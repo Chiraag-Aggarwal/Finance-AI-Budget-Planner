@@ -1,0 +1,225 @@
+{
+  "baseline": "survey-weighted median by area and family-size band (1-2, 3-4, 5+)",
+  "candidate": "survey-weighted Ridge regression with validation-selected features and target transformation",
+  "engineered_features": {
+    "state_area": "state_code combined with rural/urban area",
+    "family_size_band": "family size grouped as 1-2, 3-4, or 5+ people",
+    "state_area_family_size_band": "state/area combined with the 1-2, 3-4, or 5+ family-size band",
+    "family_size_detail_band": "family size grouped as 1, 2, 3, 4, 5-6, or 7+ people",
+    "state_area_detail_size_band": "state/area combined with the detailed family-size band",
+    "household_type_family_size_band": "household type combined with the broad family-size band",
+    "area_family_size_band": "rural/urban area combined with the broad family-size band",
+    "under5_band": "children under 5 grouped as 0, 1, or 2+",
+    "school_age_band": "children aged 5-17 grouped as 0, 1-2, or 3+",
+    "working_adult_band": "adults aged 18-59 grouped as 0, 1-2, or 3+",
+    "senior_band": "adults aged 60+ grouped as 0, 1, or 2+"
+  },
+  "selection_rule": "lowest validation weighted MAE across feature variants, target transformations, and alpha values; test evaluated after selection",
+  "validation_feature_experiments": {
+    "current_features": {
+      "target_transform": "sqrt",
+      "selected_alpha": 30.0,
+      "weighted_mae_inr": 2428.383950536692,
+      "weighted_rmse_inr": 3582.9836330982685
+    },
+    "state_area_size_interaction": {
+      "target_transform": "sqrt",
+      "selected_alpha": 100.0,
+      "weighted_mae_inr": 2421.1711197647055,
+      "weighted_rmse_inr": 3576.396973590613
+    },
+    "both_size_interactions": {
+      "target_transform": "fourth_root",
+      "selected_alpha": 100.0,
+      "weighted_mae_inr": 2414.2767623064683,
+      "weighted_rmse_inr": 3591.052283081612
+    },
+    "age_bands": {
+      "target_transform": "fourth_root",
+      "selected_alpha": 30.0,
+      "weighted_mae_inr": 2413.5365707839896,
+      "weighted_rmse_inr": 3591.3785251609966
+    },
+    "detailed_size_interaction": {
+      "target_transform": "fourth_root",
+      "selected_alpha": 100.0,
+      "weighted_mae_inr": 2398.4760453410263,
+      "weighted_rmse_inr": 3577.511549197079
+    },
+    "size_interaction_plus_age_bands": {
+      "target_transform": "sqrt",
+      "selected_alpha": 100.0,
+      "weighted_mae_inr": 2408.579213293724,
+      "weighted_rmse_inr": 3564.930366300606
+    },
+    "detailed_size_plus_age_bands": {
+      "target_transform": "fourth_root",
+      "selected_alpha": 100.0,
+      "weighted_mae_inr": 2391.1563090253385,
+      "weighted_rmse_inr": 3568.2767350272757
+    }
+  },
+  "alpha_values_checked": [
+    1.0,
+    10.0,
+    30.0,
+    50.0,
+    75.0,
+    100.0,
+    150.0,
+    200.0,
+    300.0,
+    500.0,
+    1000.0,
+    10000.0
+  ],
+  "target_transforms_checked": [
+    "raw",
+    "sqrt",
+    "log1p",
+    "fourth_root"
+  ],
+  "selected_feature_variant": "detailed_size_plus_age_bands",
+  "selected_target_transform": "fourth_root",
+  "selected_alpha": 100.0,
+  "rows_by_split": {
+    "train": 209438,
+    "validation": 26239,
+    "test": 26218
+  },
+  "validation": {
+    "baseline": {
+      "weighted_mae_inr": 2845.6957456363175,
+      "weighted_rmse_inr": 4221.673063689853
+    },
+    "candidate": {
+      "weighted_mae_inr": 2391.1563090253385,
+      "weighted_rmse_inr": 3568.2767350272757
+    },
+    "candidate_beats_baseline_by_weighted_mae": true,
+    "candidate_by_area": {
+      "Rural": {
+        "rows": 15463,
+        "weighted_mae_inr": 2145.438788635919,
+        "weighted_rmse_inr": 3076.937955307149
+      },
+      "Urban": {
+        "rows": 10776,
+        "weighted_mae_inr": 2883.151777681346,
+        "weighted_rmse_inr": 4389.77779389301
+      }
+    },
+    "baseline_by_family_size_band": {
+      "1-2": {
+        "rows": 5154,
+        "weighted_mae_inr": 1986.8664112798838,
+        "weighted_rmse_inr": 3007.817758909537
+      },
+      "3-4": {
+        "rows": 10777,
+        "weighted_mae_inr": 2625.2060712550674,
+        "weighted_rmse_inr": 3811.59365910905
+      },
+      "5+": {
+        "rows": 10308,
+        "weighted_mae_inr": 3540.7588066611825,
+        "weighted_rmse_inr": 5102.127104338197
+      }
+    },
+    "candidate_by_family_size_band": {
+      "1-2": {
+        "rows": 5154,
+        "weighted_mae_inr": 1708.7402319446703,
+        "weighted_rmse_inr": 2690.8916561647043
+      },
+      "3-4": {
+        "rows": 10777,
+        "weighted_mae_inr": 2273.563127932366,
+        "weighted_rmse_inr": 3396.382487908851
+      },
+      "5+": {
+        "rows": 10308,
+        "weighted_mae_inr": 2882.2062112477934,
+        "weighted_rmse_inr": 4117.156607831848
+      }
+    }
+  },
+  "test": {
+    "baseline": {
+      "weighted_mae_inr": 2913.847434463642,
+      "weighted_rmse_inr": 5655.639705286052
+    },
+    "candidate": {
+      "weighted_mae_inr": 2404.272700545939,
+      "weighted_rmse_inr": 5113.584811298024
+    },
+    "candidate_beats_baseline_by_weighted_mae": true,
+    "baseline_by_area": {
+      "Rural": {
+        "rows": 15442,
+        "weighted_mae_inr": 2667.0842318540217,
+        "weighted_rmse_inr": 6034.454126890662
+      },
+      "Urban": {
+        "rows": 10776,
+        "weighted_mae_inr": 3375.6586703932903,
+        "weighted_rmse_inr": 4868.127357772138
+      }
+    },
+    "candidate_by_area": {
+      "Rural": {
+        "rows": 15442,
+        "weighted_mae_inr": 2157.9379048665182,
+        "weighted_rmse_inr": 5550.925672021889
+      },
+      "Urban": {
+        "rows": 10776,
+        "weighted_mae_inr": 2865.2821834920605,
+        "weighted_rmse_inr": 4173.744104860126
+      }
+    },
+    "baseline_by_family_size_band": {
+      "1-2": {
+        "rows": 5376,
+        "weighted_mae_inr": 2052.768957267973,
+        "weighted_rmse_inr": 2966.709365318405
+      },
+      "3-4": {
+        "rows": 10774,
+        "weighted_mae_inr": 2673.439980579149,
+        "weighted_rmse_inr": 3813.0316157973366
+      },
+      "5+": {
+        "rows": 10068,
+        "weighted_mae_inr": 3676.1067464891453,
+        "weighted_rmse_inr": 8021.275632784005
+      }
+    },
+    "candidate_by_family_size_band": {
+      "1-2": {
+        "rows": 5376,
+        "weighted_mae_inr": 1716.3763018060986,
+        "weighted_rmse_inr": 2542.57648442867
+      },
+      "3-4": {
+        "rows": 10774,
+        "weighted_mae_inr": 2279.6978335415565,
+        "weighted_rmse_inr": 3321.2404939012335
+      },
+      "5+": {
+        "rows": 10068,
+        "weighted_mae_inr": 2940.476747868403,
+        "weighted_rmse_inr": 7344.880253686988
+      }
+    }
+  },
+  "recommendation": "candidate_beats_baseline_on_validation_and_test; review subgroup errors before app use",
+  "limitations": [
+    "The source CSV is user-provided and derived; original derivation notes were not supplied.",
+    "HCES food consumption may include home-produced or imputed consumption and is not necessarily cash spending.",
+    "The model cannot predict savings, debt affordability, or financial-goal success.",
+    "This held-out test split has been used in earlier candidate checks, so treat its result as exploratory.",
+    "The detailed feature and target searches can overfit validation results; confirm with a new survey sample.",
+    "Do not show this experimental estimate to users without further evaluation and review."
+  ]
+}
