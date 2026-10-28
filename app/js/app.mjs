@@ -14,7 +14,9 @@ const results = document.querySelector("#plan-results");
 const emptyResults = document.querySelector("#empty-results");
 const loanToggle = form.elements.namedItem("considerLoan");
 const goalToggle = form.elements.namedItem("includeGoal");
+const useGoalAssetsToggle = form.elements.namedItem("useGoalAssets");
 const goalFields = document.querySelectorAll("[data-goal-input]");
+const goalAssetFields = document.querySelectorAll("[data-goal-asset-input]");
 const loanFields = document.querySelectorAll("[data-loan-input]");
 const goalTypeSelect = form.elements.namedItem("goalType");
 const preferredTermSelect = form.elements.namedItem("preferredLoanTermMonths");
@@ -80,6 +82,20 @@ function updatePreferredTerms() {
   preferredTermSelect.value = terms.includes(Number(previousValue)) ? previousValue : "";
 }
 
+function updateGoalAssetFields() {
+  const enabled = goalToggle.checked && useGoalAssetsToggle.checked;
+  goalAssetFields.forEach((field) => {
+    field.hidden = !enabled;
+    field.querySelectorAll("input, select").forEach((control) => {
+      if (control.dataset.assetRequired === undefined) {
+        control.dataset.assetRequired = String(control.required);
+      }
+      control.disabled = !enabled;
+      control.required = enabled && control.dataset.assetRequired === "true";
+    });
+  });
+}
+
 function updateGoalFields() {
   const enabled = goalToggle.checked;
   goalFields.forEach((field) => {
@@ -93,12 +109,17 @@ function updateGoalFields() {
     });
   });
 
-  if (!enabled) loanToggle.checked = false;
+  if (!enabled) {
+    loanToggle.checked = false;
+    useGoalAssetsToggle.checked = false;
+  }
+  updateGoalAssetFields();
   updatePreferredTerms();
   updateLoanFields();
 }
 
 goalToggle.addEventListener("change", updateGoalFields);
+useGoalAssetsToggle.addEventListener("change", updateGoalAssetFields);
 goalTypeSelect.addEventListener("change", updatePreferredTerms);
 loanToggle.addEventListener("change", updateLoanFields);
 updateGoalFields();
@@ -136,6 +157,7 @@ function readOptionalNumber(fieldName) {
 function readProfileFromForm() {
   const includeGoal = goalToggle.checked;
   const compareLoan = includeGoal && loanToggle.checked;
+  const useGoalAssets = includeGoal && useGoalAssetsToggle.checked;
   const selectedTerm = preferredTermSelect.value;
 
   return {
@@ -149,6 +171,8 @@ function readProfileFromForm() {
     totalSavings: readNumber("totalSavings"),
     emergencyFund: readNumber("emergencyFund"),
     goalSavings: includeGoal ? readNumber("goalSavings") : null,
+    useGoalAssets,
+    goalAssetContribution: useGoalAssets ? readNumber("goalAssetContribution") : 0,
     emergencyFundMonths: readNumber("emergencyFundMonths"),
     goalComfortPercent: readNumber("goalComfortPercent"),
     region: form.elements.namedItem("region").value.trim(),
@@ -264,6 +288,7 @@ function showGoalPlan(plan) {
   showText("result-required-saving", formatRupees(plan.goal.requiredMonthlySaving));
   showText("result-comfort-saving", formatRupees(plan.goal.comfortableMonthlySaving));
   showText("result-saving-gap", formatRupees(plan.goal.monthlySavingGap));
+  showText("result-assets-included", formatRupees(plan.goal.assetsOrFamilyFundsUsed));
   showText("result-down-payment-gap", formatRupees(plan.goal.remainingDownPayment));
   showText("result-required-cash-saving", formatRupees(plan.goal.requiredMonthlyFullPriceSaving));
   showText("result-savings-by-deadline", formatRupees(plan.goal.savingsByDeadline));
@@ -353,7 +378,7 @@ function showLoanPlan(loan) {
   table.hidden = loan.scenarios.length === 0;
 
   if (loan.status === "no-loan-needed") {
-    showText("result-loan-message", "Your planned down payment covers the entered purchase price, so this estimate does not need a loan.");
+    showText("result-loan-message", "The funds you chose to apply cover the entered purchase price, so this estimate does not need a loan.");
     return;
   }
   if (loan.status === "rate-needed") {

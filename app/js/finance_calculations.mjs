@@ -37,9 +37,16 @@ function monthsNeeded(amountRemaining, monthlySaving) {
   return Math.ceil(amountRemaining / monthlySaving);
 }
 
+// Count only assets the user opted to use, capped at the remaining goal price.
+function goalAssetFunds(profile) {
+  const requestedAmount = profile.useGoalAssets === true ? profile.goalAssetContribution : 0;
+  const amountStillNeeded = Math.max(profile.goalPrice - profile.goalSavings, 0);
+  return Math.min(requestedAmount, amountStillNeeded);
+}
+
 // Build one comparable goal scenario from a monthly saving amount.
-function makeGoalScenario(name, monthlySaving, profile, remainingDownPayment, remainingFullPrice) {
-  const savingsByDeadline = profile.goalSavings + monthlySaving * profile.monthsUntilGoal;
+function makeGoalScenario(name, monthlySaving, profile, remainingDownPayment, remainingFullPrice, fundsAlreadyAvailable) {
+  const savingsByDeadline = fundsAlreadyAvailable + monthlySaving * profile.monthsUntilGoal;
 
   return {
     name,
@@ -64,6 +71,14 @@ export function validateProfile(profile) {
     errors.push("Choose whether you want to plan for a specific goal.");
   }
   const includeGoal = hasSpecificGoal(profile);
+  const useGoalAssets = includeGoal && profile.useGoalAssets === true;
+
+  if (profile.useGoalAssets !== undefined && typeof profile.useGoalAssets !== "boolean") {
+    errors.push("Choose whether to use assets or family support for this goal.");
+  }
+  if (profile.useGoalAssets === true && !includeGoal) {
+    errors.push("Assets or family support can only be used for a specific goal.");
+  }
 
   // A goal-free plan still needs only household, budget, savings, and comfort inputs.
   const requiredNumbers = [
@@ -82,6 +97,7 @@ export function validateProfile(profile) {
   if (includeGoal) {
     requiredNumbers.push(
       ["goalSavings", "Savings set aside for this goal"],
+      ...(useGoalAssets ? [["goalAssetContribution", "Assets or family support for this goal"]] : []),
       ["goalPrice", "Goal price"],
       ["plannedDownPayment", "Planned down payment"],
       ["monthsUntilGoal", "Months until the goal"],
@@ -113,6 +129,7 @@ export function validateProfile(profile) {
   if (includeGoal) {
     amountsThatCannotBeNegative.push(
       ["goalSavings", "Savings set aside for this goal"],
+      ...(useGoalAssets ? [["goalAssetContribution", "Assets or family support for this goal"]] : []),
       ["goalPrice", "Goal price"],
       ["plannedDownPayment", "Planned down payment"],
     );
@@ -209,8 +226,10 @@ function loanAmountForEmiLimit(monthlyLimit, annualRatePercent, months) {
 // Compare every example term. Affordability uses the remaining surplus and comfort cap.
 function calculateLoanEstimate(profile, monthlySurplus) {
   const includeGoal = hasSpecificGoal(profile);
+  const assetFundsUsed = includeGoal ? goalAssetFunds(profile) : 0;
+  const goalFundsAlreadyAvailable = includeGoal ? profile.goalSavings + assetFundsUsed : 0;
   const cashForPurchase = includeGoal
-    ? Math.min(profile.goalPrice, Math.max(profile.plannedDownPayment, profile.goalSavings))
+    ? Math.min(profile.goalPrice, Math.max(profile.plannedDownPayment, goalFundsAlreadyAvailable))
     : 0;
   const loanAmount = includeGoal ? Math.max(profile.goalPrice - cashForPurchase, 0) : 0;
   const automaticEmiLimit = monthlySurplus * profile.goalComfortPercent / 100;
@@ -313,24 +332,26 @@ export function calculatePlan(profile) {
   ];
 
   if (includeGoal) {
-    const remainingDownPayment = Math.max(profile.plannedDownPayment - profile.goalSavings, 0);
+    const assetsOrFamilyFundsUsed = goalAssetFunds(profile);
+    const goalFundsAlreadyAvailable = profile.goalSavings + assetsOrFamilyFundsUsed;
+    const remainingDownPayment = Math.max(profile.plannedDownPayment - goalFundsAlreadyAvailable, 0);
     const requiredMonthlyGoalSaving = remainingDownPayment / profile.monthsUntilGoal;
     const monthlyGoalSavingGap = Math.max(requiredMonthlyGoalSaving - comfortableMonthlySaving, 0);
     const goalFitsChosenMonthlyAmount = monthlyGoalSavingGap === 0;
     const monthsToDownPaymentAtChosenPace = monthsNeeded(remainingDownPayment, comfortableMonthlySaving);
-    const remainingFullPrice = Math.max(profile.goalPrice - profile.goalSavings, 0);
-    const savingsByDeadline = profile.goalSavings
+    const remainingFullPrice = Math.max(profile.goalPrice - goalFundsAlreadyAvailable, 0);
+    const savingsByDeadline = goalFundsAlreadyAvailable
       + comfortableMonthlySaving * profile.monthsUntilGoal;
     const downPaymentShortfallAtDeadline = Math.max(profile.plannedDownPayment - savingsByDeadline, 0);
     const fullPriceShortfallAtDeadline = Math.max(profile.goalPrice - savingsByDeadline, 0);
     const monthsToFullCashAtChosenPace = monthsNeeded(remainingFullPrice, comfortableMonthlySaving);
     const scenarios = [
       makeGoalScenario("Half of chosen amount", comfortableMonthlySaving / 2, profile,
-        remainingDownPayment, remainingFullPrice),
+        remainingDownPayment, remainingFullPrice, goalFundsAlreadyAvailable),
       makeGoalScenario("Your chosen amount", comfortableMonthlySaving, profile,
-        remainingDownPayment, remainingFullPrice),
+        remainingDownPayment, remainingFullPrice, goalFundsAlreadyAvailable),
       makeGoalScenario("All listed surplus", monthlySurplus, profile,
-        remainingDownPayment, remainingFullPrice),
+        remainingDownPayment, remainingFullPrice, goalFundsAlreadyAvailable),
     ];
 
     goal = {
@@ -339,6 +360,8 @@ export function calculatePlan(profile) {
       price: profile.goalPrice,
       plannedDownPayment: profile.plannedDownPayment,
       savingsAlreadySetAside: profile.goalSavings,
+      assetsOrFamilyFundsUsed,
+      totalFundsAlreadyAvailable: goalFundsAlreadyAvailable,
       remainingDownPayment,
       monthsUntilGoal: profile.monthsUntilGoal,
       requiredMonthlySaving: requiredMonthlyGoalSaving,
@@ -360,6 +383,9 @@ export function calculatePlan(profile) {
     notes.push("Goal timelines assume the same monthly saving, no investment growth, and no price changes.");
     notes.push("The full-price scenario assumes a cash purchase; it does not estimate a new loan or EMI.");
     notes.push("The goal plan uses your inputs and transparent calculations, not an ML goal-success prediction.");
+    if (profile.useGoalAssets === true) {
+      notes.push("The goal plan includes only the asset or family amount you opted to use.");
+    }
     if (!goalFitsChosenMonthlyAmount) {
       notes.push("The selected timeline needs more monthly goal savings than your chosen amount.");
     }
