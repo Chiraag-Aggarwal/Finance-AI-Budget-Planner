@@ -1,0 +1,17 @@
+# Local account data and runtime files
+/app/data/*.sqlite3*
+**/__pycache__/
+*.py[cod]
+*.log
+.env
+.env.*
+!.env.example
+
+# User-provided or generated household-level data (do not publish by default)
+/india_hces_household_spending.csv
+/data/processed/*.csv
+
+# Local historical copies
+/_backups/
+.DS_Store
+Thumbs.db
