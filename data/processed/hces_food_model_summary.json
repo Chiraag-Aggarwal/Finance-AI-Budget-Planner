@@ -1,0 +1,59 @@
+{
+  "source_file": "india_hces_household_spending.csv",
+  "source_rows": 261953,
+  "unique_household_ids": 261953,
+  "repeated_household_ids": 0,
+  "rows_missing_target_excluded_from_training_table": 58,
+  "prepared_rows": 261895,
+  "feature_columns": [
+    "state_code",
+    "area",
+    "family_size",
+    "children_under_5",
+    "children_5_to_17",
+    "adults_18_to_59",
+    "adults_60_plus",
+    "household_type"
+  ],
+  "target_column": "recorded_food_consumption_30d_inr",
+  "survey_weight_column": "survey_weight",
+  "survey_weight_is_a_predictor": false,
+  "group_split_fields_not_exported": [
+    "state_code",
+    "area",
+    "fsu_serial_no"
+  ],
+  "split_method": "Whole FSUs split within state and rural/urban groups; about 80/10/10",
+  "random_seed": 42,
+  "rows_by_split": {
+    "test": 26218,
+    "train": 209438,
+    "validation": 26239
+  },
+  "fsus_by_split": {
+    "test": 1485,
+    "train": 11857,
+    "validation": 1485
+  },
+  "rows_by_split_and_area": {
+    "test": {
+      "Rural": 15442,
+      "Urban": 10776
+    },
+    "train": {
+      "Rural": 123409,
+      "Urban": 86029
+    },
+    "validation": {
+      "Rural": 15463,
+      "Urban": 10776
+    }
+  },
+  "positive_survey_weights": true,
+  "target_nonnegative": true,
+  "known_limits": [
+    "Recorded food consumption is not necessarily money paid out of pocket.",
+    "The source does not label savings, loan affordability, or financial-goal outcomes.",
+    "The user-provided source is derived; its original derivation notes were not supplied."
+  ]
+}
