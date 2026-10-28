@@ -452,7 +452,16 @@
                 <label class="field" data-goal-input hidden>
                   <span>Savings already set aside for this goal <span class="required-mark" aria-hidden="true">*</span></span>
                   <input name="goalSavings" type="number" min="0" step="0.01" inputmode="decimal" required>
-                  <small>This is part of total savings. Keep the emergency-fund amount separate.</small>
+                  <small>This is part of total savings. Keep the emergency-fund amount separate. Do not count it again as asset or family support.</small>
+                </label>
+                <label class="save-choice field-full" data-goal-input hidden>
+                  <input name="useGoalAssets" type="checkbox">
+                  <span>Use assets or family support toward this goal<small>Optional. Turn this on only if you want an asset or family contribution counted in the plan.</small></span>
+                </label>
+                <label class="field" data-goal-asset-input hidden>
+                  <span>Amount you can actually use from assets or family support toward this goal <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="goalAssetContribution" type="number" min="0" step="0.01" inputmode="decimal" required>
+                  <small>Enter only money actually available for this goal, such as confirmed family support or net proceeds if property is sold. Do not enter the property's full value or savings already listed above.</small>
                 </label>
                 <label class="save-choice loan-toggle field-full" data-goal-input hidden>
                   <input name="considerLoan" type="checkbox">
@@ -591,12 +600,13 @@
               <dl class="result-list compact-list">
                 <div><dt>Comfortable amount you selected</dt><dd id="result-comfort-saving"></dd></div>
                 <div><dt>Monthly difference</dt><dd id="result-saving-gap"></dd></div>
-                <div><dt>Down payment still to save</dt><dd id="result-down-payment-gap"></dd></div>
-                <div><dt>Monthly saving for full price in cash</dt><dd id="result-required-cash-saving"></dd></div>
-                <div><dt>Estimated savings by your date</dt><dd id="result-savings-by-deadline"></dd></div>
+                <div><dt>Assets or family funds included</dt><dd id="result-assets-included"></dd></div>
+                <div><dt>Down payment still to arrange</dt><dd id="result-down-payment-gap"></dd></div>
+                <div><dt>Monthly amount for remaining price in cash</dt><dd id="result-required-cash-saving"></dd></div>
+                <div><dt>Estimated funds by your date</dt><dd id="result-savings-by-deadline"></dd></div>
                 <div><dt>Down-payment gap at that date</dt><dd id="result-down-payment-deadline-gap"></dd></div>
                 <div><dt>Full-price gap for a cash purchase</dt><dd id="result-full-price-deadline-gap"></dd></div>
-                <div><dt>Time to save full price in cash</dt><dd id="result-full-cash-timeline"></dd></div>
+                <div><dt>Time to fund full price in cash</dt><dd id="result-full-cash-timeline"></dd></div>
               </dl>
               <p id="result-goal-message" class="result-note"></p>
               <p id="result-cash-message" class="result-note"></p>
@@ -609,9 +619,9 @@
               <span class="result-icon icon-blue" aria-hidden="true">₹</span>
               <h3 id="loan-plan-title">Loan and EMI comparison</h3>
             </div>
-            <p class="section-intro">See whether a loan for the amount left after your down payment could fit the monthly EMI limit you chose.</p>
+            <p class="section-intro">See whether a loan for the amount left after your down payment and any savings or assets you chose to use could fit the monthly EMI limit you chose.</p>
             <dl class="result-list compact-list loan-summary">
-              <div><dt>Estimated loan after goal savings and down payment</dt><dd id="result-loan-amount"></dd></div>
+              <div><dt>Estimated loan after savings, assets, and down payment</dt><dd id="result-loan-amount"></dd></div>
               <div><dt>Comfortable limit for a new EMI</dt><dd id="result-loan-cap"></dd></div>
               <div><dt>Quoted annual interest rate</dt><dd id="result-loan-rate"></dd></div>
             </dl>
