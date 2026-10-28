@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#173a35">
+    <meta
+      name="description"
+      content="A private, India-focused household budget and goal planning calculator."
+    >
+    <title>Finance AI | Personal finance planner</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="module" src="js/i18n.mjs"></script>
+    <script type="module" src="js/account_ui.mjs"></script>
+    <script type="module" src="js/app.mjs"></script>
+    <script type="module" src="js/budget_savings_ui.mjs"></script>
+    <script type="module" src="js/budget_ui.mjs"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="#top" aria-label="Finance AI home">
+          <span class="brand-mark" aria-hidden="true">₹</span>
+          <span>Finance <strong>AI</strong></span>
+        </a>
+        <nav id="app-navigation" aria-label="Main navigation" hidden>
+          <a href="#profile">Profile</a>
+          <a href="#planner">Planner</a>
+          <a href="#budget-tracker">Monthly budget</a>
+          <a href="#results">Your plan</a>
+        </nav>
+        <div class="header-actions">
+          <span id="signed-in-name" class="signed-in-name" hidden></span>
+          <button id="sign-out-button" class="button button-quiet header-button" type="button" hidden>Sign out</button>
+          <button id="language-toggle" class="button button-quiet header-button" type="button" aria-label="Switch language">हिंदी</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section id="auth-screen" class="auth-section" aria-labelledby="auth-title">
+        <div class="auth-card">
+          <p class="eyebrow">Your private finance workspace</p>
+          <h1 id="auth-title">Sign in to Finance AI</h1>
+          <p class="auth-intro">Create an account to keep your profile and region together when you return.</p>
+          <div class="auth-tabs" role="group" aria-label="Choose an account action">
+            <button id="show-login-button" class="auth-tab active" type="button" aria-pressed="true">Sign in</button>
+            <button id="show-signup-button" class="auth-tab" type="button" aria-pressed="false">Create account</button>
+          </div>
+
+          <form id="login-form" class="account-form" novalidate>
+            <label class="field"><span>Email address</span><input name="email" type="email" maxlength="254" autocomplete="email" required></label>
+            <label class="field"><span>Password</span><input name="password" type="password" minlength="10" maxlength="128" autocomplete="current-password" required></label>
+            <button class="button button-primary" type="submit">Sign in</button>
+          </form>
+
+          <form id="signup-form" class="account-form" novalidate hidden>
+            <label class="field"><span>Your name</span><input name="name" type="text" minlength="2" maxlength="80" autocomplete="name" required></label>
+            <label class="field"><span>Email address</span><input name="email" type="email" maxlength="254" autocomplete="email" required></label>
+            <label class="field"><span>City, district, or region</span><input name="region" type="text" minlength="2" maxlength="100" autocomplete="address-level2" placeholder="For example, Pune, Maharashtra" required><small>We save this in your profile and use it as location context for your plan.</small></label>
+            <label class="field"><span>Create a password</span><input name="password" type="password" minlength="10" maxlength="128" autocomplete="new-password" required><small>Use at least 10 characters.</small></label>
+            <label class="field"><span>Confirm password</span><input name="confirmPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" required></label>
+            <button class="button button-primary" type="submit">Create account</button>
+          </form>
+          <p id="auth-error" class="auth-error" role="alert" aria-live="polite" hidden></p>
+          <p class="auth-privacy">Your password is stored as a one-way hash. Finance details remain in this browser and are separated by account on this device.</p>
+        </div>
+      </section>
+
+      <div id="app-shell" hidden>
+      <section class="profile-section" id="profile" aria-labelledby="profile-title">
+        <div class="profile-heading">
+          <div>
+            <p class="eyebrow">Your account</p>
+            <h2 id="profile-title">Your profile</h2>
+            <p id="profile-summary" class="section-intro"></p>
+          </div>
+          <button id="edit-profile-button" class="button button-quiet" type="button">Edit profile</button>
+        </div>
+        <form id="profile-form" class="profile-form" novalidate hidden>
+          <label class="field"><span>Your name</span><input name="name" type="text" minlength="2" maxlength="80" autocomplete="name" required></label>
+          <label class="field"><span>Email address</span><input name="email" type="email" readonly><small>Email is used to sign in and cannot be changed here.</small></label>
+          <label class="field"><span>City, district, or region</span><input name="region" type="text" minlength="2" maxlength="100" autocomplete="address-level2" required><small>This location is shown with your plan as context. The current savings calculation still uses your own tracked amounts.</small></label>
+          <div class="profile-actions">
+            <button class="button button-primary" type="submit">Save profile</button>
+            <button id="cancel-profile-button" class="button button-quiet" type="button">Cancel</button>
+          </div>
+          <p id="profile-status" class="save-status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="hero" id="top" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow">A calmer way to plan your money</p>
+          <h1 id="page-title">Make a plan that fits your household.</h1>
+          <p class="hero-intro">
+            See what comes in, what goes out, and what a savings goal could take.
+            The calculations use the numbers you enter, with the assumptions shown.
+          </p>
+          <a class="button button-light" href="#planner">Start your plan <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="hero-note">
+          <span class="privacy-icon" aria-hidden="true">✓</span>
+          <div>
+            <strong>Your finance figures stay on this device</strong>
+            <p>Your account profile is stored by the local Python server. Budget figures stay in this browser; there is no bank connection.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="quick-view" aria-labelledby="quick-title">
+        <div class="section-heading compact-heading">
+          <div>
+            <p class="eyebrow">Your overview</p>
+            <h2 id="quick-title">A clear starting point</h2>
+          </div>
+          <span class="status-pill" id="overview-status">Waiting for your figures</span>
+        </div>
+        <div class="overview-grid">
+          <article class="overview-card">
+            <span class="card-label">Monthly income</span>
+            <strong id="overview-income">—</strong>
+            <span class="card-hint">Take-home amount</span>
+          </article>
+          <article class="overview-card">
+            <span class="card-label">After listed costs</span>
+            <strong id="overview-balance">—</strong>
+            <span class="card-hint">After your listed monthly costs</span>
+          </article>
+          <article class="overview-card">
+            <span class="card-label">Emergency-fund gap</span>
+            <strong id="overview-emergency">—</strong>
+            <span class="card-hint">Compared with your selected target</span>
+          </article>
+          <article class="overview-card accent-card">
+            <span class="card-label" id="overview-plan-label">Goal saving needed</span>
+            <strong id="overview-goal">—</strong>
+            <span class="card-hint" id="overview-plan-hint">Per month to meet your timeline</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="budget-tracker-section" id="budget-tracker" aria-labelledby="tracker-title">
+        <div class="section-heading tracker-heading">
+          <div>
+            <p class="eyebrow">Monthly budget</p>
+            <h2 id="tracker-title">Keep track of money coming in and going out</h2>
+            <p class="section-intro">Add entries yourself. This tracker does not connect to a bank.</p>
+          </div>
+          <label class="month-picker">
+            <span>View month</span>
+            <input id="budget-month" type="month">
+          </label>
+        </div>
+
+        <label class="save-choice month-complete-choice">
+          <input id="budget-complete-month" type="checkbox">
+          <span>I have finished entering this month. Marking it complete makes the estimate more representative.</span>
+        </label>
+
+        <div class="tracker-summary-grid" aria-live="polite">
+          <article class="tracker-summary-card">
+            <span class="card-label">Income recorded</span>
+            <strong id="tracker-income">₹0</strong>
+          </article>
+          <article class="tracker-summary-card">
+            <span class="card-label">Expenses recorded</span>
+            <strong id="tracker-expenses">₹0</strong>
+          </article>
+          <article class="tracker-summary-card">
+            <span class="card-label">Recorded balance</span>
+            <strong id="tracker-balance">₹0</strong>
+          </article>
+        </div>
+
+        <div class="tracker-layout">
+          <article class="tracker-panel">
+            <div class="panel-heading">
+              <span class="step-number">+</span>
+              <div>
+                <h3>Add an entry</h3>
+                <p>Use the date the income or expense happened.</p>
+              </div>
+            </div>
+            <form id="transaction-form" class="transaction-form" novalidate>
+              <label class="field">
+                <span>Entry type <span class="required-mark" aria-hidden="true">*</span></span>
+                <select id="transaction-type" name="type" required>
+                  <option value="expense">Expense</option>
+                  <option value="income">Income</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Category <span class="required-mark" aria-hidden="true">*</span></span>
+                <select id="transaction-category" name="category" required></select>
+              </label>
+              <label class="field">
+                <span>Date <span class="required-mark" aria-hidden="true">*</span></span>
+                <input id="transaction-date" name="date" type="date" required>
+              </label>
+              <label class="field">
+                <span>Amount in rupees <span class="required-mark" aria-hidden="true">*</span></span>
+                <input id="transaction-amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required>
+              </label>
+              <label class="field field-full">
+                <span>Short note <span class="optional-mark">Optional</span></span>
+                <input id="transaction-note" name="note" type="text" maxlength="80" placeholder="For example, weekly groceries">
+              </label>
+              <label class="save-choice tracker-save-choice">
+                <input id="save-transactions" type="checkbox">
+                <span>Save entries in this browser on this device</span>
+              </label>
+              <div class="tracker-actions">
+                <button class="button button-primary" type="submit">Add entry <span aria-hidden="true">+</span></button>
+                <button class="button button-quiet" id="clear-transactions" type="button">Clear history</button>
+              </div>
+              <p id="tracker-status" class="save-status" aria-live="polite">Entries stay on this page unless you choose to save them.</p>
+              <div id="transaction-errors" class="error-box tracker-errors" role="alert" tabindex="-1" hidden>
+                <ul id="transaction-error-list"></ul>
+              </div>
+            </form>
+          </article>
+
+          <article class="tracker-panel category-panel">
+            <div class="panel-heading">
+              <span class="result-icon icon-gold" aria-hidden="true">▤</span>
+              <div>
+                <h3>Spending by category</h3>
+                <p id="category-summary-caption">For the month selected above.</p>
+              </div>
+            </div>
+            <div id="category-summary-empty" class="tracker-empty">Add expense entries to see the breakdown.</div>
+            <ul id="category-summary" class="category-summary" aria-label="Expenses grouped by category"></ul>
+          </article>
+        </div>
+
+        <article class="tracker-panel transactions-panel">
+          <div class="panel-heading">
+            <span class="result-icon icon-blue" aria-hidden="true">≡</span>
+            <div>
+              <h3>Entries for this month</h3>
+              <p id="transaction-count">0 entries</p>
+            </div>
+          </div>
+          <div id="transaction-empty" class="tracker-empty">No entries for this month yet.</div>
+          <div class="table-scroll" id="transaction-table-wrap" hidden>
+            <table class="transaction-table">
+              <thead>
+                <tr>
+                  <th scope="col">Date</th>
+                  <th scope="col">Type and category</th>
+                  <th scope="col">Note</th>
+                  <th scope="col" class="amount-column">Amount</th>
+                  <th scope="col"><span class="visually-hidden">Remove</span></th>
+                </tr>
+              </thead>
+              <tbody id="transaction-rows"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="tracker-panel savings-coach" aria-labelledby="savings-coach-title">
+          <div class="panel-heading">
+            <span class="result-icon icon-sage" aria-hidden="true">↗</span>
+            <div>
+              <h3 id="savings-coach-title">Find ways to save each month</h3>
+              <p>Use this for your future, an emergency fund, or any goal. It works without the goal planner.</p>
+            </div>
+          </div>
+
+          <form id="savings-target-form" class="savings-target-form">
+            <label class="field" for="monthly-savings-target">
+              <span>How much would you like to save each month?</span>
+              <input id="monthly-savings-target" type="number" min="0" step="1" inputmode="numeric" value="0">
+              <small>Enter 0 for a modest starting suggestion based on flexible spending. This money can be for any future need.</small>
+            </label>
+            <button class="button button-primary" type="submit">Show my savings plan</button>
+          </form>
+
+          <p id="savings-plan-message" class="result-note savings-plan-message" aria-live="polite">Add at least one income entry and one expense. Draft suggestions update as you go; mark the month complete for a fuller estimate.</p>
+          <p id="savings-region-note" class="chat-help" aria-live="polite"></p>
+
+          <div class="tracker-summary-grid budget-coach-summary" aria-live="polite">
+            <article class="tracker-summary-card"><span class="card-label">Recorded balance</span><strong id="savings-recorded-balance">—</strong></article>
+            <article class="tracker-summary-card"><span class="card-label">Possible monthly reduction</span><strong id="savings-adjustment-total">—</strong></article>
+            <article class="tracker-summary-card"><span class="card-label">Amount available to save</span><strong id="savings-available-amount">—</strong></article>
+            <article class="tracker-summary-card"><span class="card-label">Still short of your target</span><strong id="savings-target-gap">—</strong></article>
+          </div>
+
+          <h4 class="after-adjustment-title">Where your suggested budget changes</h4>
+          <p class="chat-help">The table compares recorded spending with possible new amounts. It starts with small changes to Personal, Other, Transport, Utilities, and groceries. Rent, health, education, family support, and existing EMIs stay untouched unless you ask to explore them.</p>
+          <div class="table-scroll" id="savings-budget-table-wrap" hidden>
+            <table class="scenario-table adjustment-table">
+              <caption class="visually-hidden">Current and suggested monthly spending by category</caption>
+              <thead><tr><th scope="col">Category</th><th scope="col">Current</th><th scope="col">Possible reduction</th><th scope="col">Suggested budget</th></tr></thead>
+              <tbody id="savings-budget-rows"></tbody>
+            </table>
+          </div>
+          <p id="savings-budget-empty" class="tracker-empty">Add at least one income and one expense entry. Missing entries are not treated as zero.</p>
+
+          <div class="advice-chat" aria-labelledby="savings-chat-title">
+            <h4 id="savings-chat-title">Tell me what cannot change</h4>
+            <p class="chat-help">For example: “Groceries are fixed because of my family” or “I can reduce Transport by ₹500.” I’ll update the budget using that limit.</p>
+            <ol id="savings-chat-messages" class="chat-messages" aria-live="polite" aria-relevant="additions text">
+              <li class="chat-message assistant-message">Tell me a category and whether it can change. Your preferences stay in this browser.</li>
+            </ol>
+            <form id="savings-chat-form" class="advice-chat-form">
+              <label class="visually-hidden" for="savings-chat-input">Describe which spending can or cannot change</label>
+              <input id="savings-chat-input" type="text" maxlength="300" autocomplete="off" placeholder="For example, transport is fixed…" required>
+              <button class="button button-primary" type="submit">Send</button>
+            </form>
+            <p class="chat-disclaimer">This is a private, rule-based category helper, not a generative AI chat. Suggestions are optional scenarios, not instructions.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="planner-section" id="planner" aria-labelledby="planner-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 1 · Your household</p>
+            <h2 id="planner-title">Add the details for your plan</h2>
+            <p class="section-intro">Use monthly amounts in rupees. Enter 0 for a category you don’t have.</p>
+          </div>
+          <span class="required-note"><span aria-hidden="true">*</span> Required</span>
+        </div>
+
+        <div class="form-layout">
+          <form id="finance-form" novalidate>
+            <fieldset class="form-card">
+              <legend><span class="step-number">1</span> Monthly income and spending</legend>
+              <div class="form-grid">
+                <label class="field">
+                  <span>Take-home income <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="monthlyTakeHomeIncome" type="number" min="1" step="0.01" inputmode="decimal" required>
+                  <small>Income received after tax and payroll deductions.</small>
+                </label>
+                <label class="field">
+                  <span>Essential expenses <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="monthlyEssentialExpenses" type="number" min="0" step="0.01" inputmode="decimal" required>
+                  <small>For example, rent, groceries, utilities, and medicine.</small>
+                </label>
+                <label class="field">
+                  <span>Discretionary expenses <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="monthlyDiscretionaryExpenses" type="number" min="0" step="0.01" inputmode="decimal" required>
+                  <small>For example, eating out, hobbies, and non-essential shopping.</small>
+                </label>
+                <label class="field">
+                  <span>Current loan / EMI payments <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="monthlyDebtPayment" type="number" min="0" step="0.01" inputmode="decimal" required>
+                  <small>Add current monthly loan and EMI payments. These are subtracted before calculating your available balance.</small>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="form-card">
+              <legend><span class="step-number">2</span> Household and savings</legend>
+              <div class="form-grid">
+                <label class="field">
+                  <span>People in household <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="householdSize" type="number" min="1" step="1" inputmode="numeric" required>
+                  <small>Everyone whose expenses are included in this plan.</small>
+                </label>
+                <label class="field">
+                  <span>Dependents <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="dependents" type="number" min="0" step="1" inputmode="numeric" required>
+                  <small>People who rely on this household financially.</small>
+                </label>
+                <label class="field">
+                  <span>Total savings <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="totalSavings" type="number" min="0" step="0.01" inputmode="decimal" required>
+                  <small>Your current savings. Emergency and goal savings are parts of this total.</small>
+                </label>
+                <label class="field">
+                  <span>Emergency fund <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="emergencyFund" type="number" min="0" step="0.01" inputmode="decimal" required>
+                  <small>Money you want to keep for unexpected needs.</small>
+                </label>
+                <label class="field">
+                  <span>Emergency-fund target <span class="required-mark" aria-hidden="true">*</span></span>
+                  <select name="emergencyFundMonths" required>
+                    <option value="3">3 months</option>
+                    <option value="6" selected>6 months</option>
+                    <option value="9">9 months</option>
+                    <option value="12">12 months</option>
+                  </select>
+                  <small>This is your chosen planning period, not a universal rule.</small>
+                </label>
+                <label class="field">
+                  <span>Share of monthly balance to set aside <span class="required-mark" aria-hidden="true">*</span></span>
+                  <div class="input-suffix">
+                    <input name="goalComfortPercent" type="number" min="0" max="100" step="1" inputmode="numeric" value="30" required>
+                    <span>%</span>
+                  </div>
+                  <small>Starts at 30% as an editable example, not a rule. Choose a share you can manage; it also sets a new EMI comfort cap.</small>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="form-card">
+              <legend><span class="step-number">3</span> Optional goal or purchase</legend>
+              <div class="form-grid">
+                <label class="save-choice goal-choice field-full">
+                  <input name="includeGoal" type="checkbox">
+                  <span>I have a specific goal to plan for<small>Leave this off if you only want a general savings plan. You can add a goal later.</small></span>
+                </label>
+                <label class="field" data-goal-input hidden>
+                  <span>City, district, or region <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="region" type="text" minlength="2" maxlength="100" autocomplete="address-level2" placeholder="For example, Pune, Maharashtra" required>
+                  <small>This is location context only. The app does not fetch live prices, so enter a current local quote below.</small>
+                </label>
+                <label class="field" data-goal-input hidden>
+                  <span>Goal type <span class="required-mark" aria-hidden="true">*</span></span>
+                  <select name="goalType" required>
+                    <option value="car">Buy a car</option>
+                    <option value="bike">Buy a bike or scooter</option>
+                    <option value="laptop">Buy a laptop or computer</option>
+                    <option value="home">Buy a house or flat</option>
+                    <option value="plot">Buy a plot or land</option>
+                    <option value="farm">Buy a farm or agricultural land</option>
+                    <option value="renovation">Renovate or repair a home</option>
+                    <option value="business">Start a business or buy equipment</option>
+                    <option value="education">Education or training</option>
+                    <option value="medical">Medical costs</option>
+                    <option value="wedding">Wedding</option>
+                    <option value="travel">Travel</option>
+                    <option value="phone">Buy a phone</option>
+                    <option value="appliance">Buy a household appliance</option>
+                    <option value="other">Another goal</option>
+                  </select>
+                  <small>Choose one purchase or expense to plan for first.</small>
+                </label>
+                <label class="field" data-goal-input hidden>
+                  <span>Current local target price <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="goalPrice" type="number" min="1" step="0.01" inputmode="decimal" required>
+                  <small>Use a recent local quote and include fees you expect to pay.</small>
+                </label>
+                <label class="field" data-goal-input hidden>
+                  <span>Planned down payment <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="plannedDownPayment" type="number" min="0" step="0.01" inputmode="decimal" required>
+                  <small>The amount you hope to pay upfront.</small>
+                </label>
+                <label class="field" data-goal-input hidden>
+                  <span>Time until purchase <span class="required-mark" aria-hidden="true">*</span></span>
+                  <div class="input-suffix">
+                    <input name="monthsUntilGoal" type="number" min="1" step="1" inputmode="numeric" required>
+                    <span>months</span>
+                  </div>
+                  <small>How many months you have before you want to buy.</small>
+                </label>
+                <label class="field" data-goal-input hidden>
+                  <span>Savings already set aside for this goal <span class="required-mark" aria-hidden="true">*</span></span>
+                  <input name="goalSavings" type="number" min="0" step="0.01" inputmode="decimal" required>
+                  <small>This is part of total savings. Keep the emergency-fund amount separate.</small>
+                </label>
+                <label class="save-choice loan-toggle field-full" data-goal-input hidden>
+                  <input name="considerLoan" type="checkbox">
+                  <span>Compare a loan and monthly EMI<small>Optional. The planner checks sample repayments against your budget and existing EMIs.</small></span>
+                </label>
+                <label class="field loan-input" data-loan-input hidden>
+                  <span>Annual interest rate from a lender quote <span class="optional-mark">optional</span></span>
+                  <div class="input-suffix">
+                    <input name="loanRatePercent" type="number" min="0" max="50" step="0.01" inputmode="decimal" placeholder="For example, 9.5">
+                    <span>% p.a.</span>
+                  </div>
+                  <small>The planner does not estimate a rate from your income or savings. Use a lender's quote; your budget is used to check whether the EMI fits.</small>
+                </label>
+                <label class="field loan-input" data-loan-input hidden>
+                  <span>Preferred repayment period <span class="optional-mark">optional</span></span>
+                  <select name="preferredLoanTermMonths">
+                    <option value="">Compare all options</option>
+                  </select>
+                  <small>Choose a period that suits you, or compare all examples. A longer term usually adds more interest.</small>
+                </label>
+                <label class="field loan-input" data-loan-input hidden>
+                  <span>Comfortable new EMI limit <span class="optional-mark">optional</span></span>
+                  <input name="maxComfortableNewEmi" type="number" min="0" step="1" inputmode="numeric" placeholder="Use the limit from your monthly balance">
+                  <small>This monthly cap cannot exceed the surplus left after your costs and current EMIs.</small>
+                </label>
+              </div>
+            </fieldset>
+            <div class="form-actions">
+              <label class="save-choice">
+                <input id="save-on-device" type="checkbox">
+                <span>Save these details in this browser on this device</span>
+              </label>
+              <button class="button button-primary" type="submit">Calculate my plan <span aria-hidden="true">→</span></button>
+              <button class="button button-quiet" id="clear-saved" type="button">Clear saved details</button>
+            </div>
+            <p id="save-status" class="save-status" aria-live="polite"></p>
+          </form>
+
+          <aside class="privacy-card" aria-labelledby="privacy-title">
+            <span class="privacy-icon" aria-hidden="true">✓</span>
+            <h3 id="privacy-title">Private by design</h3>
+            <p>Your finance figures are calculated in this browser. Your account profile is stored by the local Python server; saved plan figures stay in this browser.</p>
+            <ul>
+              <li>Passwords are stored as salted hashes</li>
+              <li>Budget figures stay on this device</li>
+              <li>Clear saved details any time</li>
+            </ul>
+            <p class="small-print">Avoid entering names, bank account numbers, card details, or passwords.</p>
+          </aside>
+        </div>
+
+        <div id="form-errors" class="error-box" role="alert" tabindex="-1" hidden>
+          <h3>Please check these details</h3>
+          <ul id="form-error-list"></ul>
+        </div>
+      </section>
+
+      <section class="results-section" id="results" aria-labelledby="results-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 2 · Your plan</p>
+            <h2 id="results-title">Your monthly picture</h2>
+            <p class="section-intro">These results are based only on the details you entered above.</p>
+          </div>
+        </div>
+
+        <div id="empty-results" class="empty-state">
+          <span class="empty-icon" aria-hidden="true">↗</span>
+          <p><strong>Your plan will appear here.</strong><br>Enter your household figures above and select “Calculate my plan”.</p>
+        </div>
+
+        <div id="plan-results" hidden>
+          <div class="results-grid">
+            <article class="result-card">
+              <div class="result-card-heading">
+                <span class="result-icon" aria-hidden="true">↕</span>
+                <h3>Monthly cash flow</h3>
+              </div>
+              <dl class="result-list">
+                <div><dt>Take-home income</dt><dd id="result-income"></dd></div>
+                <div><dt>Essential expenses</dt><dd id="result-essentials"></dd></div>
+                <div><dt>Discretionary expenses</dt><dd id="result-discretionary"></dd></div>
+                <div><dt>Current loan / EMI payments</dt><dd id="result-debt-payment"></dd></div>
+                <div class="result-total"><dt>Balance after listed costs</dt><dd id="result-balance"></dd></div>
+              </dl>
+              <p id="cash-flow-message" class="result-note"></p>
+            </article>
+
+            <article class="result-card">
+              <div class="result-card-heading">
+                <span class="result-icon icon-sage" aria-hidden="true">◌</span>
+                <h3>Emergency fund</h3>
+              </div>
+              <p class="big-number" id="result-emergency-gap"></p>
+              <p class="big-number-label">Remaining to reach your selected target</p>
+              <dl class="result-list compact-list">
+                <div><dt>Target</dt><dd id="result-emergency-target"></dd></div>
+                <div><dt>Current emergency fund</dt><dd id="result-emergency-current"></dd></div>
+                <div><dt>Months selected</dt><dd id="result-emergency-months"></dd></div>
+              </dl>
+              <p id="result-emergency-time" class="result-note"></p>
+            </article>
+
+            <article class="result-card goal-card" id="flexible-savings-card" hidden>
+              <div class="result-card-heading">
+                <span class="result-icon icon-sage" aria-hidden="true">↗</span>
+                <h3>Flexible savings plan</h3>
+              </div>
+              <p class="big-number" id="result-flexible-saving"></p>
+              <p class="big-number-label">Suggested amount to set aside each month</p>
+              <p id="result-flexible-message" class="result-note"></p>
+              <div class="table-scroll">
+                <table class="scenario-table">
+                  <caption>Illustrative savings from the monthly contributions you selected</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">After</th>
+                      <th scope="col">Added from contributions</th>
+                      <th scope="col">Toward emergency fund</th>
+                      <th scope="col">Extra after emergency target</th>
+                    </tr>
+                  </thead>
+                  <tbody id="flexible-savings-rows"></tbody>
+                </table>
+              </div>
+              <p class="result-note">These amounts do not include investment growth or fees. They are examples based on steady monthly saving.</p>
+            </article>
+
+            <article class="result-card goal-card" id="goal-plan-card">
+              <div class="result-card-heading">
+                <span class="result-icon icon-gold" aria-hidden="true">◎</span>
+                <h3>Goal savings plan</h3>
+              </div>
+              <p class="big-number" id="result-required-saving"></p>
+              <p class="big-number-label">Needed each month for the planned down payment</p>
+              <dl class="result-list compact-list">
+                <div><dt>Comfortable amount you selected</dt><dd id="result-comfort-saving"></dd></div>
+                <div><dt>Monthly difference</dt><dd id="result-saving-gap"></dd></div>
+                <div><dt>Down payment still to save</dt><dd id="result-down-payment-gap"></dd></div>
+                <div><dt>Monthly saving for full price in cash</dt><dd id="result-required-cash-saving"></dd></div>
+                <div><dt>Estimated savings by your date</dt><dd id="result-savings-by-deadline"></dd></div>
+                <div><dt>Down-payment gap at that date</dt><dd id="result-down-payment-deadline-gap"></dd></div>
+                <div><dt>Full-price gap for a cash purchase</dt><dd id="result-full-price-deadline-gap"></dd></div>
+                <div><dt>Time to save full price in cash</dt><dd id="result-full-cash-timeline"></dd></div>
+              </dl>
+              <p id="result-goal-message" class="result-note"></p>
+              <p id="result-cash-message" class="result-note"></p>
+            </article>
+
+          </div>
+
+          <article class="result-card scenario-card loan-card" id="loan-plan-card" aria-labelledby="loan-plan-title" hidden>
+            <div class="result-card-heading">
+              <span class="result-icon icon-blue" aria-hidden="true">₹</span>
+              <h3 id="loan-plan-title">Loan and EMI comparison</h3>
+            </div>
+            <p class="section-intro">See whether a loan for the amount left after your down payment could fit the monthly EMI limit you chose.</p>
+            <dl class="result-list compact-list loan-summary">
+              <div><dt>Estimated loan after goal savings and down payment</dt><dd id="result-loan-amount"></dd></div>
+              <div><dt>Comfortable limit for a new EMI</dt><dd id="result-loan-cap"></dd></div>
+              <div><dt>Quoted annual interest rate</dt><dd id="result-loan-rate"></dd></div>
+            </dl>
+            <p id="result-loan-message" class="result-note" aria-live="polite"></p>
+            <div class="table-scroll" id="loan-scenario-wrap" hidden>
+              <table class="scenario-table loan-scenario-table">
+                <caption class="visually-hidden">Illustrative loan EMI and interest at different repayment terms</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Example loan term</th>
+                    <th scope="col">Estimated monthly EMI</th>
+                    <th scope="col">Estimated total interest</th>
+                    <th scope="col">Within your limit?</th>
+                    <th scope="col">Preferred term?</th>
+                  </tr>
+                </thead>
+                <tbody id="loan-scenario-rows"></tbody>
+              </table>
+            </div>
+            <p class="result-note loan-disclaimer">These are reducing-balance estimates using the rate you entered. EMI starts after the purchase in this comparison. Fees, insurance, taxes, rate changes, and lender approval are not included. Compare the lender's APR and Key Facts Statement before deciding.</p>
+          </article>
+
+          <article class="result-card scenario-card" id="goal-scenario-card" aria-labelledby="scenario-title">
+            <div class="result-card-heading">
+              <span class="result-icon icon-blue" aria-hidden="true">↔</span>
+              <h3 id="scenario-title">Compare goal-saving scenarios</h3>
+            </div>
+            <p class="section-intro">See how a different monthly amount changes the estimated timeline.</p>
+            <div class="table-scroll">
+              <table class="scenario-table">
+                <caption class="visually-hidden">Goal timelines under three monthly saving scenarios</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Scenario</th>
+                    <th scope="col">Save each month</th>
+                    <th scope="col">Reach down payment</th>
+                    <th scope="col">Reach full price in cash</th>
+                  </tr>
+                </thead>
+                <tbody id="goal-scenario-rows"></tbody>
+              </table>
+            </div>
+            <p class="result-note">“All listed surplus” leaves no monthly surplus cushion. It is a comparison, not a recommendation.</p>
+          </article>
+
+          <article class="insights-card" aria-labelledby="insights-title">
+            <div class="result-card-heading">
+              <span class="result-icon icon-sage" aria-hidden="true">✦</span>
+              <h3 id="insights-title">What these numbers show</h3>
+            </div>
+            <ul id="plan-notes" class="insight-list"></ul>
+            <p class="disclaimer">This is a planning calculator, not personal financial advice or a promise about future costs or returns.</p>
+          </article>
+        </div>
+      </section>
+
+      </div>
+    </main>
+
+    <footer id="site-footer" class="site-footer" hidden>
+      <div class="footer-inner">
+        <span>Finance AI · Personal finance planner</span>
+        <a href="#top">Back to top ↑</a>
+      </div>
+    </footer>
+  </body>
+</html>
