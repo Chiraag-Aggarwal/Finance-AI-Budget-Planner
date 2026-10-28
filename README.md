@@ -8,6 +8,7 @@ A beginner-friendly personal finance app for Indian households. It helps users u
 - Calculates remaining monthly balance and a user-selected emergency-fund target.
 - Builds a flexible savings plan even when the user has no purchase goal.
 - Plans one optional goal at a time, such as a car, bike, house, plot, education, medical costs, travel, or another purchase.
+- Lets users explicitly include an accessible amount from assets or family support toward a goal; it does not treat total net worth or a property's full value as cash.
 - Compares example EMI periods when the user supplies an annual interest rate from a lender quote. Existing EMIs and household expenses reduce the available monthly amount.
 - Provides an English/Hindi interface and a small, rule-based budget helper.
 
