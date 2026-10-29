@@ -287,6 +287,7 @@ function calculateLoanEstimate(profile, monthlySurplus) {
     scenarios: [],
     maxAffordableLoanAtLongestTerm: null,
     additionalDownPaymentNeeded: null,
+    smallerLoanPlan: null,
   };
 
   if (!profile.considerLoan) return { ...base, status: "not-considered" };
@@ -317,6 +318,52 @@ function calculateLoanEstimate(profile, monthlySurplus) {
   const recommendation = preferredScenario?.affordable
     ? preferredScenario
     : scenarios.find((scenario) => scenario.affordable) ?? null;
+  let smallerLoanPlan = null;
+  if (!recommendation && comfortableEmiLimit > 0) {
+    const currentGoalFunds = goalFundsAlreadyAvailable;
+    const remainingPlannedContribution = Math.max(
+      profile.plannedDownPayment - currentGoalFunds,
+      0,
+    );
+    const comfortableMonthlySaving = monthlySurplus * profile.goalComfortPercent / 100;
+    const candidatePlans = terms.map((months) => {
+      const affordablePrincipal = Math.min(
+        loanAmount,
+        loanAmountForEmiLimit(comfortableEmiLimit, profile.loanRatePercent, months),
+      );
+      const additionalDownPaymentNeeded = Math.max(loanAmount - affordablePrincipal, 0);
+      const monthsToContribution = monthsNeeded(
+        remainingPlannedContribution + additionalDownPaymentNeeded,
+        comfortableMonthlySaving,
+      );
+      const monthsUntilPurchase = monthsToContribution === null
+        ? null
+        : Math.max(profile.monthsUntilGoal, monthsToContribution);
+
+      if (affordablePrincipal <= 0 || monthsUntilPurchase === null) return null;
+
+      const emi = calculateLoanEmi(affordablePrincipal, profile.loanRatePercent, months);
+      return {
+        loanAmount: affordablePrincipal,
+        additionalDownPaymentNeeded,
+        months,
+        emi,
+        totalRepayment: emi * months,
+        totalInterest: Math.max(emi * months - affordablePrincipal, 0),
+        monthsToContribution,
+        monthsUntilPurchase,
+        monthsToComplete: monthsUntilPurchase + months,
+      };
+    }).filter(Boolean);
+
+    // Pick the option that finishes soonest overall, including extra saving time.
+    candidatePlans.sort((first, second) => first.monthsToComplete - second.monthsToComplete
+      || first.totalInterest - second.totalInterest
+      || first.months - second.months);
+    smallerLoanPlan = candidatePlans[0] ?? null;
+  }
+  const additionalDownPaymentNeeded = smallerLoanPlan?.additionalDownPaymentNeeded
+    ?? Math.max(loanAmount - maxAffordableLoanAtLongestTerm, 0);
 
   return {
     ...base,
@@ -327,7 +374,8 @@ function calculateLoanEstimate(profile, monthlySurplus) {
     recommendation,
     recommendationUsesPreference: Boolean(preferredScenario?.affordable),
     maxAffordableLoanAtLongestTerm,
-    additionalDownPaymentNeeded: Math.max(loanAmount - maxAffordableLoanAtLongestTerm, 0),
+    additionalDownPaymentNeeded,
+    smallerLoanPlan,
   };
 }
 
@@ -406,6 +454,10 @@ export function calculatePlan(profile) {
       monthlySavingGap: monthlyGoalSavingGap,
       fitsChosenMonthlyAmount: goalFitsChosenMonthlyAmount,
       monthsAtChosenSavingPace: monthsToDownPaymentAtChosenPace,
+      // The goal cannot be purchased before the chosen date or before its planned contribution is ready.
+      monthsToPurchaseAtChosenPace: monthsToDownPaymentAtChosenPace === null
+        ? null
+        : Math.max(profile.monthsUntilGoal, monthsToDownPaymentAtChosenPace),
       remainingFullPrice,
       requiredMonthlyFullPriceSaving: remainingFullPrice / profile.monthsUntilGoal,
       monthsToFullCashAtChosenPace,
@@ -415,6 +467,15 @@ export function calculatePlan(profile) {
       cashPurchaseFitsChosenTimeline: fullPriceShortfallAtDeadline === 0,
       scenarios,
     };
+
+    // Add the recommended repayment period to the time needed before purchase.
+    goal.monthsToCompleteWithRecommendedLoan = loan.status === "affordable-option"
+      && goal.monthsToPurchaseAtChosenPace !== null
+      ? goal.monthsToPurchaseAtChosenPace + loan.recommendation.months
+      : null;
+    goal.monthsToCompleteWithSmallerLoan = loan.smallerLoanPlan
+      ? loan.smallerLoanPlan.monthsToComplete
+      : null;
 
     notes.unshift(`The goal plan uses ${profile.goalComfortPercent}% of your listed positive monthly surplus.`);
     notes.push("Goal timelines assume the same monthly saving, no investment growth, and no price changes.");

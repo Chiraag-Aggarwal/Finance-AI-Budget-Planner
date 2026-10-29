@@ -106,9 +106,24 @@ test("recommends the shortest illustrated car term within the comfort limit", ()
   assert.equal(plan.loan.comfortableEmiLimit, 22500);
   assert.equal(plan.loan.status, "affordable-option");
   assert.equal(plan.loan.recommendation.months, 60);
+  assert.equal(plan.goal.monthsToPurchaseAtChosenPace, 12);
+  assert.equal(plan.goal.monthsToCompleteWithRecommendedLoan, 72);
   assert.ok(plan.loan.recommendation.emi <= plan.loan.comfortableEmiLimit);
   assert.ok(plan.loan.recommendation.totalInterest > 0);
   assert.deepEqual(plan.loan.scenarios.map((item) => item.months), [36, 60, 84]);
+});
+
+
+test("includes extra saving time when the planned down payment takes longer than the target date", () => {
+  const plan = calculatePlan(makeProfile({
+    considerLoan: true,
+    loanRatePercent: 10,
+    monthsUntilGoal: 6,
+  }));
+
+  assert.equal(plan.goal.monthsAtChosenSavingPace, 9);
+  assert.equal(plan.goal.monthsToPurchaseAtChosenPace, 9);
+  assert.equal(plan.goal.monthsToCompleteWithRecommendedLoan, 69);
 });
 
 
@@ -166,8 +181,26 @@ test("shows when no loan term fits the user's monthly limit", () => {
   assert.equal(plan.loan.status, "no-affordable-option");
   assert.equal(plan.loan.comfortableEmiLimit, 0);
   assert.equal(plan.loan.recommendation, null);
+  assert.equal(plan.goal.monthsToCompleteWithRecommendedLoan, null);
   assert.equal(plan.loan.maxAffordableLoanAtLongestTerm, 0);
   assert.equal(plan.loan.additionalDownPaymentNeeded, plan.loan.loanAmount);
+  assert.equal(plan.loan.smallerLoanPlan, null);
+});
+
+
+test("offers an affordable smaller loan and timeline when all listed full-loan terms exceed the EMI limit", () => {
+  const plan = calculatePlan(makeProfile({
+    goalPrice: 1800000,
+    considerLoan: true,
+    loanRatePercent: 10,
+  }));
+
+  assert.equal(plan.loan.status, "no-affordable-option");
+  assert.ok(plan.loan.additionalDownPaymentNeeded > 0);
+  assert.ok(plan.loan.smallerLoanPlan.loanAmount < plan.loan.loanAmount);
+  assert.ok(plan.loan.smallerLoanPlan.emi <= plan.loan.comfortableEmiLimit + 0.005);
+  assert.equal(plan.loan.smallerLoanPlan.months, 36);
+  assert.equal(plan.goal.monthsToCompleteWithSmallerLoan, 84);
 });
 
 

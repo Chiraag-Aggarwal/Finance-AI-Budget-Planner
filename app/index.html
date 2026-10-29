@@ -486,18 +486,7 @@
                   </div>
                   <small>The planner does not estimate a rate from your income or savings. Use a lender's quote; your budget is used to check whether the EMI fits.</small>
                 </label>
-                <label class="field loan-input" data-loan-input hidden>
-                  <span>Preferred repayment period <span class="optional-mark">optional</span></span>
-                  <select name="preferredLoanTermMonths">
-                    <option value="">Compare all options</option>
-                  </select>
-                  <small>Choose a period that suits you, or compare all examples. A longer term usually adds more interest.</small>
-                </label>
-                <label class="field loan-input" data-loan-input hidden>
-                  <span>Comfortable new EMI limit <span class="optional-mark">optional</span></span>
-                  <input name="maxComfortableNewEmi" type="number" min="0" max="10000000" step="1" inputmode="numeric" placeholder="For example, 10000">
-                  <small>This monthly cap cannot exceed the surplus left after your costs and current EMIs.</small>
-                </label>
+                <p class="field-full loan-guidance loan-input" data-loan-input hidden>The planner calculates your comfortable EMI limit from your monthly balance and the share you chose above, then recommends the shortest example loan term that fits. You only need to enter the interest rate quoted by a lender.</p>
               </div>
             </fieldset>
             <div class="form-actions">
@@ -547,7 +536,7 @@
         <div id="plan-results" hidden>
           <aside class="reading-guide" aria-label="How to read your plan">
             <strong>How to read this plan</strong>
-            <p>Balance is your take-home income after the expenses and current EMIs listed above. Your emergency fund is money kept for unexpected costs. Goal figures use the amount you want to set aside and the target date you entered. The full-cost cash timeline estimates saving without a loan; loan repayment periods are shown separately.</p>
+            <p>Balance is your take-home income after the expenses and current EMIs listed above. Your emergency fund is money kept for unexpected costs. When a suitable loan is available, the completion estimate adds the time before purchase to the loan repayment period. The planner calculates a comfortable EMI limit from your monthly balance and selected savings share.</p>
           </aside>
           <div class="results-grid">
             <article class="result-card">
@@ -621,7 +610,7 @@
                 <div><dt>Estimated funds by your target date</dt><dd id="result-savings-by-deadline"></dd></div>
                 <div><dt>Goal-contribution gap by target date</dt><dd id="result-down-payment-deadline-gap"></dd></div>
                 <div><dt>Goal cost left to cover in cash</dt><dd id="result-full-price-deadline-gap"></dd></div>
-                <div><dt>Time to save the full goal cost in cash</dt><dd id="result-full-cash-timeline"></dd></div>
+                <div><dt>Estimated time to complete your goal</dt><dd id="result-full-cash-timeline"></dd></div>
               </dl>
               <p id="result-goal-message" class="result-note"></p>
               <p id="result-cash-message" class="result-note"></p>
@@ -635,10 +624,12 @@
               <span class="result-icon icon-blue" aria-hidden="true">₹</span>
               <h3 id="loan-plan-title">Loan and EMI comparison</h3>
             </div>
-            <p class="section-intro">See whether financing the goal cost left after your planned contribution and any savings or assets you choose to use could fit within your monthly EMI limit.</p>
+            <p class="section-intro">The planner calculates a comfortable EMI limit from your monthly balance and selected savings share, then recommends a repayment period that fits it.</p>
             <dl class="result-list compact-list loan-summary">
               <div><dt>Estimated loan after your contribution and other funds</dt><dd id="result-loan-amount"></dd></div>
               <div><dt>Comfortable limit for a new EMI</dt><dd id="result-loan-cap"></dd></div>
+              <div><dt>Estimated time before purchase</dt><dd id="result-loan-wait-time"></dd></div>
+              <div><dt>Suggested repayment period</dt><dd id="result-loan-term"></dd></div>
               <div><dt>Quoted annual interest rate</dt><dd id="result-loan-rate"></dd></div>
             </dl>
             <p id="result-loan-message" class="result-note" aria-live="polite"></p>
@@ -651,7 +642,7 @@
                     <th scope="col">Estimated monthly EMI</th>
                     <th scope="col">Estimated total interest</th>
                     <th scope="col">Within your limit?</th>
-                    <th scope="col">Preferred term?</th>
+                    <th scope="col">Recommended?</th>
                   </tr>
                 </thead>
                 <tbody id="loan-scenario-rows"></tbody>

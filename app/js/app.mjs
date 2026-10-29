@@ -1,4 +1,4 @@
-import { calculatePlan, LOAN_TERMS_BY_GOAL, validateProfile } from "./finance_calculations.mjs";
+import { calculatePlan, validateProfile } from "./finance_calculations.mjs";
 
 
 // Keep saved information in this browser only. The version helps us update it later.
@@ -19,7 +19,6 @@ const goalFields = document.querySelectorAll("[data-goal-input]");
 const goalAssetFields = document.querySelectorAll("[data-goal-asset-input]");
 const loanFields = document.querySelectorAll("[data-loan-input]");
 const goalTypeSelect = form.elements.namedItem("goalType");
-const preferredTermSelect = form.elements.namedItem("preferredLoanTermMonths");
 
 let currentUserId = null;
 let activeProfile = null;
@@ -203,33 +202,12 @@ function updateLoanFields() {
   });
 }
 
-// Offer repayment terms that match the selected goal category.
 function formatLoanTerm(months) {
   if (months >= 12 && months % 12 === 0) {
     const years = months / 12;
     return `${years} ${years === 1 ? "year" : "years"}`;
   }
   return `${months} months`;
-}
-
-function updatePreferredTerms() {
-  const previousValue = preferredTermSelect.value;
-  const terms = LOAN_TERMS_BY_GOAL[goalTypeSelect.value] || LOAN_TERMS_BY_GOAL.other;
-  preferredTermSelect.replaceChildren();
-
-  const compareOption = document.createElement("option");
-  compareOption.value = "";
-  compareOption.textContent = "Compare all options";
-  preferredTermSelect.append(compareOption);
-
-  for (const months of terms) {
-    const option = document.createElement("option");
-    option.value = String(months);
-    option.textContent = formatLoanTerm(months);
-    preferredTermSelect.append(option);
-  }
-
-  preferredTermSelect.value = terms.includes(Number(previousValue)) ? previousValue : "";
 }
 
 function updateGoalAssetFields() {
@@ -291,7 +269,6 @@ function updateGoalFields() {
   updateGoalCopy();
   updateCustomGoalField();
   updateGoalAssetFields();
-  updatePreferredTerms();
   updateLoanFields();
 }
 
@@ -300,7 +277,6 @@ useGoalAssetsToggle.addEventListener("change", updateGoalAssetFields);
 goalTypeSelect.addEventListener("change", () => {
   updateGoalCopy();
   updateCustomGoalField();
-  updatePreferredTerms();
 });
 loanToggle.addEventListener("change", updateLoanFields);
 updateGoalFields();
@@ -347,7 +323,6 @@ function readProfileFromForm() {
   const includeGoal = goalToggle.checked;
   const compareLoan = includeGoal && loanToggle.checked;
   const useGoalAssets = includeGoal && useGoalAssetsToggle.checked;
-  const selectedTerm = preferredTermSelect.value;
 
   return {
     includeGoal,
@@ -372,8 +347,9 @@ function readProfileFromForm() {
     monthsUntilGoal: includeGoal ? readNumber("monthsUntilGoal") : null,
     considerLoan: compareLoan,
     loanRatePercent: compareLoan ? readOptionalNumber("loanRatePercent") : null,
-    preferredLoanTermMonths: compareLoan && selectedTerm !== "" ? Number(selectedTerm) : null,
-    maxComfortableNewEmi: compareLoan ? readOptionalNumber("maxComfortableNewEmi") : null,
+    // Work out the EMI cap and suitable term from the entered budget.
+    preferredLoanTermMonths: null,
+    maxComfortableNewEmi: null,
   };
 }
 
@@ -484,13 +460,63 @@ function showGoalPlan(plan) {
   showText("result-savings-by-deadline", formatRupees(plan.goal.savingsByDeadline));
   showText("result-down-payment-deadline-gap", formatRupees(plan.goal.downPaymentShortfallAtDeadline));
   showText("result-full-price-deadline-gap", formatRupees(plan.goal.fullPriceShortfallAtDeadline));
-  showText("result-full-cash-timeline", formatMonths(plan.goal.monthsToFullCashAtChosenPace));
-  showText(
-    "result-timeline-explainer",
-    plan.goal.monthsToFullCashAtChosenPace !== null && plan.goal.monthsToFullCashAtChosenPace > 120
-      ? "This is a long cash-saving estimate, not a loan term. Review the goal cost, monthly saving, or target date. If you want to compare financing, turn on the loan and EMI comparison."
-      : "This is a cash-saving estimate, not a loan repayment term. It does not include price changes or investment returns. Sample repayment periods appear separately if you compare a loan."
-  );
+  if (plan.loan.status === "affordable-option") {
+    if (plan.goal.monthsToCompleteWithRecommendedLoan === null) {
+      showText("result-full-cash-timeline", "Not available with this saving amount");
+      showText(
+        "result-timeline-explainer",
+        "Your monthly saving amount does not reach the planned upfront contribution, so the time including a loan cannot be estimated. Increase the saving amount or move the purchase date to review the timeline."
+      );
+    } else {
+      showText("result-full-cash-timeline", formatMonths(plan.goal.monthsToCompleteWithRecommendedLoan));
+      showText(
+        "result-timeline-explainer",
+        "This estimate includes the time until your planned purchase date or until your planned upfront contribution is saved, whichever takes longer, plus the affordable loan repayment term shown below. Current expenses and EMIs are included when checking the new EMI limit. Fees, price changes, changing rates, and lender approval are not included."
+      );
+    }
+  } else if (plan.loan.status === "no-loan-needed") {
+    showText("result-full-cash-timeline", formatMonths(plan.goal.monthsToPurchaseAtChosenPace));
+    showText(
+      "result-timeline-explainer",
+      "Your selected savings or other funds cover the estimated goal cost, so no new loan is needed. The time shown is based on your target purchase date and the time needed to save the planned upfront contribution."
+    );
+  } else if (plan.loan.status === "rate-needed") {
+    showText("result-full-cash-timeline", "Add an interest rate to include a loan");
+    showText(
+      "result-timeline-explainer",
+      `Cash-only reference: ${formatMonths(plan.goal.monthsToFullCashAtChosenPace)}. Enter a lender's quoted annual interest rate to estimate the total time including loan repayment.`
+    );
+  } else if (plan.loan.status === "no-affordable-option") {
+    if (plan.loan.smallerLoanPlan) {
+      if (plan.goal.monthsToCompleteWithSmallerLoan === null) {
+        showText("result-full-cash-timeline", "No timeline at this saving amount");
+        showText(
+          "result-timeline-explainer",
+          "A smaller loan could fit your EMI limit, but there is no monthly saving amount available to estimate when its extra upfront contribution would be ready."
+        );
+      } else {
+        showText("result-full-cash-timeline", formatMonths(plan.goal.monthsToCompleteWithSmallerLoan));
+        showText(
+          "result-timeline-explainer",
+          `This estimate first adds ${formatRupees(plan.loan.additionalDownPaymentNeeded)} of extra upfront saving, then ${formatLoanTerm(plan.loan.smallerLoanPlan.months)} of loan repayments. It assumes your current expenses and EMIs stay the same and that you save your selected amount each month. Fees, price changes, rate changes, and lender approval are not included.`
+        );
+      }
+    } else {
+      showText("result-full-cash-timeline", formatMonths(plan.goal.monthsToFullCashAtChosenPace));
+      showText(
+        "result-timeline-explainer",
+        "No new loan payment fits your current monthly EMI limit. The time shown is the cash-only estimate for saving the remaining goal cost; increasing your savings or reducing the goal cost may change it."
+      );
+    }
+  } else {
+    showText("result-full-cash-timeline", formatMonths(plan.goal.monthsToFullCashAtChosenPace));
+    showText(
+      "result-timeline-explainer",
+      plan.goal.monthsToFullCashAtChosenPace !== null && plan.goal.monthsToFullCashAtChosenPace > 120
+        ? "This is a long cash-only estimate. Review the goal cost, monthly saving, or target date. Turn on loan and EMI comparison to include an affordable loan repayment term."
+        : "Loan comparison is off, so this is a cash-only estimate. Turn it on and enter an annual rate to see the time including loan repayment."
+    );
+  }
 
   if (plan.goal.fitsChosenMonthlyAmount) {
     showText(
@@ -559,7 +585,8 @@ function showFlexibleSavings(plan) {
 
 
 // Show an EMI comparison only when the user enters a quoted annual rate.
-function showLoanPlan(loan) {
+function showLoanPlan(plan) {
+  const { loan, goal } = plan;
   const card = document.querySelector("#loan-plan-card");
   card.hidden = loan.status === "not-considered" || loan.status === "goal-needed";
   if (card.hidden) return;
@@ -567,6 +594,19 @@ function showLoanPlan(loan) {
   showText("result-loan-amount", formatRupees(loan.loanAmount));
   showText("result-loan-cap", formatRupees(loan.comfortableEmiLimit));
   showText("result-loan-rate", loan.annualRatePercent === null ? "Not entered" : `${loan.annualRatePercent}% p.a.`);
+  const monthsBeforePurchase = loan.smallerLoanPlan?.monthsUntilPurchase
+    ?? goal?.monthsToPurchaseAtChosenPace
+    ?? null;
+  showText("result-loan-wait-time", formatMonths(monthsBeforePurchase));
+  const suggestedTerm = loan.recommendation?.months
+    ?? loan.smallerLoanPlan?.months
+    ?? (loan.status === "no-loan-needed" ? "No loan needed"
+      : loan.status === "rate-needed" ? "Add a lender rate first"
+        : "No loan fits this limit");
+  showText(
+    "result-loan-term",
+    typeof suggestedTerm === "number" ? formatLoanTerm(suggestedTerm) : suggestedTerm,
+  );
 
   const rows = document.querySelector("#loan-scenario-rows");
   const table = document.querySelector("#loan-scenario-wrap");
@@ -588,15 +628,16 @@ function showLoanPlan(loan) {
     const emi = document.createElement("td");
     const interest = document.createElement("td");
     const fits = document.createElement("td");
-    const preferred = document.createElement("td");
+    const recommended = document.createElement("td");
     term.scope = "row";
     term.textContent = formatLoanTerm(scenario.months);
     emi.textContent = formatRupees(scenario.emi);
     interest.textContent = formatRupees(scenario.totalInterest);
     fits.textContent = scenario.affordable ? "Within your limit" : "Above your limit";
-    preferred.textContent = scenario.isPreferred ? "Your choice" : "—";
-    if (scenario.isPreferred) row.classList.add("preferred-loan-row");
-    row.append(term, emi, interest, fits, preferred);
+    const isRecommended = loan.recommendation?.months === scenario.months;
+    recommended.textContent = isRecommended ? "Recommended" : "—";
+    if (isRecommended) row.classList.add("preferred-loan-row");
+    row.append(term, emi, interest, fits, recommended);
     rows.append(row);
   }
 
@@ -618,10 +659,16 @@ function showLoanPlan(loan) {
         `The shortest example term within your comfort limit is ${formatLoanTerm(option.months)}: estimated EMI ${formatRupees(option.emi)} per month and total interest ${formatRupees(option.totalInterest)}. A longer term lowers the EMI but usually increases total interest in this estimate.`
       );
     }
+  } else if (loan.smallerLoanPlan) {
+    const option = loan.smallerLoanPlan;
+    showText(
+      "result-loan-message",
+      `No listed loan term fits your monthly EMI limit. If you save an additional ${formatRupees(loan.additionalDownPaymentNeeded)} toward the upfront amount, an estimated loan of ${formatRupees(option.loanAmount)} over ${formatLoanTerm(option.months)} could fit at about ${formatRupees(option.emi)} per month. Estimated interest for this example is ${formatRupees(option.totalInterest)}.`
+    );
   } else {
     showText(
       "result-loan-message",
-      `None of these example terms fits your ${formatRupees(loan.comfortableEmiLimit)} monthly limit. At the longest example term, a loan of about ${formatRupees(loan.maxAffordableLoanAtLongestTerm)} would fit this limit; increasing your contribution, lowering the goal cost, or choosing a later target date could reduce the amount borrowed.`
+      `No new loan payment fits your ${formatRupees(loan.comfortableEmiLimit)} monthly EMI limit. Consider saving the remaining goal cost in cash, increasing monthly savings, or lowering the goal cost.`
     );
   }
 }
@@ -713,7 +760,7 @@ function showPlan(profile, plan) {
     : "Goal funding plan";
   showGoalPlan(plan.goal ? plan : { goal: null });
   showFlexibleSavings(plan);
-  showLoanPlan(plan.loan);
+  showLoanPlan(plan);
   showNotes(plan.notes, plan, profile);
 
   emptyResults.hidden = true;
@@ -739,9 +786,7 @@ function saveProfileOnThisDevice(profile) {
 
 // Put saved values back into their form fields when the page is reopened.
 function fillForm(profile) {
-  const preferredTerm = profile.preferredLoanTermMonths;
   for (const [fieldName, value] of Object.entries(profile)) {
-    if (fieldName === "preferredLoanTermMonths") continue;
     const field = form.elements.namedItem(fieldName);
     if (!field || value === null || value === undefined) continue;
     if (field.type === "checkbox") {
@@ -751,11 +796,7 @@ function fillForm(profile) {
     }
   }
 
-  // Build the right term choices before restoring the user's saved selection.
   updateGoalFields();
-  if (preferredTerm !== null && preferredTerm !== undefined) {
-    preferredTermSelect.value = String(preferredTerm);
-  }
 }
 
 
@@ -772,6 +813,9 @@ function loadSavedProfile() {
     }
 
     const savedProfile = JSON.parse(savedText);
+    // Older saved plans may contain manual term or EMI overrides that this simpler flow no longer uses.
+    savedProfile.preferredLoanTermMonths = null;
+    savedProfile.maxComfortableNewEmi = null;
     if (savedProfile.includeGoal === undefined) savedProfile.includeGoal = true;
     if (typeof savedProfile.region !== "string" && savedProfile.includeGoal) {
       fillForm(savedProfile);
