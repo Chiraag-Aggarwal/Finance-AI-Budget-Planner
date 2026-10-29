@@ -29,7 +29,7 @@ export function buildBudgetAdjustment(profile, baselinePlan, budgetSummary, cons
   });
 
   if (baselinePlan.goal.monthlySavingGap <= 0) {
-    return emptyResult("no-cut-needed", "Your selected monthly goal amount already covers the down payment timeline, so no spending cut is needed for this goal.");
+    return emptyResult("no-cut-needed", "Your selected monthly goal amount already covers the planned contribution timeline, so no spending cut is needed for this goal.");
   }
 
   if (profile.goalComfortPercent <= 0) {
@@ -116,8 +116,8 @@ export function buildBudgetAdjustment(profile, baselinePlan, budgetSummary, cons
   const message = totalCut === 0
     ? "No safe itemized reduction was found in the adjustable categories. Tell me which tracked category could change, or adjust your goal date or saving preference."
     : status === "adjusted"
-      ? `A possible ${formatRupees(totalCut)} monthly reduction closes the selected down-payment saving gap in this calculation. These are choices to review, not automatic instructions.`
-      : `The modest reductions available here total ${formatRupees(totalCut)} per month. They help, but leave a ${formatRupees(afterPlan.goal.monthlySavingGap)} monthly goal gap; you could also change the deadline, target, or saving share.`;
+      ? `A possible ${formatRupees(totalCut)} monthly reduction closes the selected goal contribution gap in this calculation. These are choices to review, not automatic instructions.`
+      : `The modest reductions available here total ${formatRupees(totalCut)} per month. They help, but leave a ${formatRupees(afterPlan.goal.monthlySavingGap)} monthly goal contribution gap; you could also change the target date, goal cost, or saving share.`;
 
   return {
     status,

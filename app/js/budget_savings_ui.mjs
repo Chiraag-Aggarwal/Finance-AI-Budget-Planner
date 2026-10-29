@@ -9,8 +9,8 @@ const chatInput = document.querySelector("#savings-chat-input");
 const chatMessages = document.querySelector("#savings-chat-messages");
 const rows = document.querySelector("#savings-budget-rows");
 const table = document.querySelector("#savings-budget-table-wrap");
-const emptyMessage = document.querySelector("#savings-budget-empty");
 const planMessage = document.querySelector("#savings-plan-message");
+const draftNote = document.querySelector("#savings-draft-note");
 const regionNote = document.querySelector("#savings-region-note");
 
 const currency = new Intl.NumberFormat("en-IN", {
@@ -43,9 +43,50 @@ function addChatMessage(messageText, sender) {
 }
 
 
-// Show the tracked balance and what the user's category limits would change.
+// Explain the estimate in one short sentence, using the numbers shown below.
+function savingsMessage(plan, target) {
+  if (plan.status === "needs-income") return "Add income to see a monthly estimate.";
+  if (plan.status === "needs-expenses") return "Add expenses to see where spending may be adjusted. Missing expenses are not assumed to be zero.";
+
+  if (plan.status === "monthly-shortfall") {
+    const amountOver = formatRupees(Math.abs(plan.currentBalance));
+    return plan.totalCut > 0
+      ? `Recorded spending is ${amountOver} above income. Suggested changes could reduce the gap by ${formatRupees(plan.totalCut)} per month.`
+      : `Recorded spending is ${amountOver} above income. Add flexible expenses to see possible changes.`;
+  }
+
+  if (plan.status === "already-on-track") {
+    return "Your current balance already meets this monthly target. No cuts are suggested.";
+  }
+  if (plan.status === "target-reached") {
+    return `These changes could free ${formatRupees(plan.totalCut)} each month and meet your target.`;
+  }
+  if (plan.status === "target-shortfall") {
+    return plan.totalCut > 0
+      ? `These changes could free ${formatRupees(plan.totalCut)} each month. You could save about ${formatRupees(plan.availableToSave)}, leaving ${formatRupees(plan.targetGap)} of your target unmet.`
+      : `Your target is ${formatRupees(target)} per month, but no adjustable spending was found in these entries.`;
+  }
+  if (plan.status === "starter-suggestions") {
+    return `Small changes could free ${formatRupees(plan.totalCut)} each month for future savings.`;
+  }
+  return "No adjustable spending is available in these entries. Use Adjust suggestions to explore another category.";
+}
+
+
+// Show only the monthly totals and category changes the user can act on.
 function showSavingsBudget() {
-  const target = Number(targetInput.value);
+  if (!targetInput.validity.valid) {
+    planMessage.textContent = "Enter a monthly target between ₹0 and ₹1 crore.";
+    draftNote.hidden = true;
+    document.querySelector("#savings-recorded-balance").textContent = "—";
+    document.querySelector("#savings-adjustment-total").textContent = "—";
+    document.querySelector("#savings-available-amount").textContent = "—";
+    rows.replaceChildren();
+    table.hidden = true;
+    return;
+  }
+
+  const target = Number(targetInput.value || 0);
   const plan = buildSavingsBudget(monthlySummary, target, {
     adjustableCategories,
     lockedCategories,
@@ -53,10 +94,11 @@ function showSavingsBudget() {
     region: profileRegion,
   });
 
-  planMessage.textContent = plan.message;
+  planMessage.textContent = savingsMessage(plan, target);
   regionNote.textContent = plan.region
     ? `Your profile region is ${plan.region}. Savings calculations use your tracked amounts; regional price differences are not included.`
     : "";
+  draftNote.hidden = monthlySummary.isComplete || plan.currentBalance === null;
   document.querySelector("#savings-recorded-balance").textContent = plan.currentBalance === null
     ? "—"
     : formatRupees(plan.currentBalance);
@@ -66,27 +108,9 @@ function showSavingsBudget() {
   document.querySelector("#savings-available-amount").textContent = plan.availableToSave === null
     ? "—"
     : formatRupees(plan.availableToSave);
-  document.querySelector("#savings-target-gap").textContent = plan.targetGap === null
-    ? "No target set"
-    : formatRupees(plan.targetGap);
 
   rows.replaceChildren();
   table.hidden = plan.cuts.length === 0;
-  emptyMessage.hidden = plan.cuts.length !== 0;
-
-  if (plan.cuts.length === 0) {
-    emptyMessage.textContent = plan.currentBalance === null
-      ? plan.status === "needs-income"
-        ? "Add an income entry to start the estimate."
-        : "Add at least one expense entry. Missing expenses are not treated as zero."
-      : plan.status === "already-on-track"
-        ? "Your recorded balance already covers the monthly savings target. No cuts are needed."
-        : plan.status === "target-shortfall"
-          ? "No flexible category is currently available for a reduction. Tell me what could change in the chat below."
-          : plan.status === "no-flexible-categories"
-            ? "No adjustable spending categories are available. Tell me which category could change in the chat below."
-            : "No category reductions are needed for this monthly plan.";
-  }
 
   for (const cut of plan.cuts) {
     const row = document.createElement("tr");
@@ -95,7 +119,7 @@ function showSavingsBudget() {
     category.textContent = cut.category;
     row.append(category);
 
-    for (const amount of [cut.currentAmount, cut.proposedCut, cut.newAmount]) {
+    for (const amount of [cut.currentAmount, cut.newAmount, cut.proposedCut]) {
       const cell = document.createElement("td");
       cell.textContent = formatRupees(amount);
       row.append(cell);

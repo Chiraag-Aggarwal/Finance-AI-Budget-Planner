@@ -25,6 +25,12 @@ export const LOAN_TERMS_BY_GOAL = Object.freeze({
 
 const ALLOWED_GOAL_TYPES = Object.keys(LOAN_TERMS_BY_GOAL);
 
+// Broad typo guards for a personal household planner, not financial eligibility rules.
+export const MAX_MONTHLY_AMOUNT = 10_000_000; // ₹1 crore per month
+export const MAX_SAVED_OR_GOAL_AMOUNT = 1_000_000_000; // ₹100 crore
+export const MAX_HOUSEHOLD_SIZE = 50;
+export const MAX_GOAL_HORIZON_MONTHS = 360; // 30 years
+
 // Older saved plans did not have an optional-goal switch, so keep them as goals.
 function hasSpecificGoal(profile) {
   return profile.includeGoal !== false;
@@ -99,7 +105,7 @@ export function validateProfile(profile) {
       ["goalSavings", "Savings set aside for this goal"],
       ...(useGoalAssets ? [["goalAssetContribution", "Assets or family support for this goal"]] : []),
       ["goalPrice", "Goal price"],
-      ["plannedDownPayment", "Planned down payment"],
+      ["plannedDownPayment", "Planned goal contribution"],
       ["monthsUntilGoal", "Months until the goal"],
     );
   }
@@ -131,7 +137,7 @@ export function validateProfile(profile) {
       ["goalSavings", "Savings set aside for this goal"],
       ...(useGoalAssets ? [["goalAssetContribution", "Assets or family support for this goal"]] : []),
       ["goalPrice", "Goal price"],
-      ["plannedDownPayment", "Planned down payment"],
+      ["plannedDownPayment", "Planned goal contribution"],
     );
   }
 
@@ -139,8 +145,37 @@ export function validateProfile(profile) {
     if (profile[field] < 0) errors.push(`${label} cannot be negative.`);
   }
 
+  const monthlyAmounts = [
+    ["monthlyTakeHomeIncome", "Take-home income"],
+    ["monthlyEssentialExpenses", "Essential expenses"],
+    ["monthlyDiscretionaryExpenses", "Discretionary expenses"],
+    ["monthlyDebtPayment", "Current loan and EMI payments"],
+    ["maxComfortableNewEmi", "Comfortable new EMI limit"],
+  ];
+  for (const [field, label] of monthlyAmounts) {
+    if (Number.isFinite(profile[field]) && profile[field] > MAX_MONTHLY_AMOUNT) {
+      errors.push(`${label} is above the ₹1 crore monthly limit. Check the value for extra zeroes.`);
+    }
+  }
+
+  const savingsAndGoalAmounts = [
+    ["totalSavings", "Total savings"],
+    ["emergencyFund", "Emergency fund"],
+    ["goalSavings", "Savings set aside for this goal"],
+    ["goalAssetContribution", "Assets or family support for this goal"],
+    ["goalPrice", "Goal price"],
+    ["plannedDownPayment", "Planned goal contribution"],
+  ];
+  for (const [field, label] of savingsAndGoalAmounts) {
+    if (Number.isFinite(profile[field]) && profile[field] > MAX_SAVED_OR_GOAL_AMOUNT) {
+      errors.push(`${label} is above the ₹100 crore limit. Check the value for extra zeroes.`);
+    }
+  }
+
   if (!Number.isInteger(profile.householdSize) || profile.householdSize < 1) {
     errors.push("Household size must be a whole number of at least 1.");
+  } else if (profile.householdSize > MAX_HOUSEHOLD_SIZE) {
+    errors.push("Household size cannot exceed 50 people.");
   }
   if (!Number.isInteger(profile.dependents) || profile.dependents < 0) {
     errors.push("Dependents must be a whole number and cannot be negative.");
@@ -154,10 +189,12 @@ export function validateProfile(profile) {
   if (includeGoal) {
     if (!Number.isInteger(profile.monthsUntilGoal) || profile.monthsUntilGoal < 1) {
       errors.push("Months until the goal must be a whole number of at least 1.");
+    } else if (profile.monthsUntilGoal > MAX_GOAL_HORIZON_MONTHS) {
+      errors.push("Months until the goal cannot exceed 360 months (30 years).");
     }
     if (profile.goalPrice <= 0) errors.push("Goal price must be more than zero.");
     if (profile.plannedDownPayment > profile.goalPrice) {
-      errors.push("The down payment cannot be more than the goal price.");
+      errors.push("The planned goal contribution cannot be more than the estimated goal cost.");
     }
     if (!ALLOWED_GOAL_TYPES.includes(profile.goalType)) {
       errors.push("Choose a goal type from the list.");
@@ -381,13 +418,13 @@ export function calculatePlan(profile) {
 
     notes.unshift(`The goal plan uses ${profile.goalComfortPercent}% of your listed positive monthly surplus.`);
     notes.push("Goal timelines assume the same monthly saving, no investment growth, and no price changes.");
-    notes.push("The full-price scenario assumes a cash purchase; it does not estimate a new loan or EMI.");
+    notes.push("The full-cost scenario assumes you save the entire goal cost; it does not estimate a new loan or EMI.");
     notes.push("The goal plan uses your inputs and transparent calculations, not an ML goal-success prediction.");
     if (profile.useGoalAssets === true) {
       notes.push("The goal plan includes only the asset or family amount you opted to use.");
     }
     if (!goalFitsChosenMonthlyAmount) {
-      notes.push("The selected timeline needs more monthly goal savings than your chosen amount.");
+      notes.push("The selected goal timeline needs more monthly savings than your chosen amount.");
     }
   } else {
     const horizons = [6, 12, 24, 36];

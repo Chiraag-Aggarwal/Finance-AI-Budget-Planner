@@ -1,5 +1,76 @@
 // The small built-in dictionary keeps the language switch private and offline.
 const HINDI_TEXT = {
+  "Your money, your plan": "आपका पैसा, आपकी योजना",
+  "Smart, stress-free money planning for your household.": "आपके परिवार के लिए समझदारी भरी, तनाव-मुक्त वित्तीय योजना।",
+  "Build a little breathing room": "थोड़ी आर्थिक राहत बनाएँ",
+  "One clear monthly step at a time": "हर महीने एक आसान कदम",
+  "A person reviewing household finances on a laptop at home": "घर पर लैपटॉप पर परिवार का बजट देखती हुई एक व्यक्ति",
+  "Account menu": "खाता मेनू",
+  "Profile details": "प्रोफ़ाइल विवरण",
+  "Back to dashboard": "डैशबोर्ड पर वापस जाएँ",
+  "Update the name and region saved with your account.": "अपने खाते में सहेजा गया नाम और क्षेत्र बदलें।",
+  "This is saved as location context. The planner does not look up local prices.": "यह केवल स्थान के संदर्भ के लिए सहेजा जाता है। प्लानर स्थानीय कीमतें नहीं खोजता।",
+  "Loading your profile…": "प्रोफ़ाइल लोड हो रही है…",
+  "The account server could not be reached.": "खाता सर्वर से संपर्क नहीं हो सका।",
+  "The profile could not be loaded.": "प्रोफ़ाइल लोड नहीं हो सकी।",
+  "See practical changes based on the spending you recorded this month.": "इस महीने दर्ज खर्चों के आधार पर व्यावहारिक बदलाव देखें।",
+  "Monthly savings target (optional)": "मासिक बचत लक्ष्य (वैकल्पिक)",
+  "Enter 0 if you want ideas for general future savings. Suggestions update as you type.": "सामान्य भविष्य की बचत के सुझावों के लिए 0 दर्ज करें। लिखते ही सुझाव बदलेंगे।",
+  "Draft estimate based on entries so far. Mark the month complete for a fuller estimate.": "अभी तक दर्ज जानकारी पर आधारित प्रारंभिक अनुमान। बेहतर अनुमान के लिए महीने को पूरा चिह्नित करें।",
+  "Current balance this month": "इस महीने की मौजूदा शेष राशि",
+  "Could free up each month": "हर महीने संभावित बचत",
+  "Estimated monthly savings": "अनुमानित मासिक बचत",
+  "Where you can save": "आप कहाँ बचत कर सकते हैं",
+  "Monthly amounts from categories you recorded.": "आपकी दर्ज श्रेणियों की मासिक राशि।",
+  "Current monthly spend": "मौजूदा मासिक खर्च",
+  "Suggested monthly spend": "सुझाया गया मासिक खर्च",
+  "Could save monthly": "मासिक बचत संभव",
+  "Add income to see a monthly estimate.": "मासिक अनुमान देखने के लिए आय दर्ज करें।",
+  "Enter a monthly target between ₹0 and ₹1 crore.": "₹0 से ₹1 करोड़ के बीच मासिक लक्ष्य दर्ज करें।",
+  "Add expenses to see where spending may be adjusted. Missing expenses are not assumed to be zero.": "खर्च कहाँ घट सकते हैं, यह देखने के लिए खर्च दर्ज करें। छूटे खर्चों को शून्य नहीं माना जाता।",
+  "Your current balance already meets this monthly target. No cuts are suggested.": "आपकी मौजूदा शेष राशि इस मासिक लक्ष्य के लिए पर्याप्त है। खर्च घटाने का सुझाव नहीं है।",
+  "Add flexible expenses to see possible changes.": "संभावित बदलाव देखने के लिए लचीले खर्च दर्ज करें।",
+  "Adjust suggestions": "सुझाव बदलें",
+  "Tell the coach what cannot change": "बताएँ कि कौन-सा खर्च नहीं बदल सकता",
+  "Only flexible categories are suggested. Existing EMIs and essential expenses stay as recorded.": "सुझाव केवल लचीली श्रेणियों के लिए हैं। मौजूदा EMI और ज़रूरी खर्च जस के तस रहेंगे।",
+  "For example, groceries may be fixed, or you may be able to reduce transport by ₹500.": "उदाहरण के लिए, किराने का खर्च तय हो सकता है या आप परिवहन खर्च ₹500 घटा सकते हैं।",
+  "Tell me a category and whether its spending can change. Preferences stay in this browser.": "श्रेणी बताएँ और कहें कि उसका खर्च बदल सकता है या नहीं। आपकी पसंद इसी ब्राउज़र में रहती है।",
+  "Update suggestions": "सुझाव अपडेट करें",
+  "These are optional estimates based on your entries. They do not change your transactions.": "ये आपकी जानकारी पर आधारित वैकल्पिक अनुमान हैं। इनसे आपकी लेन-देन प्रविष्टियाँ नहीं बदलतीं।",
+  "No adjustable spending is available in these entries. Use Adjust suggestions to explore another category.": "इन प्रविष्टियों में बदल सकने वाला खर्च नहीं मिला। दूसरी श्रेणी देखने के लिए सुझाव बदलें।",
+  "Add expenses to see possible changes. Unrecorded categories are not assumed to be zero.": "संभावित बदलाव देखने के लिए खर्च दर्ज करें। दर्ज न की गई श्रेणियों को शून्य नहीं माना जाता।",
+  "Your current monthly balance meets your target. You do not need a spending cut.": "आपकी मासिक शेष राशि लक्ष्य के लिए पर्याप्त है। खर्च घटाने की ज़रूरत नहीं है।",
+  "No adjustable spending is available for this target. Use Adjust suggestions to explore another category.": "इस लक्ष्य के लिए बदल सकने वाला खर्च नहीं मिला। दूसरी श्रेणी देखने के लिए सुझाव बदलें।",
+  "No flexible spending is available in these entries. Use Adjust suggestions if another category can change.": "इन प्रविष्टियों में लचीला खर्च नहीं मिला। कोई और श्रेणी बदल सकती है तो सुझाव बदलें।",
+  "No changes are needed for this monthly plan.": "इस मासिक योजना में बदलाव की ज़रूरत नहीं है।",
+  "Your current savings. Emergency and goal savings are parts of this total.": "आपकी मौजूदा बचत। आपातकालीन और लक्ष्य की बचत इसी कुल राशि के हिस्से हैं।",
+  "Add at least one income entry to estimate what may be available to save.": "बचत के लिए उपलब्ध राशि का अनुमान लगाने हेतु कम से कम एक आय दर्ज करें।",
+  "Settings": "सेटिंग्स",
+  "Open appearance settings": "दिखावट की सेटिंग खोलें",
+  "Personalize your workspace": "अपनी जगह को अनुकूलित करें",
+  "Choose how the planner looks and feels. Changes apply right away.": "प्लानर की दिखावट और उपयोग का तरीका चुनें। बदलाव तुरंत लागू होंगे।",
+  "Close": "बंद करें",
+  "Close settings": "सेटिंग्स बंद करें",
+  "Color mode": "रंग मोड",
+  "Use device setting": "डिवाइस की सेटिंग का उपयोग करें",
+  "Light": "हल्का",
+  "Dark": "गहरा",
+  "System mode follows your device’s light or dark preference.": "सिस्टम मोड आपके डिवाइस की हल्की या गहरी थीम का पालन करता है।",
+  "Accent color": "मुख्य रंग",
+  "Mint": "मिंट",
+  "Ocean blue": "समुद्री नीला",
+  "Violet": "बैंगनी",
+  "Changes the main buttons, highlights, and focus color.": "मुख्य बटन, हाइलाइट और फ़ोकस रंग बदलता है।",
+  "Text size": "टेक्स्ट का आकार",
+  "Standard": "सामान्य",
+  "Larger": "बड़ा",
+  "Choose larger text if it is easier for you to read.": "पढ़ने में आसानी के लिए बड़ा टेक्स्ट चुनें।",
+  "Reduce motion": "गतिशीलता कम करें",
+  "Limit smooth scrolling and interface movement.": "स्मूद स्क्रॉल और इंटरफ़ेस की गति कम करें।",
+  "These choices are saved only in this browser.": "ये विकल्प केवल इसी ब्राउज़र में सहेजे जाते हैं।",
+  "Appearance saved in this browser.": "दिखावट की सेटिंग इसी ब्राउज़र में सहेजी गई।",
+  "Appearance changed for this visit, but could not be saved.": "इस बार के लिए दिखावट बदल गई, लेकिन सेटिंग सहेजी नहीं जा सकी।",
+  "Reset appearance": "दिखावट रीसेट करें",
   "Finance AI | Personal finance planner": "Finance AI | व्यक्तिगत वित्त योजनाकार",
   "Skip to main content": "मुख्य सामग्री पर जाएँ",
   "Finance AI home": "Finance AI होम",
@@ -153,7 +224,18 @@ const HINDI_TEXT = {
   "This is a private, rule-based category helper, not a generative AI chat. Suggestions are optional scenarios, not instructions.": "यह निजी, नियम-आधारित श्रेणी सहायक है; जनरेटिव AI चैट नहीं। सुझाव वैकल्पिक हैं, निर्देश नहीं।",
   "Step 1 · Your household": "चरण 1 · आपका परिवार",
   "Add the details for your plan": "अपनी योजना के लिए जानकारी दें",
-  "Use monthly amounts in rupees. Enter 0 for a category you don’t have.": "मासिक राशि रुपयों में दर्ज करें। जो श्रेणी लागू न हो, उसमें 0 लिखें।",
+  "Use your usual monthly amounts in rupees. Enter take-home income after tax, and enter 0 only if a category does not apply. A specific goal is optional.": "रुपयों में सामान्य मासिक राशि दर्ज करें। कर के बाद मिलने वाली आय लिखें और केवल लागू न होने वाली श्रेणी में 0 लिखें। कोई खास लक्ष्य चुनना वैकल्पिक है।",
+  "To catch typing mistakes, monthly amounts are limited to ₹1 crore and savings or goal amounts to ₹100 crore. Purchase dates can be up to 30 years away.": "टाइप करने की गलती पकड़ने के लिए मासिक राशि की सीमा ₹1 करोड़ और बचत या लक्ष्य राशि की सीमा ₹100 करोड़ है। खरीद की तारीख अधिकतम 30 साल आगे हो सकती है।",
+  "Enter the amount that reaches you after tax and payroll deductions. Use a typical month if your income changes.": "कर और वेतन कटौतियों के बाद आपके हाथ में आने वाली राशि लिखें। आय बदलती हो तो सामान्य महीने की राशि लिखें।",
+  "Add the household’s essential costs for one typical month, such as rent, groceries, utilities, and medicine.": "एक सामान्य महीने के परिवार के ज़रूरी खर्च जोड़ें, जैसे किराया, किराना, बिजली-पानी और दवाइयाँ।",
+  "Add non-essential household spending in a typical month, such as eating out, hobbies, and shopping.": "एक सामान्य महीने के गैर-ज़रूरी पारिवारिक खर्च जोड़ें, जैसे बाहर खाना, शौक और खरीदारी।",
+  "Add what you pay each month on existing loans and EMIs, not the total loan balance.": "मौजूदा ऋण और EMI पर हर महीने जितना भुगतान करते हैं, वह लिखें—ऋण की कुल बाकी राशि नहीं।",
+  "Enter whole months, up to 360 (30 years). This is when you hope to buy, not the loan repayment period.": "पूरे महीनों की संख्या लिखें, अधिकतम 360 (30 साल)। यह आपकी खरीद की इच्छित तारीख है, ऋण चुकाने की अवधि नहीं।",
+  "Use a recent local quote and include fees you expect to pay. The app does not look up live prices.": "हाल का स्थानीय मूल्य और अनुमानित शुल्क जोड़ें। ऐप मौजूदा बाजार कीमतें नहीं खोजता।",
+  "How to read this plan": "इस योजना को कैसे समझें",
+  "Balance is your take-home income after the expenses and current EMIs listed above. Your emergency fund is money kept for unexpected costs. Goal figures use the amount you want to set aside and the target date you entered. The full-cost cash timeline estimates saving without a loan; loan repayment periods are shown separately.": "शेष राशि ऊपर दर्ज खर्च और मौजूदा EMI घटाने के बाद की हाथ में मिलने वाली आय है। आपातकालीन निधि अचानक आने वाले खर्चों के लिए रखी राशि है। लक्ष्य के आँकड़े आपकी अलग रखने की तय राशि और दर्ज लक्ष्य तारीख पर आधारित हैं। पूरी लागत का नकद समय बिना ऋण के बचत का अनुमान है; ऋण भुगतान अवधि अलग दिखाई जाती है।",
+  "This is a long cash-saving estimate, not a loan term. Review the goal cost, monthly saving, or target date. If you want to compare financing, turn on the loan and EMI comparison.": "यह नकद बचत का लंबा अनुमान है, ऋण अवधि नहीं। लक्ष्य लागत, मासिक बचत या लक्ष्य तारीख पर फिर विचार करें। वित्तपोषण की तुलना के लिए ऋण और EMI तुलना चालू करें।",
+  "This is a cash-saving estimate, not a loan repayment term. It does not include price changes or investment returns. Sample repayment periods appear separately if you compare a loan.": "यह नकद बचत का अनुमान है, ऋण चुकाने की अवधि नहीं। इसमें कीमतों में बदलाव या निवेश लाभ शामिल नहीं हैं। ऋण की तुलना करने पर भुगतान की उदाहरण अवधि अलग दिखाई जाती है।",
   "Required": "ज़रूरी",
   "Monthly income and spending": "मासिक आय और खर्च",
   "Take-home income": "हाथ में मिलने वाली आय",
@@ -407,11 +489,124 @@ const HINDI_TEXT = {
   "Assets or family support can only be used for a specific goal.": "संपत्ति या पारिवारिक सहायता केवल किसी खास लक्ष्य के लिए शामिल की जा सकती है।",
   "Consider a loan and EMI for this goal": "इस लक्ष्य के लिए ऋण और EMI पर विचार करें",
   "Optional. Turn this on to compare a loan after using the savings set aside for this goal and your planned down payment.": "वैकल्पिक। इस लक्ष्य के लिए रखी बचत और नियोजित अग्रिम भुगतान के बाद ऋण की तुलना करने के लिए इसे चालू करें।",
+  "What is the car's estimated on-road cost?": "कार की अनुमानित ऑन-रोड कीमत क्या है?",
+  "What is the estimated price of the bike or scooter?": "बाइक या स्कूटर की अनुमानित कीमत क्या है?",
+  "What is the estimated price of the laptop or computer?": "लैपटॉप या कंप्यूटर की अनुमानित कीमत क्या है?",
+  "What is the estimated cost of the house or flat?": "घर या फ्लैट की अनुमानित लागत क्या है?",
+  "What is the estimated cost of the plot or land?": "प्लॉट या ज़मीन की अनुमानित लागत क्या है?",
+  "What is the estimated cost of the farm or agricultural land?": "खेत या कृषि भूमि की अनुमानित लागत क्या है?",
+  "What is the estimated renovation or repair budget?": "मरम्मत या नवीनीकरण का अनुमानित बजट क्या है?",
+  "What is the estimated start-up or equipment cost?": "व्यवसाय शुरू करने या उपकरणों की अनुमानित लागत क्या है?",
+  "What education or training costs do you expect to cover?": "शिक्षा या प्रशिक्षण पर कितनी लागत आने की उम्मीद है?",
+  "What out-of-pocket medical cost do you expect?": "इलाज पर अपनी जेब से कितनी लागत आने की उम्मीद है?",
+  "What share of wedding costs will your household pay?": "शादी के खर्च का कितना हिस्सा आपका परिवार देगा?",
+  "What is the estimated total cost of your trip?": "आपकी यात्रा की अनुमानित कुल लागत क्या है?",
+  "What is the estimated price of the phone?": "फोन की अनुमानित कीमत क्या है?",
+  "What is the estimated cost of the appliance?": "घरेलू उपकरण की अनुमानित लागत क्या है?",
+  "What is the estimated cost of this goal?": "इस लक्ष्य की अनुमानित लागत क्या है?",
+  "Include registration, insurance, and other on-road amounts you expect to pay.": "रजिस्ट्रेशन, बीमा और सड़क पर वाहन लाने से जुड़े अन्य अपेक्षित खर्च जोड़ें।",
+  "Include registration, insurance, or accessories only if you expect to pay for them.": "रजिस्ट्रेशन, बीमा या सहायक सामान तभी जोड़ें जब उनका खर्च आपको देना हो।",
+  "Include the computer and any essential accessories you plan to buy.": "कंप्यूटर और खरीदे जाने वाले ज़रूरी सहायक सामान की लागत जोड़ें।",
+  "Use a recent local quote; include registration and other one-time fees if known.": "हाल का स्थानीय भाव लें; पता हो तो रजिस्ट्रेशन और अन्य एकमुश्त शुल्क भी जोड़ें।",
+  "Use a recent local quote; include registration and other one-time costs if known.": "हाल का स्थानीय भाव लें; पता हो तो रजिस्ट्रेशन और अन्य एकमुश्त खर्च भी जोड़ें।",
+  "Include only the land, equipment, or setup costs you want this plan to cover.": "केवल उस ज़मीन, उपकरण या सेटअप का खर्च जोड़ें जिसे इस योजना में शामिल करना है।",
+  "Include the contractor, materials, and labour costs you expect.": "ठेकेदार, सामग्री और मज़दूरी के अपेक्षित खर्च जोड़ें।",
+  "Include set-up and equipment costs. This planner does not estimate future business income.": "सेटअप और उपकरण का खर्च जोड़ें। यह प्लानर भविष्य की व्यावसायिक आय का अनुमान नहीं लगाता।",
+  "If fees are split across dates, plan for the next major fee and its due date.": "यदि फीस अलग-अलग तारीखों पर देनी है, तो अगली बड़ी फीस और उसकी देय तारीख की योजना बनाएँ।",
+  "Use the amount your household expects to pay after insurance or confirmed coverage.": "बीमा या पक्की सहायता के बाद आपके परिवार को जितनी राशि देनी होगी, वही दर्ज करें।",
+  "Include only the share this household expects to pay; leave out amounts others have agreed to cover.": "केवल आपके परिवार के हिस्से का खर्च जोड़ें; दूसरों द्वारा देने की तय राशि शामिल न करें।",
+  "Include trip costs your household expects to pay, such as tickets, lodging, and local travel.": "टिकट, ठहरने और स्थानीय यात्रा जैसे आपके परिवार के यात्रा खर्च जोड़ें।",
+  "Use a recent price for the model you plan to buy.": "जिस मॉडल को खरीदना है उसकी हाल की कीमत दर्ज करें।",
+  "Include delivery or installation if you expect to pay those costs.": "डिलीवरी या इंस्टॉलेशन का खर्च आपको देना हो तो उसे भी जोड़ें।",
+  "Name this goal, then enter the amount you expect to need and when you will need it.": "इस लक्ष्य का नाम दें, फिर ज़रूरी राशि और उसकी ज़रूरत की अवधि दर्ज करें।",
+  "Amount to pay upfront": "शुरुआत में देने वाली राशि",
+  "Amount to contribute upfront": "शुरुआती योगदान की राशि",
+  "Amount to have ready before work starts": "काम शुरू होने से पहले तैयार रखने वाली राशि",
+  "Amount to have ready before business set-up": "व्यवसाय की स्थापना से पहले तैयार रखने वाली राशि",
+  "Amount to have ready for the next fee": "अगली फीस के लिए तैयार रखने वाली राशि",
+  "Amount to have ready for the medical bill": "चिकित्सा बिल के लिए तैयार रखने वाली राशि",
+  "Amount to cover from savings by the wedding": "शादी तक बचत से देने वाली राशि",
+  "Amount to cover from savings before the trip": "यात्रा से पहले बचत से देने वाली राशि",
+  "Amount to cover from savings for this goal": "इस लक्ष्य के लिए बचत से देने वाली राशि",
+  "How many months until you hope to buy the car?": "कार खरीदने में कितने महीने बाकी हैं?",
+  "How many months until you plan to buy the bike or scooter?": "बाइक या स्कूटर खरीदने में कितने महीने बाकी हैं?",
+  "How many months until you plan to buy the computer?": "कंप्यूटर खरीदने में कितने महीने बाकी हैं?",
+  "How many months until you hope to buy the home?": "घर खरीदने में कितने महीने बाकी हैं?",
+  "How many months until you plan to buy the land?": "ज़मीन खरीदने में कितने महीने बाकी हैं?",
+  "How many months until you need the farm or land funds?": "खेत या ज़मीन के लिए राशि कितने महीने में चाहिए?",
+  "How many months until renovation work is expected to start?": "घर की मरम्मत या नवीनीकरण कितने महीने में शुरू होगा?",
+  "How many months until you need the start-up funds?": "व्यवसाय शुरू करने की राशि कितने महीने में चाहिए?",
+  "How many months until the next major fee is due?": "अगली बड़ी फीस कितने महीने में देनी है?",
+  "How many months until the medical payment is due?": "चिकित्सा भुगतान कितने महीने में करना है?",
+  "How many months until the wedding?": "शादी में कितने महीने बाकी हैं?",
+  "How many months until you plan to travel?": "यात्रा करने में कितने महीने बाकी हैं?",
+  "How many months until you plan to buy the phone?": "फोन खरीदने में कितने महीने बाकी हैं?",
+  "How many months until you plan to buy the appliance?": "घरेलू उपकरण खरीदने में कितने महीने बाकी हैं?",
+  "How many months until you need the money?": "राशि कितने महीने में चाहिए?",
+  "Enter the amount your household expects to pay. The app does not fetch live prices.": "आपके परिवार को जितनी राशि देनी होगी, वह दर्ज करें। ऐप ताज़ा कीमतें नहीं खोजता।",
+  "Enter the total upfront amount you want ready by the purchase date. Current goal savings are listed separately below.": "खरीद की तारीख तक तैयार रखने वाली कुल शुरुआती राशि दर्ज करें। मौजूदा लक्ष्य बचत नीचे अलग दर्ज करें।",
+  "Enter the total amount you want to pay upfront. Current goal savings are listed separately below.": "शुरुआत में देने वाली कुल राशि दर्ज करें। मौजूदा लक्ष्य बचत नीचे अलग दर्ज करें।",
+  "Enter the total amount you want ready before work or set-up begins. Current goal savings are listed separately below.": "काम या सेटअप शुरू होने से पहले तैयार रखने वाली कुल राशि दर्ज करें। मौजूदा लक्ष्य बचत नीचे अलग दर्ज करें।",
+  "Enter the total amount you want to cover from savings by then. Current goal savings are listed separately below.": "उस तारीख तक बचत से देने वाली कुल राशि दर्ज करें। मौजूदा लक्ष्य बचत नीचे अलग दर्ज करें।",
+  "Enter whole months from 1 to 360 until you plan to buy. Loan repayment is chosen separately.": "खरीद तक के पूरे महीने 1 से 360 के बीच दर्ज करें। ऋण भुगतान अवधि अलग चुनी जाती है।",
+  "Enter whole months from 1 to 360 until you plan to buy it. Loan repayment is chosen separately.": "खरीद तक के पूरे महीने 1 से 360 के बीच दर्ज करें। ऋण भुगतान अवधि अलग चुनी जाती है।",
+  "Enter whole months from 1 to 360 until the work or set-up begins. Loan repayment is chosen separately.": "काम या सेटअप शुरू होने तक के पूरे महीने 1 से 360 के बीच दर्ज करें। ऋण भुगतान अवधि अलग चुनी जाती है।",
+  "Enter whole months from 1 to 360 until the event or payment is due. Loan repayment is chosen separately.": "कार्यक्रम या भुगतान की तारीख तक के पूरे महीने 1 से 360 के बीच दर्ज करें। ऋण भुगतान अवधि अलग चुनी जाती है।",
+  "Optional. Compare the amount left after your planned upfront payment with sample loan repayments and your monthly EMI limit.": "वैकल्पिक। शुरुआती भुगतान के बाद बची ऋण राशि की EMI की तुलना अपनी मासिक सीमा से करें।",
+  "Optional. Compare financing the remaining item cost with sample loan repayments and your monthly EMI limit.": "वैकल्पिक। वस्तु की बची कीमत के ऋण भुगतान की तुलना अपनी मासिक EMI सीमा से करें।",
+  "Optional. Compare financing the remaining project or set-up cost with your monthly EMI limit.": "वैकल्पिक। परियोजना या सेटअप की बची लागत के ऋण भुगतान की तुलना अपनी मासिक EMI सीमा से करें।",
+  "Optional. Compare borrowing the remaining event or payment cost with sample EMIs against your monthly budget.": "वैकल्पिक। कार्यक्रम या भुगतान की बची लागत के ऋण की EMI की तुलना अपने मासिक बजट से करें।",
+  "What are you saving for?": "आप किस चीज़ के लिए बचत कर रहे हैं?",
+  "Use a short name. It will appear in your plan title.": "छोटा-सा नाम लिखें। यह आपकी योजना के शीर्षक में दिखेगा।",
+  "How much have you already saved for this goal?": "इस लक्ष्य के लिए आपने पहले से कितनी बचत की है?",
+  "This is part of total savings. Keep your emergency fund separate, and do not count the same money again as family or asset support.": "यह कुल बचत का हिस्सा है। आपातकालीन निधि अलग रखें और इसी राशि को परिवार या संपत्ति की सहायता में दोबारा न गिनें।",
+  "Goal funding plan": "लक्ष्य के लिए धन योजना",
+  "Goal contribution needed each month": "लक्ष्य योगदान के लिए हर महीने ज़रूरी राशि",
+  "Comfortable monthly saving amount": "आपकी सहज मासिक बचत राशि",
+  "Monthly gap to planned contribution": "योजना के योगदान में मासिक कमी",
+  "Goal contribution still to arrange": "लक्ष्य योगदान के लिए बाकी राशि",
+  "Monthly amount to cover remaining goal cost in cash": "बची लक्ष्य लागत नकद देने के लिए मासिक राशि",
+  "Estimated funds by your target date": "आपकी लक्ष्य तारीख तक अनुमानित राशि",
+  "Goal-contribution gap by target date": "लक्ष्य तारीख तक योगदान की कमी",
+  "Goal cost left to cover in cash": "नकद देने के लिए बची लक्ष्य लागत",
+  "Time to save the full goal cost in cash": "पूरी लक्ष्य लागत नकद बचाने का समय",
+  "See whether financing the goal cost left after your planned contribution and any savings or assets you choose to use could fit within your monthly EMI limit.": "देखें कि आपकी तय योगदान राशि, बचत या चुनी संपत्ति घटाने के बाद बची लागत का ऋण आपकी मासिक EMI सीमा में आता है या नहीं।",
+  "Estimated loan after your contribution and other funds": "योगदान और अन्य उपलब्ध राशि के बाद अनुमानित ऋण",
+  "These are reducing-balance estimates using the rate you entered. The comparison assumes you borrow when the goal cost is due and begin EMIs then. Fees, insurance, taxes, rate changes, and lender approval are not included. Compare the lender's APR and Key Facts Statement before deciding.": "ये आपके दर्ज ब्याज दर पर घटती शेष राशि के अनुमान हैं। तुलना मानती है कि लक्ष्य खर्च की तारीख पर ऋण लिया जाएगा और EMI तब शुरू होगी। शुल्क, बीमा, कर, दर बदलाव और ऋणदाता की मंज़ूरी शामिल नहीं हैं। निर्णय से पहले ऋणदाता का APR और मुख्य तथ्य विवरण देखें।",
+  "Reach planned contribution": "तय योगदान तक पहुँचें",
+  "Reach full goal cost in cash": "पूरी लक्ष्य लागत नकद जुटाएँ",
+  "Optional goal": "वैकल्पिक लक्ष्य",
+  "Your selected monthly savings amount can reach this contribution target by your goal date.": "आपकी चुनी मासिक बचत राशि लक्ष्य तारीख तक तय योगदान जुटा सकती है।",
+  "At your pace, you could cover the full estimated goal cost in cash by your target date, before price changes.": "इस गति से, कीमत बदलने से पहले आप लक्ष्य तारीख तक पूरी अनुमानित लागत नकद जुटा सकते हैं।",
+  "At this pace, you could cover the full estimated goal cost in cash by your target date, before price changes.": "इस गति से, कीमत बदलने से पहले आप लक्ष्य तारीख तक पूरी अनुमानित लागत नकद जुटा सकते हैं।",
+  "The savings or other funds you chose cover the estimated goal cost, so no loan is needed in this estimate.": "आपकी चुनी बचत या अन्य राशि अनुमानित लक्ष्य लागत को पूरा करती है, इसलिए इस अनुमान में ऋण की ज़रूरत नहीं है।",
+  "The planned goal contribution cannot be more than the estimated goal cost.": "लक्ष्य के लिए तय योगदान अनुमानित लागत से अधिक नहीं हो सकता।",
+  "The full-cost scenario assumes you save the entire goal cost; it does not estimate a new loan or EMI.": "पूरी लागत वाला विकल्प मानता है कि आप पूरी लक्ष्य राशि बचाएँगे; इसमें नए ऋण या EMI का अनुमान नहीं है।",
+  "The selected goal timeline needs more monthly savings than your chosen amount.": "चुनी लक्ष्य अवधि के लिए आपकी तय राशि से अधिक मासिक बचत चाहिए।",
+  "Goal timelines can be up to 30 years.": "लक्ष्य की अवधि 30 साल तक हो सकती है।",
+  "Goal figures use the amount you want to set aside and the target date you entered. The full-cost cash timeline estimates saving without a loan; loan repayment periods are shown separately.": "लक्ष्य के आँकड़े आपकी अलग रखने की तय राशि और दर्ज लक्ष्य तारीख पर आधारित हैं। पूरी लागत का नकद समय बिना ऋण के बचत का अनुमान है; ऋण भुगतान अवधि अलग दिखाई जाती है।",
+  "Planned goal contribution": "लक्ष्य के लिए तय योगदान",
+  "To catch typing mistakes, monthly amounts are limited to ₹1 crore and savings or goal amounts to ₹100 crore. Goal timelines can be up to 30 years.": "टाइपिंग की गलती पकड़ने के लिए मासिक राशि ₹1 करोड़ और बचत या लक्ष्य राशि ₹100 करोड़ तक सीमित है। लक्ष्य की अवधि अधिकतम 30 साल हो सकती है।",
+  "This is location context only. The app does not fetch live prices, so enter a current local quote below.": "यह केवल स्थान का संदर्भ है। ऐप ताज़ा कीमतें नहीं खोजता, इसलिए नीचे मौजूदा स्थानीय अनुमान दर्ज करें।",
+  "Enter the amount you want ready for that fee. Current goal savings are listed separately below.": "उस फीस के लिए तैयार रखने वाली राशि दर्ज करें। मौजूदा लक्ष्य बचत नीचे अलग दर्ज है।",
+  "Enter whole months from now until the next major fee is due. Loan repayment is chosen separately.": "अगली बड़ी फीस देय होने तक आज से पूरे महीने दर्ज करें। ऋण चुकाने की अवधि अलग चुनी जाती है।",
+  "Optional. Compare a loan for remaining education or training costs with sample EMIs against your monthly budget.": "वैकल्पिक। बची शिक्षा या प्रशिक्षण लागत के ऋण की उदाहरण EMI की तुलना अपने मासिक बजट से करें।",
+  "Enter the amount you want ready for the expected bill. Current goal savings are listed separately below.": "अपेक्षित बिल के लिए तैयार रखने वाली राशि दर्ज करें। मौजूदा लक्ष्य बचत नीचे अलग दर्ज है।",
+  "Enter whole months from now until the medical bill is due. Loan repayment is chosen separately.": "चिकित्सा बिल देय होने तक आज से पूरे महीने दर्ज करें। ऋण चुकाने की अवधि अलग चुनी जाती है।",
+  "Optional. Compare financing the remaining medical cost with sample EMIs against your monthly budget.": "वैकल्पिक। बची चिकित्सा लागत के वित्तपोषण की उदाहरण EMI की तुलना अपने मासिक बजट से करें।",
+  "Enter the total amount this household wants to fund from savings by the wedding. Current goal savings are listed separately below.": "शादी तक आपका परिवार बचत से जितनी कुल राशि जुटाना चाहता है, वह दर्ज करें। मौजूदा लक्ष्य बचत नीचे अलग दर्ज है।",
+  "Enter whole months from now until the wedding. Loan repayment is chosen separately.": "शादी तक आज से पूरे महीने दर्ज करें। ऋण चुकाने की अवधि अलग चुनी जाती है।",
+  "Optional. Compare a loan for the remaining wedding costs with sample EMIs against your monthly budget.": "वैकल्पिक। शादी के बचे खर्च के ऋण की उदाहरण EMI की तुलना अपने मासिक बजट से करें।",
+  "Enter the total amount you want ready from savings before travel. Current goal savings are listed separately below.": "यात्रा से पहले बचत से तैयार रखने वाली कुल राशि दर्ज करें। मौजूदा लक्ष्य बचत नीचे अलग दर्ज है।",
+  "Enter whole months from now until your planned trip. Loan repayment is chosen separately.": "नियोजित यात्रा तक आज से पूरे महीने दर्ज करें। ऋण चुकाने की अवधि अलग चुनी जाती है।",
+  "Optional. Compare financing the remaining trip cost with sample EMIs against your monthly budget.": "वैकल्पिक। यात्रा की बची लागत के वित्तपोषण की उदाहरण EMI की तुलना अपने मासिक बजट से करें।",
 };
 
 let language = "en";
 const originalText = new WeakMap();
+const renderedText = new WeakMap();
 const originalAttributes = new WeakMap();
+const renderedAttributes = new WeakMap();
 
 
 function localizedValue(english, requestedLanguage) {
@@ -419,10 +614,53 @@ function localizedValue(english, requestedLanguage) {
     return english;
   }
   const cleanText = english.trim().replace(/\s+/g, " ");
+  const customGoalTitle = cleanText.match(/^Plan for (.+)$/);
+  if (customGoalTitle) return `लक्ष्य योजना: ${customGoalTitle[1]}`;
+  const adjustedGoalReady = cleanText.match(/^A possible (.+) monthly reduction closes the selected goal contribution gap in this calculation\. These are choices to review, not automatic instructions\.$/);
+  if (adjustedGoalReady) return `इस गणना में हर महीने ${adjustedGoalReady[1]} की संभावित कटौती लक्ष्य योगदान की कमी पूरी करती है। ये विचार करने के विकल्प हैं, अपने-आप लागू होने वाले निर्देश नहीं।`;
+  const adjustedGoalPartial = cleanText.match(/^The modest reductions available here total (.+) per month\. They help, but leave a (.+) monthly goal contribution gap; you could also change the target date, goal cost, or saving share\.$/);
+  if (adjustedGoalPartial) return `यहाँ उपलब्ध छोटी कटौतियाँ हर महीने ${adjustedGoalPartial[1]} हैं। इनसे मदद मिलेगी, फिर भी लक्ष्य योगदान में ${adjustedGoalPartial[2]} की मासिक कमी रहेगी। आप लक्ष्य तारीख, लागत या बचत का हिस्सा भी बदल सकते हैं।`;
+  const plannedContributionTime = cleanText.match(/^At your selected monthly saving amount, reaching the planned contribution could take about (\d+) months\.$/);
+  if (plannedContributionTime) return `आपकी चुनी मासिक बचत राशि से तय योगदान तक पहुँचने में लगभग ${plannedContributionTime[1]} महीने लग सकते हैं।`;
+  const goalCostGap = cleanText.match(/^At this pace, the full estimated goal cost would be short by (.+) at your target date\. This cash estimate does not include a loan\.$/);
+  if (goalCostGap) return `इस गति से, लक्ष्य तारीख पर अनुमानित पूरी लागत में ${goalCostGap[1]} की कमी होगी। इस नकद अनुमान में ऋण शामिल नहीं है।`;
+  const contributionGap = cleanText.match(/^Your goal contribution needs (.+) more per month than your selected amount\. Consider changing the target date, cost, or monthly saving share\.$/);
+  if (contributionGap) return `लक्ष्य योगदान के लिए आपकी चुनी राशि से हर महीने ${contributionGap[1]} अधिक चाहिए। लक्ष्य तारीख, लागत या मासिक बचत राशि बदलने पर विचार करें।`;
+  const fullGoalCashGap = cleanText.match(/^If you plan to cover the full goal cost in cash, the projected gap at your target date is (.+)\. This estimate excludes borrowing and investment returns\.$/);
+  if (fullGoalCashGap) return `यदि आप पूरी लक्ष्य लागत नकद देना चाहते हैं, तो लक्ष्य तारीख पर अनुमानित कमी ${fullGoalCashGap[1]} है। इसमें ऋण या निवेश से लाभ शामिल नहीं है।`;
+  const loanCostLimit = cleanText.match(/^None of these example terms fits your (.+) monthly limit\. At the longest example term, a loan of about (.+) would fit this limit; increasing your contribution, lowering the goal cost, or choosing a later target date could reduce the amount borrowed\.$/);
+  if (loanCostLimit) return `इनमें से कोई उदाहरण अवधि आपकी ${loanCostLimit[1]} मासिक सीमा में नहीं आती। सबसे लंबी अवधि में लगभग ${loanCostLimit[2]} का ऋण सीमा में आएगा; योगदान बढ़ाने, लक्ष्य लागत घटाने या बाद की तारीख चुनने से ऋण राशि कम हो सकती है।`;
   if (HINDI_TEXT[cleanText]) {
     return HINDI_TEXT[cleanText];
   }
 
+  const overBudget = cleanText.match(/^Recorded spending is (.+) above income\. Suggested changes could reduce the gap by (.+) per month\.$/);
+  if (overBudget) return `दर्ज खर्च आय से ${overBudget[1]} अधिक हैं। सुझाए बदलाव हर महीने इस कमी को ${overBudget[2]} घटा सकते हैं।`;
+  const overBudgetNoCuts = cleanText.match(/^Recorded spending is (.+) above income\. Add flexible expenses to see possible changes\.$/);
+  if (overBudgetNoCuts) return `दर्ज खर्च आय से ${overBudgetNoCuts[1]} अधिक हैं। संभावित बदलाव देखने के लिए लचीले खर्च दर्ज करें।`;
+  const goalReached = cleanText.match(/^These changes could free (.+) each month and meet your target\.$/);
+  if (goalReached) return `इन बदलावों से हर महीने ${goalReached[1]} बच सकते हैं और आपका लक्ष्य पूरा हो सकता है।`;
+  const goalGap = cleanText.match(/^These changes could free (.+) each month\. You could save about (.+), leaving (.+) of your target unmet\.$/);
+  if (goalGap) return `इन बदलावों से हर महीने ${goalGap[1]} बच सकते हैं। आप लगभग ${goalGap[2]} बचा पाएँगे और लक्ष्य में ${goalGap[3]} की कमी रहेगी।`;
+  const targetWithoutCuts = cleanText.match(/^Your target is (.+) per month, but no adjustable spending was found in these entries\.$/);
+  if (targetWithoutCuts) return `आपका लक्ष्य हर महीने ${targetWithoutCuts[1]} है, लेकिन इन प्रविष्टियों में बदल सकने वाला खर्च नहीं मिला।`;
+  const starterSavings = cleanText.match(/^Small changes could free (.+) each month for future savings\.$/);
+  if (starterSavings) return `छोटे बदलावों से भविष्य की बचत के लिए हर महीने ${starterSavings[1]} बच सकते हैं।`;
+  const draftCoach = cleanText.match(/^Draft estimate from entries so far: (.+)\.$/);
+  if (draftCoach) return `अभी तक दर्ज जानकारी पर आधारित प्रारंभिक अनुमान: ${draftCoach[1]}।`;
+
+  const examplePlaceholder = cleanText.match(/^For example, ([\d,]+)$/);
+  if (examplePlaceholder) {
+    return `उदाहरण: ${examplePlaceholder[1]}`;
+  }
+  const friendlyYears = cleanText.match(/^About (\d+) years and (\d+) months$/);
+  if (friendlyYears) {
+    return `लगभग ${friendlyYears[1]} साल और ${friendlyYears[2]} महीने`;
+  }
+  const friendlyWholeYears = cleanText.match(/^About (\d+) years?$/);
+  if (friendlyWholeYears) {
+    return `लगभग ${friendlyWholeYears[1]} साल`;
+  }
   const months = cleanText.match(/^(\d+) months?$/);
   if (months) {
     return `${months[1]} महीने`;
@@ -467,6 +705,20 @@ function localizedValue(english, requestedLanguage) {
   const cashShortfall = cleanText.match(/^At this pace, the simple cash-purchase estimate is short by (.+) at your target date\. It does not assume a new loan\.$/);
   if (cashShortfall) {
     return `इस गति से, आपकी लक्ष्य तारीख पर नकद खरीद के अनुमान में ${cashShortfall[1]} की कमी होगी। इसमें नया ऋण नहीं माना गया है।`;
+  }
+  const monthlyLimit = cleanText.match(/^(.+) is above the ₹1 crore monthly limit\. Check the value for extra zeroes\.$/);
+  if (monthlyLimit) {
+    return `${monthlyLimit[1]} ₹1 करोड़ की मासिक सीमा से अधिक है। अतिरिक्त शून्य तो नहीं जुड़ गए, जाँचें।`;
+  }
+  const savingsLimit = cleanText.match(/^(.+) is above the ₹100 crore limit\. Check the value for extra zeroes\.$/);
+  if (savingsLimit) {
+    return `${savingsLimit[1]} ₹100 करोड़ की सीमा से अधिक है। अतिरिक्त शून्य तो नहीं जुड़ गए, जाँचें।`;
+  }
+  if (cleanText === "Household size cannot exceed 50 people.") {
+    return "परिवार के सदस्यों की संख्या 50 से अधिक नहीं हो सकती।";
+  }
+  if (cleanText === "Months until the goal cannot exceed 360 months (30 years).") {
+    return "लक्ष्य तक की अवधि 360 महीने (30 साल) से अधिक नहीं हो सकती।";
   }
   const validation = cleanText.match(/^(.+) must be a number\.$/);
   if (validation) {
@@ -626,9 +878,12 @@ function localizedValue(english, requestedLanguage) {
 
 
 function translateTextNode(node) {
-  let english = originalText.get(node);
   const current = node.nodeValue;
-  if (english === undefined || (current !== english && current !== localizedValue(english, "hi"))) {
+  let english = originalText.get(node);
+  const lastRendered = renderedText.get(node);
+
+  // Treat a change as new English only when it did not come from this translator.
+  if (english === undefined || (current !== english && current !== lastRendered)) {
     english = current;
     originalText.set(node, english);
   }
@@ -637,6 +892,7 @@ function translateTextNode(node) {
   const text = whitespace[2].replace(/\s+/g, " ");
   const translated = localizedValue(text, language);
   const result = `${whitespace[1]}${translated}${whitespace[3]}`;
+  renderedText.set(node, result);
   if (node.nodeValue !== result) {
     node.nodeValue = result;
   }
@@ -644,7 +900,7 @@ function translateTextNode(node) {
 
 
 function translateAttributes(element) {
-  for (const attribute of ["placeholder", "aria-label", "title"]) {
+  for (const attribute of ["placeholder", "aria-label", "title", "alt"]) {
     if (!element.hasAttribute(attribute)) {
       continue;
     }
@@ -653,13 +909,24 @@ function translateAttributes(element) {
       saved = new Map();
       originalAttributes.set(element, saved);
     }
+    let rendered = renderedAttributes.get(element);
+    if (!rendered) {
+      rendered = new Map();
+      renderedAttributes.set(element, rendered);
+    }
+
     const current = element.getAttribute(attribute);
     let english = saved.get(attribute);
-    if (english === undefined || (current !== english && current !== localizedValue(english, "hi"))) {
+    const lastRendered = rendered.get(attribute);
+    if (english === undefined || (current !== english && current !== lastRendered)) {
       english = current;
       saved.set(attribute, english);
     }
-    element.setAttribute(attribute, localizedValue(english, language));
+    const translated = localizedValue(english, language);
+    rendered.set(attribute, translated);
+    if (current !== translated) {
+      element.setAttribute(attribute, translated);
+    }
   }
 }
 
@@ -687,7 +954,9 @@ function updateLanguageButton() {
     return;
   }
   button.textContent = language === "en" ? "हिंदी" : "English";
-  button.setAttribute("aria-label", language === "en" ? "Switch to Hindi" : "Switch to English");
+  const label = language === "en" ? "Switch to Hindi" : "Switch to English";
+  button.setAttribute("aria-label", label);
+  translateAttributes(button);
 }
 
 
@@ -725,6 +994,8 @@ const languageObserver = new MutationObserver((mutations) => {
   for (const mutation of mutations) {
     if (mutation.type === "characterData") {
       translateTextNode(mutation.target);
+    } else if (mutation.type === "attributes") {
+      translateAttributes(mutation.target);
     } else {
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === Node.TEXT_NODE) {
@@ -736,4 +1007,10 @@ const languageObserver = new MutationObserver((mutations) => {
     }
   }
 });
-languageObserver.observe(document.body, { childList: true, characterData: true, subtree: true });
+languageObserver.observe(document.body, {
+  attributes: true,
+  attributeFilter: ["placeholder", "aria-label", "title", "alt"],
+  childList: true,
+  characterData: true,
+  subtree: true,
+});

@@ -452,11 +452,18 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
 
     @staticmethod
     def resolve_static_asset(path: str) -> Path | None:
-        """Only expose app HTML, styles, and browser modules, never server or database files."""
+        """Expose only the app shell, browser modules, and approved PNG assets."""
         if path in ("/", "/index.html"):
             return APP_FOLDER / "index.html"
+        if path == "/profile.html":
+            return APP_FOLDER / "profile.html"
         if path == "/styles.css":
             return APP_FOLDER / "styles.css"
+        if path.startswith("/assets/") and Path(path).suffix.lower() == ".png":
+            candidate = (APP_FOLDER / path.lstrip("/")).resolve()
+            assets_folder = (APP_FOLDER / "assets").resolve()
+            if candidate.is_relative_to(assets_folder) and candidate.is_file():
+                return candidate
         if path.startswith("/js/") and path.endswith(".mjs"):
             candidate = (APP_FOLDER / path.lstrip("/")).resolve()
             js_folder = (APP_FOLDER / "js").resolve()
@@ -471,11 +478,13 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             self.send_error_json(HTTPStatus.NOT_FOUND, "Page not found.")
             return
 
-        content_type = "text/javascript; charset=utf-8" if path.suffix == ".mjs" else None
-        if path.suffix == ".css":
-            content_type = "text/css; charset=utf-8"
-        elif path.suffix == ".html":
-            content_type = "text/html; charset=utf-8"
+        content_types = {
+            ".mjs": "text/javascript; charset=utf-8",
+            ".css": "text/css; charset=utf-8",
+            ".html": "text/html; charset=utf-8",
+            ".png": "image/png",
+        }
+        content_type = content_types.get(path.suffix.lower(), "application/octet-stream")
 
         self.send_response(HTTPStatus.OK)
         self.send_security_headers()
@@ -491,9 +500,13 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         if asset is None or not asset.is_file():
             self.send_error(HTTPStatus.NOT_FOUND)
             return
-        content_type = "text/javascript; charset=utf-8" if asset.suffix == ".mjs" else "text/html; charset=utf-8"
-        if asset.suffix == ".css":
-            content_type = "text/css; charset=utf-8"
+        content_types = {
+            ".mjs": "text/javascript; charset=utf-8",
+            ".css": "text/css; charset=utf-8",
+            ".html": "text/html; charset=utf-8",
+            ".png": "image/png",
+        }
+        content_type = content_types.get(asset.suffix.lower(), "application/octet-stream")
         self.send_response(HTTPStatus.OK)
         self.send_security_headers()
         self.send_header("Content-Type", content_type)

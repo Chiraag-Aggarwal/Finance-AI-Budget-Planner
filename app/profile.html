@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-accent="mint" data-text-size="standard" data-reduce-motion="false">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#07100c">
+    <title>Finance AI | Profile details</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/js/i18n.mjs"></script>
+    <script type="module" src="/js/settings.mjs"></script>
+    <script type="module" src="/js/profile_page.mjs"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <header class="site-header">
+      <div class="header-inner profile-page-header">
+        <a class="brand" href="/" aria-label="Finance AI home">
+          <span class="brand-mark" aria-hidden="true">₹</span>
+          <span>Finance <strong>AI</strong></span>
+        </a>
+        <div class="header-actions">
+          <a class="button button-quiet header-button" href="/">Back to dashboard</a>
+          <button id="language-toggle" class="button button-quiet header-button" type="button" aria-label="Switch language">हिंदी</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content" class="profile-edit-page">
+      <section class="profile-edit-card" aria-labelledby="profile-edit-title">
+        <p class="eyebrow">Your account</p>
+        <h1 id="profile-edit-title">Profile details</h1>
+        <p class="profile-page-intro">Update the name and region saved with your account.</p>
+        <form id="profile-edit-form" class="profile-edit-form" novalidate hidden>
+          <label class="field">
+            <span>Your name</span>
+            <input name="name" type="text" minlength="2" maxlength="80" autocomplete="name" required>
+          </label>
+          <label class="field">
+            <span>Email address</span>
+            <input name="email" type="email" autocomplete="email" readonly>
+            <small>Email is used to sign in and cannot be changed here.</small>
+          </label>
+          <label class="field">
+            <span>City, district, or region</span>
+            <input name="region" type="text" minlength="2" maxlength="100" autocomplete="address-level2" required>
+            <small>This is saved as location context. The planner does not look up local prices.</small>
+          </label>
+          <div class="profile-edit-actions">
+            <button class="button button-primary" type="submit">Save profile</button>
+            <a class="button button-quiet" href="/">Cancel</a>
+          </div>
+        </form>
+        <p id="profile-page-status" class="save-status" role="status" aria-live="polite">Loading your profile…</p>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <div class="footer-inner"><span>Finance AI · Personal finance planner</span><a href="/">Back to dashboard ↑</a></div>
+    </footer>
+  </body>
+</html>

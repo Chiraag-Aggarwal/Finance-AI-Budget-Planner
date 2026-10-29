@@ -5,22 +5,17 @@ const siteFooter = document.querySelector("#site-footer");
 const authError = document.querySelector("#auth-error");
 const loginForm = document.querySelector("#login-form");
 const signupForm = document.querySelector("#signup-form");
-const profileForm = document.querySelector("#profile-form");
-const profileStatus = document.querySelector("#profile-status");
-const editProfileButton = document.querySelector("#edit-profile-button");
+const profileMenuButton = document.querySelector("#profile-menu-button");
+const profileMenu = document.querySelector("#profile-menu");
+const profileAvatar = document.querySelector("#profile-avatar");
 const signOutButton = document.querySelector("#sign-out-button");
 const signedInName = document.querySelector("#signed-in-name");
 
 let signedInUser = null;
 
 
-function translated(message) {
-  return window.financeTranslate ? window.financeTranslate(message) : message;
-}
-
-
 function setAuthError(message) {
-  authError.textContent = translated(message);
+  authError.textContent = message;
   authError.hidden = false;
 }
 
@@ -59,13 +54,6 @@ async function sendAccountRequest(path, method, fields) {
 }
 
 
-function fillProfileForm(user) {
-  profileForm.elements.namedItem("name").value = user.name;
-  profileForm.elements.namedItem("email").value = user.email;
-  profileForm.elements.namedItem("region").value = user.region;
-}
-
-
 function showSignedIn(user) {
   const firstSignIn = !signedInUser || signedInUser.id !== user.id;
   signedInUser = user;
@@ -73,14 +61,16 @@ function showSignedIn(user) {
   appShell.hidden = false;
   appNavigation.hidden = false;
   siteFooter.hidden = false;
+  profileMenuButton.hidden = false;
   signOutButton.hidden = false;
-  signedInName.hidden = false;
   signedInName.textContent = user.name;
-  document.querySelector("#profile-summary").textContent = `${user.name} · ${user.email} · ${user.region}`;
-  fillProfileForm(user);
-  profileForm.hidden = true;
-  editProfileButton.hidden = false;
-  profileStatus.textContent = "";
+  profileAvatar.textContent = user.name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
+  closeProfileMenu();
   clearAuthError();
 
   // The account's saved region is the starting region for goal planning.
@@ -103,12 +93,46 @@ function showSignedOut() {
   appShell.hidden = true;
   appNavigation.hidden = true;
   siteFooter.hidden = true;
-  signOutButton.hidden = true;
-  signedInName.hidden = true;
+  profileMenuButton.hidden = true;
+  closeProfileMenu();
   if (wasSignedIn) {
     window.dispatchEvent(new CustomEvent("finance-user-logout"));
   }
 }
+
+
+function closeProfileMenu(returnFocus = false) {
+  profileMenu.hidden = true;
+  profileMenuButton.setAttribute("aria-expanded", "false");
+  if (returnFocus) {
+    profileMenuButton.focus();
+  }
+}
+
+
+profileMenuButton.addEventListener("click", () => {
+  const shouldOpen = profileMenu.hidden;
+  profileMenu.hidden = !shouldOpen;
+  profileMenuButton.setAttribute("aria-expanded", String(shouldOpen));
+});
+
+profileMenu.addEventListener("click", (event) => {
+  if (event.target.closest("a")) {
+    closeProfileMenu();
+  }
+});
+
+document.addEventListener("click", (event) => {
+  if (!profileMenu.hidden && !event.target.closest("#account-menu-wrap")) {
+    closeProfileMenu();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !profileMenu.hidden) {
+    closeProfileMenu(true);
+  }
+});
 
 
 function setAccountView(view) {
@@ -170,46 +194,8 @@ signupForm.addEventListener("submit", async (event) => {
 });
 
 
-editProfileButton.addEventListener("click", () => {
-  if (!signedInUser) {
-    return;
-  }
-  fillProfileForm(signedInUser);
-  profileForm.hidden = false;
-  profileStatus.textContent = "";
-  profileForm.elements.namedItem("name").focus();
-});
-
-
-document.querySelector("#cancel-profile-button").addEventListener("click", () => {
-  if (signedInUser) {
-    fillProfileForm(signedInUser);
-  }
-  profileForm.hidden = true;
-});
-
-
-profileForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  if (!signedInUser || !profileForm.reportValidity()) {
-    return;
-  }
-  profileStatus.textContent = "Saving profile…";
-  const fields = {
-    name: profileForm.elements.namedItem("name").value,
-    region: profileForm.elements.namedItem("region").value,
-  };
-  try {
-    const result = await sendAccountRequest("/api/profile", "PUT", fields);
-    showSignedIn(result.user);
-    profileStatus.textContent = translated("Your profile has been updated.");
-  } catch (error) {
-    profileStatus.textContent = translated(error.message);
-  }
-});
-
-
 signOutButton.addEventListener("click", async () => {
+  closeProfileMenu();
   try {
     await sendAccountRequest("/api/logout", "POST", {});
   } catch (error) {
