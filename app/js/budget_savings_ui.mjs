@@ -2,8 +2,6 @@ import { buildSavingsBudget, interpretConstraintMessage } from "./budget_recomme
 
 
 // Keep the user's budget and chat preferences in this page only.
-const targetForm = document.querySelector("#savings-target-form");
-const targetInput = document.querySelector("#monthly-savings-target");
 const chatForm = document.querySelector("#savings-chat-form");
 const chatInput = document.querySelector("#savings-chat-input");
 const chatMessages = document.querySelector("#savings-chat-messages");
@@ -43,8 +41,8 @@ function addChatMessage(messageText, sender) {
 }
 
 
-// Explain the estimate in one short sentence, using the numbers shown below.
-function savingsMessage(plan, target) {
+// Explain the suggested changes without asking the user to set a savings target.
+function savingsMessage(plan) {
   if (plan.status === "needs-income") return "Add income to see a monthly estimate.";
   if (plan.status === "needs-expenses") return "Add expenses to see where spending may be adjusted. Missing expenses are not assumed to be zero.";
 
@@ -55,48 +53,24 @@ function savingsMessage(plan, target) {
       : `Recorded spending is ${amountOver} above income. Add flexible expenses to see possible changes.`;
   }
 
-  if (plan.status === "already-on-track") {
-    return plan.totalCut > 0
-      ? `Your monthly balance already meets this target. Optional changes below could free ${formatRupees(plan.totalCut)} more each month.`
-      : "Your balance meets this target, but no adjustable spending was found in the selected month's entries.";
-  }
-  if (plan.status === "target-reached") {
-    return `These changes could free ${formatRupees(plan.totalCut)} each month and meet your target.`;
-  }
-  if (plan.status === "target-shortfall") {
-    return plan.totalCut > 0
-      ? `These changes could free ${formatRupees(plan.totalCut)} each month. You could save about ${formatRupees(plan.availableToSave)}, leaving ${formatRupees(plan.targetGap)} of your target unmet.`
-      : `Your target is ${formatRupees(target)} per month, but no adjustable spending was found in these entries.`;
-  }
   if (plan.status === "starter-suggestions") {
-    return `Small changes could free ${formatRupees(plan.totalCut)} each month for future savings.`;
+    return `These small changes could free ${formatRupees(plan.totalCut)} each month. After them, your recorded budget could leave about ${formatRupees(plan.availableToSave)} for future savings.`;
   }
-  return "No adjustable spending is available in these entries. Use Adjust suggestions to explore another category.";
+
+  return `Your recorded budget leaves ${formatRupees(plan.availableToSave)} after expenses. No adjustable spending was found in the categories recorded; use Adjust suggestions to explore another category.`;
 }
 
 
-// Show only the monthly totals and category changes the user can act on.
+// Show the remaining balance and practical reductions from flexible categories.
 function showSavingsBudget() {
-  if (!targetInput.validity.valid) {
-    planMessage.textContent = "Enter a monthly target between ₹0 and ₹1 crore.";
-    draftNote.hidden = true;
-    document.querySelector("#savings-recorded-balance").textContent = "—";
-    document.querySelector("#savings-adjustment-total").textContent = "—";
-    document.querySelector("#savings-available-amount").textContent = "—";
-    rows.replaceChildren();
-    table.hidden = true;
-    return;
-  }
-
-  const target = Number(targetInput.value || 0);
-  const plan = buildSavingsBudget(monthlySummary, target, {
+  const plan = buildSavingsBudget(monthlySummary, 0, {
     adjustableCategories,
     lockedCategories,
     maximumCuts,
     region: profileRegion,
   });
 
-  planMessage.textContent = savingsMessage(plan, target);
+  planMessage.textContent = savingsMessage(plan);
   regionNote.textContent = plan.region
     ? `Your profile region is ${plan.region}. Savings calculations use your tracked amounts; regional price differences are not included.`
     : "";
@@ -129,16 +103,6 @@ function showSavingsBudget() {
     rows.append(row);
   }
 }
-
-
-// Entering a monthly savings target updates the same budget, without a goal form.
-targetForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  showSavingsBudget();
-});
-
-targetInput.addEventListener("input", showSavingsBudget);
-
 
 // Interpret plain-language limits for categories and recalculate the plan.
 chatForm.addEventListener("submit", (event) => {

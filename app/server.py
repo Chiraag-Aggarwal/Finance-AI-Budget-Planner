@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import secrets
@@ -11,6 +12,7 @@ import sqlite3
 import threading
 import time
 from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -19,6 +21,30 @@ from urllib.parse import unquote, urlsplit
 
 
 APP_FOLDER = Path(__file__).resolve().parent
+
+
+def load_local_environment():
+    """Read simple KEY=VALUE settings from app/.env for local development."""
+    env_file = APP_FOLDER / ".env"
+    if not env_file.is_file():
+        return
+
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, value = line.split("=", 1)
+        name = name.strip()
+        value = value.strip()
+        if value[:1] in {"\"", "'"} and value[-1:] == value[:1]:
+            value = value[1:-1]
+        # A Windows environment setting takes precedence over the local file.
+        if name and not os.environ.get(name):
+            os.environ[name] = value
+
+
+load_local_environment()
+
 DATABASE_FILE = Path(os.environ.get(
     "FINANCE_AI_DATABASE",
     str(APP_FOLDER / "data" / "finance_ai_accounts.sqlite3"),
@@ -27,7 +53,11 @@ SESSION_COOKIE = "finance_ai_session"
 SESSION_LIFETIME_SECONDS = 60 * 60 * 24 * 7
 PASSWORD_HASH_ROUNDS = 310_000
 MAX_REQUEST_BYTES = 16_384
-COOKIE_SECURE = os.environ.get("FINANCE_AI_COOKIE_SECURE", "0") == "1"
+MAX_FINANCE_DATA_BYTES = 1_000_000
+COOKIE_SECURE = os.environ.get(
+    "FINANCE_AI_COOKIE_SECURE",
+    "1" if os.environ.get("FINANCE_AI_ENV", "development").lower() == "production" else "0",
+) == "1"
 EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 RATE_LIMIT_WINDOW_SECONDS = 15 * 60
 _RATE_LIMIT_LOCK = threading.Lock()
@@ -74,8 +104,140 @@ def initialize_database(database_file: Path = DATABASE_FILE) -> None:
 
             CREATE INDEX IF NOT EXISTS sessions_by_user
                 ON sessions(user_id);
+
+            CREATE TABLE IF NOT EXISTS user_finance_data (
+                user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                payload TEXT NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
             """
         )
+
+
+class DuplicateEmailError(Exception):
+    """Raised when MongoDB already contains an account with this email."""
+
+
+class MongoStore:
+    """MongoDB collections for accounts, sessions, and private finance data."""
+
+    def __init__(self, uri: str, database_name: str):
+        try:
+            from pymongo import ASCENDING, MongoClient
+        except ImportError as error:
+            raise RuntimeError(
+                "MongoDB is configured, but PyMongo is missing. Install app/requirements.txt."
+            ) from error
+
+        self.client = MongoClient(uri, serverSelectionTimeoutMS=8_000, tz_aware=True)
+        self.client.admin.command("ping")
+        database = self.client[database_name]
+        self.users = database["users"]
+        self.sessions = database["sessions"]
+        self.finance_data = database["finance_data"]
+        self.users.create_index([("email", ASCENDING)], unique=True)
+        self.sessions.create_index("expires_at", expireAfterSeconds=0)
+        self.finance_data.create_index("updated_at")
+
+    def create_user(self, fields: dict) -> dict:
+        from pymongo.errors import DuplicateKeyError
+
+        salt, password_hash_value = hash_password(fields["password"])
+        # New account IDs are strings; imported SQLite IDs remain integers.
+        user_id = secrets.token_hex(12)
+        try:
+            self.users.insert_one({
+                "_id": user_id,
+                "name": fields["name"],
+                "email": fields["email"],
+                "region": fields["region"],
+                "password_salt": salt,
+                "password_hash": password_hash_value,
+                "created_at": int(time.time()),
+            })
+        except DuplicateKeyError as error:
+            raise DuplicateEmailError from error
+        return {
+            "id": user_id,
+            "name": fields["name"],
+            "email": fields["email"],
+            "region": fields["region"],
+        }
+
+    def get_user_by_email(self, email: str):
+        user = self.users.find_one({"email": email.strip().lower()})
+        if not user:
+            return None
+        user["id"] = user.pop("_id")
+        return user
+
+    def update_user_profile(self, user_id: int | str, name: str, region: str) -> dict | None:
+        self.users.update_one(
+            {"_id": user_id},
+            {"$set": {"name": name, "region": region}},
+        )
+        user = self.users.find_one({"_id": user_id}, {"name": 1, "email": 1, "region": 1})
+        if not user:
+            return None
+        return {
+            "id": user["_id"],
+            "name": user["name"],
+            "email": user["email"],
+            "region": user["region"],
+        }
+
+    def find_session_user(self, token_hash: str, now: int) -> dict | None:
+        session = self.sessions.find_one({
+            "_id": token_hash,
+            "expires_at": {"$gt": datetime.fromtimestamp(now, timezone.utc)},
+        })
+        if not session:
+            self.sessions.delete_one({"_id": token_hash})
+            return None
+        user = self.users.find_one(
+            {"_id": session["user_id"]},
+            {"name": 1, "email": 1, "region": 1},
+        )
+        if not user:
+            return None
+        return {
+            "id": user["_id"],
+            "name": user["name"],
+            "email": user["email"],
+            "region": user["region"],
+            "expires_at": int(session["expires_at"].timestamp()),
+        }
+
+    def create_session(self, token_hash: str, user_id: int | str, expires_at: int) -> None:
+        self.sessions.insert_one({
+            "_id": token_hash,
+            "user_id": user_id,
+            "expires_at": datetime.fromtimestamp(expires_at, timezone.utc),
+        })
+
+    def delete_session(self, token_hash: str) -> None:
+        self.sessions.delete_one({"_id": token_hash})
+
+    def get_finance_data(self, user_id: int | str) -> dict:
+        document = self.finance_data.find_one({"_id": user_id})
+        if not document:
+            return {}
+        return {
+            key: value
+            for key, value in document.items()
+            if key in FINANCE_DATA_FIELDS
+        }
+
+    def update_finance_data(self, user_id: int | str, changes: dict) -> dict:
+        self.finance_data.update_one(
+            {"_id": user_id},
+            {
+                "$set": {**changes, "updated_at": datetime.now(timezone.utc)},
+                "$setOnInsert": {"created_at": datetime.now(timezone.utc)},
+            },
+            upsert=True,
+        )
+        return self.get_finance_data(user_id)
 
 
 def clean_profile_fields(name: str, region: str) -> tuple[str, str, str | None]:
@@ -135,8 +297,11 @@ def password_matches(password: str, salt_hex: str, expected_hash: str) -> bool:
     return secrets.compare_digest(submitted_hash, expected_hash)
 
 
-def create_user(database_file: Path, fields: dict) -> dict:
+def create_user(database_file: Path | MongoStore, fields: dict) -> dict:
     """Insert an account and return its non-secret profile fields."""
+    if isinstance(database_file, MongoStore):
+        return database_file.create_user(fields)
+
     salt, password_hash_value = hash_password(fields["password"])
     with open_database(database_file) as connection:
         cursor = connection.execute(
@@ -159,7 +324,10 @@ def create_user(database_file: Path, fields: dict) -> dict:
         }
 
 
-def get_user_by_email(database_file: Path, email: str):
+def get_user_by_email(database_file: Path | MongoStore, email: str):
+    if isinstance(database_file, MongoStore):
+        return database_file.get_user_by_email(email)
+
     with open_database(database_file) as connection:
         return connection.execute(
             "SELECT * FROM users WHERE email = ? COLLATE NOCASE",
@@ -167,10 +335,13 @@ def get_user_by_email(database_file: Path, email: str):
         ).fetchone()
 
 
-def update_user_profile(database_file: Path, user_id: int, name: str, region: str) -> dict | None:
+def update_user_profile(database_file: Path | MongoStore, user_id: int, name: str, region: str) -> dict | None:
     clean_name, clean_region, error = clean_profile_fields(name, region)
     if error:
         raise ValueError(error)
+
+    if isinstance(database_file, MongoStore):
+        return database_file.update_user_profile(user_id, clean_name, clean_region)
 
     with open_database(database_file) as connection:
         connection.execute(
@@ -182,6 +353,121 @@ def update_user_profile(database_file: Path, user_id: int, name: str, region: st
             (user_id,),
         ).fetchone()
         return dict(row) if row else None
+
+
+FINANCE_DATA_FIELDS = {"plannerProfile", "transactions", "settings"}
+TRANSACTION_FIELDS = {"id", "type", "category", "date", "amount", "note"}
+PLANNER_PROFILE_FIELDS = {
+    "includeGoal", "monthlyTakeHomeIncome", "monthlyEssentialExpenses",
+    "monthlyDiscretionaryExpenses", "monthlyDebtPayment", "householdSize",
+    "dependents", "totalSavings", "emergencyFund", "goalSavings",
+    "useGoalAssets", "goalAssetContribution", "emergencyFundMonths",
+    "goalComfortPercent", "region", "goalType", "goalLabel", "goalPrice",
+    "plannedDownPayment", "monthsUntilGoal", "considerLoan", "loanRatePercent",
+    "preferredLoanTermMonths", "maxComfortableNewEmi",
+}
+
+
+def validate_finance_data_patch(payload: dict) -> tuple[dict, str | None]:
+    """Allow only the signed-in user's known finance fields and safe value types."""
+    if not payload or set(payload) - FINANCE_DATA_FIELDS:
+        return {}, "The saved finance details contain an unsupported field."
+
+    clean = {}
+    for field, value in payload.items():
+        if field == "plannerProfile":
+            if value is not None and (
+                not isinstance(value, dict)
+                or len(value) > 80
+                or set(value) - PLANNER_PROFILE_FIELDS
+                or any(
+                    not isinstance(key, str)
+                    or len(key) > 80
+                    or not isinstance(item, (str, int, float, bool, type(None)))
+                    or isinstance(item, float) and not math.isfinite(item)
+                    or isinstance(item, str) and len(item) > 500
+                    for key, item in value.items()
+                )
+            ):
+                return {}, "The saved planner details are invalid."
+        elif field == "transactions":
+            if not isinstance(value, list) or len(value) > 5_000:
+                return {}, "The income and expense list is invalid or too large."
+            for entry in value:
+                if not isinstance(entry, dict) or set(entry) - TRANSACTION_FIELDS:
+                    return {}, "An income or expense entry has unsupported fields."
+                amount = entry.get("amount")
+                if (
+                    not isinstance(entry.get("id"), str)
+                    or not 1 <= len(entry["id"]) <= 100
+                    or entry.get("type") not in {"income", "expense"}
+                    or not isinstance(entry.get("category"), str)
+                    or not 1 <= len(entry["category"]) <= 80
+                    or not isinstance(entry.get("date"), str)
+                    or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", entry["date"])
+                    or not isinstance(amount, (int, float))
+                    or isinstance(amount, bool)
+                    or not math.isfinite(amount)
+                    or amount <= 0
+                    or amount > 1_000_000_000
+                    or not isinstance(entry.get("note", ""), str)
+                    or len(entry.get("note", "")) > 80
+                ):
+                    return {}, "An income or expense entry is invalid."
+                try:
+                    datetime.strptime(entry["date"], "%Y-%m-%d")
+                except ValueError:
+                    return {}, "An income or expense date is invalid."
+        elif field == "settings":
+            if not isinstance(value, dict) or set(value) - {
+                "theme", "accent", "textSize", "reduceMotion"
+            }:
+                return {}, "The saved display settings are invalid."
+            allowed = {
+                "theme": {"system", "light", "dark"},
+                "accent": {"mint", "ocean", "violet"},
+                "textSize": {"standard", "large"},
+                "reduceMotion": {True, False},
+            }
+            if any(
+                not isinstance(item, bool) if key == "reduceMotion"
+                else not isinstance(item, str) or item not in allowed[key]
+                for key, item in value.items()
+            ):
+                return {}, "The saved display settings are invalid."
+        clean[field] = value
+    return clean, None
+
+
+def get_finance_data(database_file: Path | MongoStore, user_id: int | str) -> dict:
+    if isinstance(database_file, MongoStore):
+        return database_file.get_finance_data(user_id)
+    with open_database(database_file) as connection:
+        row = connection.execute(
+            "SELECT payload FROM user_finance_data WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+    return json.loads(row["payload"]) if row else {}
+
+
+def update_finance_data(database_file: Path | MongoStore, user_id: int | str, changes: dict) -> dict:
+    if isinstance(database_file, MongoStore):
+        return database_file.update_finance_data(user_id, changes)
+    with open_database(database_file) as connection:
+        row = connection.execute(
+            "SELECT payload FROM user_finance_data WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+        saved = json.loads(row["payload"]) if row else {}
+        saved.update(changes)
+        connection.execute(
+            """INSERT INTO user_finance_data (user_id, payload, updated_at)
+               VALUES (?, ?, ?)
+               ON CONFLICT(user_id) DO UPDATE SET payload = excluded.payload,
+                   updated_at = excluded.updated_at""",
+            (user_id, json.dumps(saved, allow_nan=False), int(time.time())),
+        )
+    return saved
 
 
 def hash_session_token(token: str) -> str:
@@ -208,6 +494,17 @@ def account_request_allowed(client_ip: str, route: str, now: float | None = None
         return True
 
 
+def is_database_error(error: Exception) -> bool:
+    """Recognize database outages without making MongoDB mandatory for local mode."""
+    if isinstance(error, sqlite3.Error):
+        return True
+    try:
+        from pymongo.errors import PyMongoError
+    except ImportError:
+        return False
+    return isinstance(error, PyMongoError)
+
+
 class FinanceRequestHandler(BaseHTTPRequestHandler):
     """Serve the static app and its same-origin account API."""
 
@@ -218,7 +515,7 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         return
 
     @property
-    def database_file(self) -> Path:
+    def database_file(self) -> Path | MongoStore:
         return self.server.database_file
 
     def send_security_headers(self):
@@ -247,6 +544,12 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
     def send_error_json(self, status: int, message: str):
         self.send_json(status, {"error": message})
 
+    def send_database_unavailable(self):
+        self.send_error_json(
+            HTTPStatus.SERVICE_UNAVAILABLE,
+            "The database is temporarily unavailable. Please try again shortly.",
+        )
+
     def read_json_body(self):
         content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
         if content_type != "application/json":
@@ -258,7 +561,12 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         except ValueError:
             self.send_error_json(HTTPStatus.BAD_REQUEST, "The request size is invalid.")
             return None
-        if body_size <= 0 or body_size > MAX_REQUEST_BYTES:
+        maximum_size = (
+            MAX_FINANCE_DATA_BYTES
+            if urlsplit(self.path).path == "/api/finance-data"
+            else MAX_REQUEST_BYTES
+        )
+        if body_size <= 0 or body_size > maximum_size:
             self.send_error_json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "The request is too large or empty.")
             return None
 
@@ -297,29 +605,36 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             return None
 
         now = int(time.time())
+        token_hash = hash_session_token(token)
+        if isinstance(self.database_file, MongoStore):
+            return self.database_file.find_session_user(token_hash, now)
         with open_database(self.database_file) as connection:
             row = connection.execute(
                 """SELECT users.id, users.name, users.email, users.region, sessions.expires_at
                    FROM sessions JOIN users ON users.id = sessions.user_id
                    WHERE sessions.token_hash = ?""",
-                (hash_session_token(token),),
+                (token_hash,),
             ).fetchone()
             if row and row["expires_at"] <= now:
                 connection.execute(
                     "DELETE FROM sessions WHERE token_hash = ?",
-                    (hash_session_token(token),),
+                    (token_hash,),
                 )
                 return None
             return dict(row) if row else None
 
-    def make_session(self, user_id: int) -> tuple[str, str]:
+    def make_session(self, user_id: int | str) -> tuple[str, str]:
         token = secrets.token_urlsafe(32)
         expires_at = int(time.time()) + SESSION_LIFETIME_SECONDS
-        with open_database(self.database_file) as connection:
-            connection.execute(
-                "INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)",
-                (hash_session_token(token), user_id, expires_at),
-            )
+        token_hash = hash_session_token(token)
+        if isinstance(self.database_file, MongoStore):
+            self.database_file.create_session(token_hash, user_id, expires_at)
+        else:
+            with open_database(self.database_file) as connection:
+                connection.execute(
+                    "INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)",
+                    (token_hash, user_id, expires_at),
+                )
         flags = ["Path=/", f"Max-Age={SESSION_LIFETIME_SECONDS}", "HttpOnly", "SameSite=Strict"]
         if COOKIE_SECURE:
             flags.append("Secure")
@@ -334,12 +649,38 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = unquote(urlsplit(self.path).path)
         if path == "/api/me":
-            user = self.current_user()
+            try:
+                user = self.current_user()
+            except Exception as error:
+                if is_database_error(error):
+                    self.send_database_unavailable()
+                    return
+                raise
             if not user:
                 self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in.")
                 return
             user.pop("expires_at", None)
             self.send_json(HTTPStatus.OK, {"user": user})
+            return
+        if path == "/api/finance-data":
+            try:
+                user = self.current_user()
+            except Exception as error:
+                if is_database_error(error):
+                    self.send_database_unavailable()
+                    return
+                raise
+            if not user:
+                self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in.")
+                return
+            try:
+                data = get_finance_data(self.database_file, user["id"])
+            except Exception as error:
+                if is_database_error(error):
+                    self.send_database_unavailable()
+                    return
+                raise
+            self.send_json(HTTPStatus.OK, {"data": data})
             return
 
         asset = self.resolve_static_asset(path)
@@ -363,14 +704,20 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         if payload is None:
             return
 
-        if path == "/api/signup":
-            self.handle_signup(payload)
-        elif path == "/api/login":
-            self.handle_login(payload)
-        elif path == "/api/logout":
-            self.handle_logout()
-        else:
-            self.send_error_json(HTTPStatus.NOT_FOUND, "Account action not found.")
+        try:
+            if path == "/api/signup":
+                self.handle_signup(payload)
+            elif path == "/api/login":
+                self.handle_login(payload)
+            elif path == "/api/logout":
+                self.handle_logout()
+            else:
+                self.send_error_json(HTTPStatus.NOT_FOUND, "Account action not found.")
+        except Exception as error:
+            if is_database_error(error):
+                self.send_database_unavailable()
+                return
+            raise
 
     def do_PUT(self):
         if urlsplit(self.path).path != "/api/profile":
@@ -379,7 +726,13 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         if not self.request_is_same_origin():
             self.send_error_json(HTTPStatus.FORBIDDEN, "This profile request was blocked.")
             return
-        user = self.current_user()
+        try:
+            user = self.current_user()
+        except Exception as error:
+            if is_database_error(error):
+                self.send_database_unavailable()
+                return
+            raise
         if not user:
             self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in again.")
             return
@@ -391,8 +744,47 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         if error:
             self.send_error_json(HTTPStatus.BAD_REQUEST, error)
             return
-        updated = update_user_profile(self.database_file, user["id"], name, region)
+        try:
+            updated = update_user_profile(self.database_file, user["id"], name, region)
+        except Exception as error:
+            if is_database_error(error):
+                self.send_database_unavailable()
+                return
+            raise
         self.send_json(HTTPStatus.OK, {"user": updated})
+
+    def do_PATCH(self):
+        if urlsplit(self.path).path != "/api/finance-data":
+            self.send_error_json(HTTPStatus.NOT_FOUND, "Saved finance data was not found.")
+            return
+        if not self.request_is_same_origin():
+            self.send_error_json(HTTPStatus.FORBIDDEN, "This finance data request was blocked.")
+            return
+        try:
+            user = self.current_user()
+        except Exception as error:
+            if is_database_error(error):
+                self.send_database_unavailable()
+                return
+            raise
+        if not user:
+            self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in again.")
+            return
+        payload = self.read_json_body()
+        if payload is None:
+            return
+        changes, error = validate_finance_data_patch(payload)
+        if error:
+            self.send_error_json(HTTPStatus.BAD_REQUEST, error)
+            return
+        try:
+            data = update_finance_data(self.database_file, user["id"], changes)
+        except Exception as error:
+            if is_database_error(error):
+                self.send_database_unavailable()
+                return
+            raise
+        self.send_json(HTTPStatus.OK, {"data": data})
 
     def handle_signup(self, payload: dict):
         fields, error = validate_signup(
@@ -406,7 +798,7 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             return
         try:
             user = create_user(self.database_file, fields)
-        except sqlite3.IntegrityError:
+        except (sqlite3.IntegrityError, DuplicateEmailError):
             self.send_error_json(HTTPStatus.CONFLICT, "An account with that email already exists.")
             return
 
@@ -439,11 +831,15 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
     def handle_logout(self):
         token = self.read_session_token()
         if token:
-            with open_database(self.database_file) as connection:
-                connection.execute(
-                    "DELETE FROM sessions WHERE token_hash = ?",
-                    (hash_session_token(token),),
-                )
+            token_hash = hash_session_token(token)
+            if isinstance(self.database_file, MongoStore):
+                self.database_file.delete_session(token_hash)
+            else:
+                with open_database(self.database_file) as connection:
+                    connection.execute(
+                        "DELETE FROM sessions WHERE token_hash = ?",
+                        (token_hash,),
+                    )
         self.send_json(
             HTTPStatus.OK,
             {"message": "Signed out."},
@@ -518,19 +914,34 @@ class FinanceHTTPServer(ThreadingHTTPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-    def __init__(self, server_address, handler_class, database_file: Path):
+    def __init__(self, server_address, handler_class, database_file: Path | MongoStore):
         super().__init__(server_address, handler_class)
         self.database_file = database_file
 
 
 def main():
-    database_file = DATABASE_FILE
-    initialize_database(database_file)
-    host = os.environ.get("FINANCE_AI_HOST", "127.0.0.1")
-    port = int(os.environ.get("FINANCE_AI_PORT", "8000"))
+    production = os.environ.get("FINANCE_AI_ENV", "development").lower() == "production"
+    mongo_uri = os.environ.get("MONGODB_URI", "").strip()
+    if production and not mongo_uri:
+        raise RuntimeError("Set MONGODB_URI before starting Finance AI in production.")
+    if production and not COOKIE_SECURE:
+        raise RuntimeError("Set FINANCE_AI_COOKIE_SECURE=1 when running the app over HTTPS.")
+
+    if mongo_uri:
+        database_file = MongoStore(
+            mongo_uri,
+            os.environ.get("MONGODB_DATABASE", "finance_ai"),
+        )
+        print(f"Account and finance data are stored in MongoDB database '{os.environ.get('MONGODB_DATABASE', 'finance_ai')}'.")
+    else:
+        database_file = DATABASE_FILE
+        initialize_database(database_file)
+        print(f"Local development data is stored in {database_file}")
+
+    host = os.environ.get("FINANCE_AI_HOST", "0.0.0.0" if production else "127.0.0.1")
+    port = int(os.environ.get("FINANCE_AI_PORT", os.environ.get("PORT", "8000")))
     server = FinanceHTTPServer((host, port), FinanceRequestHandler, database_file)
     print(f"Finance AI is running at http://{host}:{port}")
-    print(f"Account data is stored in {database_file}")
     print("Press Ctrl+C to stop the server.")
     try:
         server.serve_forever()
@@ -538,6 +949,8 @@ def main():
         print("\nStopping Finance AI server.")
     finally:
         server.server_close()
+        if isinstance(database_file, MongoStore):
+            database_file.client.close()
 
 
 if __name__ == "__main__":

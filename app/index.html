@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-theme="dark" data-accent="mint" data-text-size="standard" data-reduce-motion="false">
+<html lang="en" data-theme="light" data-accent="mint" data-text-size="standard" data-reduce-motion="false">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#07100c">
+    <meta name="theme-color" content="#ffffff">
     <meta
       name="description"
       content="A private, India-focused household budget and goal planning calculator."
@@ -11,6 +11,7 @@
     <title>Finance AI | Personal finance planner</title>
     <link rel="stylesheet" href="styles.css">
     <script type="module" src="js/i18n.mjs"></script>
+    <script type="module" src="js/finance_data.mjs"></script>
     <script type="module" src="js/account_ui.mjs"></script>
     <script type="module" src="js/app.mjs"></script>
     <script type="module" src="js/budget_savings_ui.mjs"></script>
@@ -19,6 +20,7 @@
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
+    <div id="save-error-alert" class="save-error-alert" role="alert" aria-live="assertive" hidden></div>
 
     <header class="site-header">
       <div class="header-inner">
@@ -74,7 +76,7 @@
             <button class="button button-primary" type="submit">Create account</button>
           </form>
           <p id="auth-error" class="auth-error" role="alert" aria-live="polite" hidden></p>
-          <p class="auth-privacy">Your password is stored as a one-way hash. Finance details remain in this browser and are separated by account on this device.</p>
+          <p class="auth-privacy">Your password is stored as a one-way hash. Your profile, saved plan, and income and expense entries are linked to your account.</p>
         </div>
       </section>
 
@@ -92,8 +94,8 @@
             <div class="hero-note">
               <span class="privacy-icon" aria-hidden="true">✓</span>
               <div>
-                <strong>Your finance figures stay on this device</strong>
-                <p>Your account profile is stored by the local Python server. Budget figures stay in this browser; there is no bank connection.</p>
+                <strong>Your data stays with your account</strong>
+                <p>Your account, saved plan, and budget entries are stored in the configured database when you sign in. There is no bank connection.</p>
               </div>
             </div>
           </div>
@@ -178,7 +180,7 @@
               <span class="step-number">+</span>
               <div>
                 <h3>Add an entry</h3>
-                <p>Use the date the income or expense happened.</p>
+                <p>Use the date the income or expense happened. Entries save automatically to your account.</p>
               </div>
             </div>
             <form id="transaction-form" class="transaction-form" novalidate>
@@ -205,15 +207,11 @@
                 <span>Short note <span class="optional-mark">Optional</span></span>
                 <input id="transaction-note" name="note" type="text" maxlength="80" placeholder="For example, weekly groceries">
               </label>
-              <label class="save-choice tracker-save-choice">
-                <input id="save-transactions" type="checkbox">
-                <span>Save entries in this browser on this device</span>
-              </label>
               <div class="tracker-actions">
                 <button class="button button-primary" type="submit">Add entry <span aria-hidden="true">+</span></button>
                 <button class="button button-quiet" id="clear-transactions" type="button">Clear history</button>
               </div>
-              <p id="tracker-status" class="save-status" aria-live="polite">Entries stay on this page unless you choose to save them.</p>
+              <p id="tracker-status" class="save-status" aria-live="polite">Entries are saved automatically to your account.</p>
               <div id="transaction-errors" class="error-box tracker-errors" role="alert" tabindex="-1" hidden>
                 <ul id="transaction-error-list"></ul>
               </div>
@@ -266,14 +264,6 @@
               <p>See practical changes based on the spending you recorded this month.</p>
             </div>
           </div>
-
-          <form id="savings-target-form" class="savings-target-form">
-            <label class="field" for="monthly-savings-target">
-              <span>Monthly savings target (optional)</span>
-              <input id="monthly-savings-target" type="number" min="0" max="10000000" step="1" inputmode="numeric" value="0">
-              <small>Enter 0 if you want ideas for general future savings. Suggestions update as you type.</small>
-            </label>
-          </form>
 
           <p id="savings-plan-message" class="result-note savings-plan-message" aria-live="polite">Add income to see a monthly estimate.</p>
           <p id="savings-draft-note" class="savings-draft-note" hidden>Draft estimate based on entries so far. Mark the month complete for a fuller estimate.</p>
@@ -490,10 +480,6 @@
               </div>
             </fieldset>
             <div class="form-actions">
-              <label class="save-choice">
-                <input id="save-on-device" type="checkbox">
-                <span>Save these details in this browser on this device</span>
-              </label>
               <button class="button button-primary" type="submit">Calculate my plan <span aria-hidden="true">→</span></button>
               <button class="button button-quiet" id="clear-saved" type="button">Clear saved details</button>
             </div>
@@ -503,10 +489,10 @@
           <aside class="privacy-card" aria-labelledby="privacy-title">
             <span class="privacy-icon" aria-hidden="true">✓</span>
             <h3 id="privacy-title">Private by design</h3>
-            <p>Your finance figures are calculated in this browser. Your account profile is stored by the local Python server; saved plan figures stay in this browser.</p>
+            <p>Your calculations run in this app. Your profile, planner details, and budget entries are saved automatically to your account in the configured database.</p>
             <ul>
               <li>Passwords are stored as salted hashes</li>
-              <li>Budget figures stay on this device</li>
+              <li>Your data is separated by account</li>
               <li>Clear saved details any time</li>
             </ul>
             <p class="small-print">Avoid entering names, bank account numbers, card details, or passwords.</p>
@@ -711,7 +697,7 @@
             <span>Color mode</span>
             <select id="setting-theme">
               <option value="system">Use device setting</option>
-              <option value="light">Light</option>
+              <option value="light" selected>Light</option>
               <option value="dark">Dark</option>
             </select>
             <small>System mode follows your device’s light or dark preference.</small>

@@ -1,26 +1,28 @@
 # Finance AI planner
 
-A beginner-friendly Indian household budgeting and goal-planning app. The browser interface uses HTML, CSS, and JavaScript modules. The account API and SQLite storage use Python's standard library; no Node backend or third-party Python packages are required. The browser still uses JavaScript for the existing interface.
+A beginner-friendly Indian household budgeting and goal-planning app. The browser interface uses HTML, CSS, and JavaScript modules. Its Python API stores accounts, sessions, planner inputs, and budget entries in MongoDB when `MONGODB_URI` is configured. SQLite remains available for local development without a database connection.
 
 ## Main features
 
 - Create an account with name, email, password, and a required city, district, or region.
-- Sign in and out using a server-side session. Passwords are stored as salted PBKDF2 hashes, never as plain text.
+- Sign in and out using a server-side session. Passwords are stored as salted PBKDF2 hashes, never as plain text; only a hash of each session token is saved.
 - Edit the account name and region in the profile section. The profile region is prefilled in the goal planner and shown with savings guidance.
 - Switch between English and Hindi. The selected language is remembered in this browser.
 - Plan monthly cash flow and an emergency fund with or without a specific purchase goal. In no-goal mode, see a flexible monthly savings amount and simple 6, 12, 24, and 36-month contribution examples.
 - Plan goals such as a car, bike or scooter, laptop, house or flat, plot, farm land, renovation, business equipment, education, medical costs, wedding, travel, phone, appliances, or another purchase.
 - Compare several example EMI periods using the rate from the user’s lender quote. A preferred period is checked against monthly surplus after existing costs and EMIs; if it is not affordable, the planner shows the shortest example period that fits, when one does. The app does not infer a lender rate from income or savings; enter the rate quoted by the lender.
-- Track monthly income and expenses manually. Users can choose to save them in this browser; records are kept separately by account on the same device.
+- Track income and expenses manually. Budget entries, planner drafts, and profile changes save automatically to the signed-in account. With MongoDB configured, they are available across devices. Earlier browser-only plan and transaction saves are imported the first time that account is opened.
 - Get draft monthly savings suggestions as soon as income and expense entries are added; marking the month complete refines the estimate. Missing income and expenses are not assumed to be zero. Existing EMI and sensitive expense categories are protected by default.
 
 ## Project files
 
-- `server.py` serves the app, validates account requests, hashes passwords, creates server-side sessions, and saves account profiles in SQLite.
+- `server.py` serves the app, validates account requests, hashes passwords, creates server-side sessions, and saves account and finance data in MongoDB or local SQLite.
+- `migrate_sqlite_to_mongodb.py` safely copies existing SQLite account records and saved server data. It does not copy active login sessions; users sign in again afterward.
 - `index.html` contains the sign-in, sign-up, profile, planner, and savings coach screens.
 - `styles.css` contains the responsive layout and styles.
 - `js/i18n.mjs` switches the interface between English and Hindi using a local translation dictionary.
 - `js/account_ui.mjs` connects sign-in, sign-up, profile edits, and sign-out to the Python API.
+- `js/finance_data.mjs` sends signed-in users' saved plan and budget entries to the account-scoped API.
 - `js/app.mjs` validates finance inputs and shows cash-flow, emergency-fund, and goal calculations.
 - `js/finance_calculations.mjs` contains the transparent cash-flow, emergency-fund, optional goal, flexible savings, and reducing-balance EMI formulas.
 - `js/budget_ui.mjs` manages the manual monthly tracker.
@@ -36,7 +38,7 @@ The experimental HCES model has a `state_code` input and predicts recorded surve
 
 ## Start the app
 
-Install Python 3.10 or newer. Open PowerShell in the `app` folder and run:
+Install Python 3.10 or newer. For local-only use, open PowerShell in the `app` folder and run:
 
 ```powershell
 python server.py
@@ -49,13 +51,40 @@ $env:FINANCE_AI_PORT = "8001"
 python server.py
 ```
 
-The server listens on `127.0.0.1` by default. Account rows and session hashes are saved to `app/data/finance_ai_accounts.sqlite3`. The server only serves the app's HTML, CSS, and browser modules; it does not expose the database or Python source as static files.
+The server listens on `127.0.0.1` by default. If `MONGODB_URI` is not set in development, account records and sessions are saved to `app/data/finance_ai_accounts.sqlite3`; saved plan and budget data use the same local SQLite database. The server does not expose the database or Python source as static files.
+
+## Use MongoDB
+
+Create a MongoDB deployment and database user, then copy its connection URI from MongoDB Atlas. Install the MongoDB Python driver:
+
+```powershell
+cd app
+python -m pip install -r requirements.txt
+```
+
+For local use, copy `app/.env.example` to `app/.env`, replace the URI placeholders with your Atlas values, and run `python server.py`. The local server reads `app/.env` automatically. The root `.gitignore` excludes `.env`, so never commit or share the filled-in file. You can also set `MONGODB_URI` and `MONGODB_DATABASE` as environment variables; those take precedence over `app/.env`.
+
+For deployment, configure `MONGODB_URI`, `MONGODB_DATABASE`, `FINANCE_AI_ENV=production`, and `FINANCE_AI_COOKIE_SECURE=1` in the hosting provider's private environment settings. Do not use the local `.env` file in a public repository.
+
+The MongoDB database has three collections:
+
+- `users` stores a user's name, email, region, salted password hash, and account creation time. Emails have a unique index.
+- `sessions` stores hashed browser session tokens and expiration times. Expired sessions are removed by MongoDB's TTL index.
+- `finance_data` stores each account's planner inputs, income and expense entries, and update time. The API derives the account ID from the signed-in session, so a request cannot choose another user's account.
+
+The MongoDB connection is checked when the server starts; MongoDB connection or configuration errors stop startup instead of silently switching to SQLite. To move a current local SQLite account database, first set `MONGODB_URI` and `MONGODB_DATABASE`, then run:
+
+```powershell
+python migrate_sqlite_to_mongodb.py
+```
+
+Run this before opening the public site. The migration keeps existing numeric account IDs and password hashes, allowing legacy browser-saved plans and transactions to be matched and imported after the user signs in again. It does not copy session tokens or plaintext passwords. The script stops if it detects conflicting account IDs or emails.
 
 ## Privacy and deployment
 
-Account name, email, region, password hash, and active session hashes are stored in the local SQLite database. Finance form values and optional transaction history remain in browser storage and are separated by account on that device; they do not sync between devices. Sign-out clears the server session. There is no email verification or password-reset flow yet.
+Account name, email, region, password hash, and session records are stored in the configured database. Planner form values, monthly budget entries, and profile changes save automatically with the signed-in account and can be loaded on another device. Appearance choices are saved separately for each account in that browser; language remains in that browser. Sign-out clears the active server session. There is no email verification or password-reset flow yet.
 
-The app is not deployed publicly. The local server binds to this computer only. A public deployment needs HTTPS, a protected database backup, a production server setup, and secure cookies. Set `FINANCE_AI_COOKIE_SECURE=1` behind HTTPS; do not expose the local development server directly to the internet.
+The app is not deployed publicly. For a hosting provider, install `app/requirements.txt` and set `MONGODB_URI`, `MONGODB_DATABASE`, `FINANCE_AI_ENV=production`, and `FINANCE_AI_COOKIE_SECURE=1` in its private environment settings. The app binds to `0.0.0.0` in production and uses the hosting provider's `PORT` when supplied. Serve it over HTTPS, allow the hosting service to reach your MongoDB cluster, and configure database backups and access rules in MongoDB Atlas. Production startup fails if the MongoDB URI is missing or secure cookies are disabled. Do not expose the local development server directly to the internet.
 
 The savings coach uses deterministic calculations and a small keyword-based helper, not a generative AI service. It does not connect to banks or live local price listings. Suggestions use recorded entries only; incomplete months are labeled as drafts. Automatic reductions are limited to modest examples for Personal, Other, Transport, Utilities, and Food and groceries. Rent, Health, Education, Family support, and Loan EMI are left unchanged unless the user asks to explore them.
 
@@ -72,4 +101,4 @@ node --test tests/budget_tracker.test.mjs
 node --test tests/budget_recommendations.test.mjs
 ```
 
-The account backend uses Python's standard library. JavaScript tests use Node's built-in test runner and no third-party packages.
+The Python API and storage tests use Python's standard library and a temporary SQLite database. MongoDB connectivity requires the `pymongo[srv]` dependency and a reachable database URI; production deployment must use MongoDB. JavaScript tests use Node's built-in test runner.

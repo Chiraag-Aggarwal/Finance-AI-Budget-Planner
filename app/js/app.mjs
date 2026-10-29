@@ -1,13 +1,13 @@
 import { calculatePlan, validateProfile } from "./finance_calculations.mjs";
+import { loadFinanceData, saveFinanceDataField } from "./finance_data.mjs";
 
 
-// Keep saved information in this browser only. The version helps us update it later.
+// This key is used only to import plans saved by an earlier browser-only version.
 const SAVED_PROFILE_KEY_PREFIX = "finance-ai-planner-profile-v1";
 
 const form = document.querySelector("#finance-form");
 const errorBox = document.querySelector("#form-errors");
 const errorList = document.querySelector("#form-error-list");
-const saveCheckbox = document.querySelector("#save-on-device");
 const saveStatus = document.querySelector("#save-status");
 const clearButton = document.querySelector("#clear-saved");
 const results = document.querySelector("#plan-results");
@@ -23,6 +23,8 @@ const goalTypeSelect = form.elements.namedItem("goalType");
 let currentUserId = null;
 let activeProfile = null;
 let activePlan = null;
+let plannerSaveTimer = null;
+let lastSavedPlannerSignature = null;
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -768,19 +770,35 @@ function showPlan(profile, plan) {
 }
 
 
-// Save only when the user ticks the local-save box.
-function saveProfileOnThisDevice(profile) {
-  if (!saveCheckbox.checked) {
-    saveStatus.textContent = "Not saved. Your figures are only being used for this page.";
-    return;
-  }
-
+// Save the planner details to this signed-in user's account automatically.
+async function saveProfileToAccount(profile) {
+  window.clearTimeout(plannerSaveTimer);
+  const savedProfile = JSON.parse(JSON.stringify(profile));
   try {
-    window.localStorage.setItem(getSavedProfileKey(), JSON.stringify(profile));
-    saveStatus.textContent = "Saved in this browser on this device.";
-  } catch {
-    saveStatus.textContent = "The browser could not save these details. Your calculation is still shown.";
+    await saveFinanceDataField("plannerProfile", savedProfile);
+    lastSavedPlannerSignature = JSON.stringify(savedProfile);
+  } catch (error) {
+    console.error("Finance AI could not save the planner details.", error);
   }
+}
+
+// Save incomplete planner drafts in the background as the user edits.
+function schedulePlannerAutoSave() {
+  window.clearTimeout(plannerSaveTimer);
+  if (currentUserId === null) return;
+
+  plannerSaveTimer = window.setTimeout(async () => {
+    const profile = JSON.parse(JSON.stringify(readProfileFromForm()));
+    const signature = JSON.stringify(profile);
+    if (signature === lastSavedPlannerSignature) return;
+
+    try {
+      await saveFinanceDataField("plannerProfile", profile);
+      lastSavedPlannerSignature = signature;
+    } catch (error) {
+      console.error("Finance AI planner auto-save failed.", error);
+    }
+  }, 250);
 }
 
 
@@ -788,11 +806,11 @@ function saveProfileOnThisDevice(profile) {
 function fillForm(profile) {
   for (const [fieldName, value] of Object.entries(profile)) {
     const field = form.elements.namedItem(fieldName);
-    if (!field || value === null || value === undefined) continue;
+    if (!field || value === undefined) continue;
     if (field.type === "checkbox") {
       field.checked = Boolean(value);
     } else {
-      field.value = String(value);
+      field.value = value === null ? "" : String(value);
     }
   }
 
@@ -800,47 +818,63 @@ function fillForm(profile) {
 }
 
 
-// Load a saved profile only from this browser; invalid saved data is ignored.
-function loadSavedProfile() {
+// Load the account copy first. Older browser-only plans are imported once.
+async function loadSavedProfile() {
   if (currentUserId === null) {
     return;
   }
 
   try {
-    const savedText = window.localStorage.getItem(getSavedProfileKey());
-    if (!savedText) {
+    const accountData = await loadFinanceData();
+    let savedProfile = accountData.plannerProfile;
+    let isLegacyBrowserCopy = !Object.hasOwn(accountData, "plannerProfile");
+
+    if (isLegacyBrowserCopy) {
+      const savedText = window.localStorage.getItem(getSavedProfileKey());
+      if (!savedText) return;
+      savedProfile = JSON.parse(savedText);
+    }
+    if (!savedProfile || typeof savedProfile !== "object") {
       return;
     }
 
-    const savedProfile = JSON.parse(savedText);
     // Older saved plans may contain manual term or EMI overrides that this simpler flow no longer uses.
     savedProfile.preferredLoanTermMonths = null;
     savedProfile.maxComfortableNewEmi = null;
     if (savedProfile.includeGoal === undefined) savedProfile.includeGoal = true;
     if (typeof savedProfile.region !== "string" && savedProfile.includeGoal) {
       fillForm(savedProfile);
-      saveCheckbox.checked = true;
-      saveStatus.textContent = "Your saved plan is from an older version. Add your city or region, then calculate again.";
+      lastSavedPlannerSignature = JSON.stringify(savedProfile);
       return;
     }
 
     const validation = validateProfile(savedProfile);
+    fillForm(savedProfile);
+    lastSavedPlannerSignature = JSON.stringify(savedProfile);
 
+    // Restore a partial draft too; only calculate results when it is complete.
     if (!validation.isValid) {
       return;
     }
 
-    fillForm(savedProfile);
-    saveCheckbox.checked = true;
     showPlan(savedProfile, calculatePlan(savedProfile));
-    saveStatus.textContent = "Loaded your saved details from this browser.";
+    if (isLegacyBrowserCopy) {
+      await saveFinanceDataField("plannerProfile", savedProfile);
+      window.localStorage.removeItem(getSavedProfileKey());
+      saveStatus.textContent = "Your previous plan has been moved to your account.";
+    } else {
+      saveStatus.textContent = "Loaded your saved plan from your account.";
+    }
   } catch {
-    // Ignore storage problems and let the user enter a new plan.
+    saveStatus.textContent = "Your saved plan could not be synced. You can still enter and calculate a plan.";
   }
 }
 
 
 // Calculate when the form is submitted.
+form.addEventListener("input", schedulePlannerAutoSave);
+form.addEventListener("change", schedulePlannerAutoSave);
+
 form.addEventListener("submit", (event) => {
   event.preventDefault();
 
@@ -854,23 +888,26 @@ form.addEventListener("submit", (event) => {
 
   const plan = calculatePlan(profile);
   showPlan(profile, plan);
-  saveProfileOnThisDevice(profile);
+  saveProfileToAccount(profile);
   document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 
 // Remove saved numbers and reset the page when the user asks to clear them.
 clearButton.addEventListener("click", () => {
-  try {
-    window.localStorage.removeItem(getSavedProfileKey());
-    saveStatus.textContent = "Saved details cleared from this browser.";
-  } catch {
-    saveStatus.textContent = "The browser could not access its saved details.";
-  }
+  window.clearTimeout(plannerSaveTimer);
+  lastSavedPlannerSignature = null;
+  saveFinanceDataField("plannerProfile", null)
+    .then(() => {
+      window.localStorage.removeItem(getSavedProfileKey());
+      saveStatus.textContent = "Your saved plan was removed from your account.";
+    })
+    .catch(() => {
+      saveStatus.textContent = "Could not remove the saved plan. Check your connection and try again.";
+    });
 
   form.reset();
   updateGoalFields();
-  saveCheckbox.checked = false;
   activeProfile = null;
   activePlan = null;
   showValidationErrors([]);
@@ -887,10 +924,12 @@ clearButton.addEventListener("click", () => {
 
 
 // Load local finance details only after the account server confirms who signed in.
-window.addEventListener("finance-user-ready", (event) => {
+window.addEventListener("finance-user-ready", async (event) => {
+  window.clearTimeout(plannerSaveTimer);
+  lastSavedPlannerSignature = null;
   currentUserId = String(event.detail.id);
   document.querySelector('#finance-form [name="region"]').value = event.detail.region;
-  loadSavedProfile();
+  await loadSavedProfile();
   document.querySelector('#finance-form [name="region"]').value = event.detail.region;
 });
 
@@ -908,6 +947,8 @@ window.addEventListener("finance-user-profile", (event) => {
 
 
 window.addEventListener("finance-user-logout", () => {
+  window.clearTimeout(plannerSaveTimer);
+  lastSavedPlannerSignature = null;
   currentUserId = null;
   activeProfile = null;
   activePlan = null;

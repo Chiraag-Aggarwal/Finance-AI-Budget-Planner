@@ -1,7 +1,8 @@
 import { summarizeMonth, TRANSACTION_CATEGORIES, validateTransaction } from "./budget_tracker.mjs";
+import { loadFinanceData, saveFinanceDataField } from "./finance_data.mjs";
 
 
-// This key is used only in this browser. It is not sent to a server.
+// This key is used only to import entries saved by an older browser-only version.
 const TRANSACTIONS_KEY_PREFIX = "finance-ai-monthly-entries-v1";
 
 const form = document.querySelector("#transaction-form");
@@ -9,7 +10,6 @@ const typeInput = document.querySelector("#transaction-type");
 const categoryInput = document.querySelector("#transaction-category");
 const dateInput = document.querySelector("#transaction-date");
 const monthInput = document.querySelector("#budget-month");
-const saveInput = document.querySelector("#save-transactions");
 const completeMonthInput = document.querySelector("#budget-complete-month");
 const statusText = document.querySelector("#tracker-status");
 const errorBox = document.querySelector("#transaction-errors");
@@ -91,24 +91,16 @@ function showTransactionErrors(errors) {
 }
 
 
-// Save entries only when the user has selected the save option.
-function saveTransactions() {
-  if (currentUserId === null) {
-    return;
-  }
-  if (!saveInput.checked) {
-    statusText.textContent = "Entries are only in this page and will clear when it closes.";
-    return;
-  }
+// Save every budget change to the signed-in user's account automatically.
+async function saveTransactions() {
+  if (currentUserId === null) return;
 
   try {
-    window.localStorage.setItem(getTransactionsKey(), JSON.stringify(transactions));
-    statusText.textContent = "Entries saved in this browser on this device.";
-  } catch {
-    statusText.textContent = "The browser could not save entries. They remain here until the page closes.";
+    await saveFinanceDataField("transactions", transactions);
+  } catch (error) {
+    console.error("Finance AI transaction save failed.", error);
   }
 }
-
 
 // Show totals, category bars, and the entry list for the selected month.
 function updateTracker() {
@@ -216,27 +208,37 @@ function showTransactionList(selectedMonth, entryCount) {
 }
 
 
-// Read stored entries, but ignore any damaged or outdated rows.
-function loadTransactions() {
+// Read account entries first, then import old browser-only entries if needed.
+async function loadTransactions() {
   if (currentUserId === null) {
     return;
   }
   try {
-    const savedText = window.localStorage.getItem(getTransactionsKey());
-    if (!savedText) {
+    const accountData = await loadFinanceData();
+    if (Object.hasOwn(accountData, "transactions")) {
+      const savedEntries = accountData.transactions;
+      transactions = Array.isArray(savedEntries)
+        ? savedEntries.filter((entry) => validateTransaction(entry).isValid)
+        : [];
+      statusText.textContent = "Loaded your saved income and expenses from your account.";
+      updateTracker();
       return;
     }
 
+    const savedText = window.localStorage.getItem(getTransactionsKey());
+    if (!savedText) return;
     const savedEntries = JSON.parse(savedText);
     if (!Array.isArray(savedEntries)) {
       return;
     }
 
     transactions = savedEntries.filter((entry) => validateTransaction(entry).isValid);
-    saveInput.checked = true;
-    statusText.textContent = "Loaded saved entries from this browser.";
+    await saveFinanceDataField("transactions", transactions);
+    window.localStorage.removeItem(getTransactionsKey());
+    statusText.textContent = "Your previous income and expense entries were moved to your account.";
+    updateTracker();
   } catch {
-    statusText.textContent = "Saved entries could not be loaded from this browser.";
+    statusText.textContent = "Your saved entries could not be synced. You can still add entries.";
   }
 }
 
@@ -283,22 +285,7 @@ monthInput.addEventListener("change", () => {
 });
 completeMonthInput.addEventListener("change", updateTracker);
 
-// Save existing entries when the user opts in. Opting out removes the saved copy.
-saveInput.addEventListener("change", () => {
-  if (saveInput.checked) {
-    saveTransactions();
-    return;
-  }
 
-  try {
-    if (currentUserId !== null) {
-      window.localStorage.removeItem(getTransactionsKey());
-    }
-    statusText.textContent = "Saved entries removed. Current entries will clear when this page closes.";
-  } catch {
-    statusText.textContent = "The browser could not remove its saved entries.";
-  }
-});
 
 // Remove one selected entry from the list.
 transactionRows.addEventListener("click", (event) => {
@@ -313,41 +300,31 @@ transactionRows.addEventListener("click", (event) => {
   saveTransactions();
 });
 
-// Clear all entries after the user confirms the action.
+// Clear all account entries after the user confirms the action.
 document.querySelector("#clear-transactions").addEventListener("click", () => {
-  if (!window.confirm("Clear all income and expense entries saved in this browser?")) {
+  if (!window.confirm("Clear all income and expense entries saved to your account?")) {
     return;
   }
 
   transactions = [];
   completeMonthInput.checked = false;
-  try {
-    if (currentUserId !== null) {
-      window.localStorage.removeItem(getTransactionsKey());
-    }
-    statusText.textContent = "All transaction entries were cleared from this browser.";
-  } catch {
-    statusText.textContent = "Entries were cleared from this page, but browser storage could not be accessed.";
-  }
-
-  saveInput.checked = false;
   updateTracker();
+  saveTransactions();
 });
 
 
-// Start with today's date and month, then load any entries the user saved earlier.
+// Start with today's date and month, then load account entries after sign-in.
 dateInput.value = getToday();
 monthInput.value = getCurrentMonth();
 updateCategoryChoices();
 updateTracker();
 
 
-// Keep each signed-in user's budget history separate in this browser.
-window.addEventListener("finance-user-ready", (event) => {
+// Keep each signed-in user's budget history in their own account.
+window.addEventListener("finance-user-ready", async (event) => {
   currentUserId = String(event.detail.id);
   transactions = [];
-  saveInput.checked = false;
-  loadTransactions();
+  await loadTransactions();
   updateTracker();
 });
 
@@ -355,7 +332,6 @@ window.addEventListener("finance-user-ready", (event) => {
 window.addEventListener("finance-user-logout", () => {
   currentUserId = null;
   transactions = [];
-  saveInput.checked = false;
   completeMonthInput.checked = false;
   updateTracker();
 });

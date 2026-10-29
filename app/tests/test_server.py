@@ -12,22 +12,30 @@ from functools import partial
 from pathlib import Path
 
 from server import (
+    _ACCOUNT_ATTEMPTS,
+    _RATE_LIMIT_LOCK,
     FinanceHTTPServer,
     FinanceRequestHandler,
+    MongoStore,
     account_request_allowed,
     create_user,
+    get_finance_data,
     get_user_by_email,
     hash_password,
     hash_session_token,
     initialize_database,
     password_matches,
     update_user_profile,
+    validate_finance_data_patch,
     validate_signup,
 )
 
 
 class AccountServerTests(unittest.TestCase):
     def setUp(self):
+        # Each test starts with an independent in-memory login-rate window.
+        with _RATE_LIMIT_LOCK:
+            _ACCOUNT_ATTEMPTS.clear()
         self.temp_folder = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
         self.database_file = Path(self.temp_folder.name) / "accounts.sqlite3"
         initialize_database(self.database_file)
@@ -124,6 +132,103 @@ class AccountServerTests(unittest.TestCase):
         user = create_user(self.database_file, self.valid_fields())
         with self.assertRaises(ValueError):
             update_user_profile(self.database_file, user["id"], "Asha Rao", " ")
+
+    def test_finance_data_validation_rejects_unknown_or_invalid_entries(self):
+        valid_entry = {
+            "id": "entry-1",
+            "type": "expense",
+            "category": "Food and groceries",
+            "date": "2026-10-29",
+            "amount": 250.5,
+            "note": "Vegetables",
+        }
+        clean, error = validate_finance_data_patch({
+            "plannerProfile": {"monthlyTakeHomeIncome": 75_000, "includeGoal": False},
+            "transactions": [valid_entry],
+        })
+        self.assertIsNone(error)
+        self.assertEqual(clean["transactions"], [valid_entry])
+
+        _, error = validate_finance_data_patch({"userId": 12})
+        self.assertIsNotNone(error)
+        _, error = validate_finance_data_patch({"transactions": [{**valid_entry, "amount": float("nan")}]})
+        self.assertIsNotNone(error)
+        _, error = validate_finance_data_patch({"transactions": [{**valid_entry, "date": "2026-02-31"}]})
+        self.assertIsNotNone(error)
+
+    def test_mongo_finance_store_returns_only_user_data_fields(self):
+        class FakeCollection:
+            def __init__(self):
+                self.documents = {}
+
+            def find_one(self, query):
+                document = self.documents.get(query["_id"])
+                return dict(document) if document else None
+
+            def update_one(self, query, update, upsert=False):
+                document = self.documents.setdefault(query["_id"], {"_id": query["_id"]})
+                for key, value in update.get("$setOnInsert", {}).items():
+                    document.setdefault(key, value)
+                document.update(update.get("$set", {}))
+
+        store = object.__new__(MongoStore)
+        store.finance_data = FakeCollection()
+        saved = store.update_finance_data("account-1", {"transactions": []})
+        self.assertEqual(saved, {"transactions": []})
+        self.assertEqual(store.get_finance_data("account-1"), {"transactions": []})
+
+    def test_finance_data_api_saves_per_signed_in_user(self):
+        self.assertEqual(self.request("/api/finance-data")[0], 401)
+        self.assertEqual(self.request("/api/signup", "POST", {
+            "name": "Asha Rao",
+            "email": "asha-finance@example.com",
+            "region": "Pune, Maharashtra",
+            "password": "long-enough-example-123",
+        })[0], 201)
+
+        data = {
+            "plannerProfile": {"monthlyTakeHomeIncome": 75_000, "includeGoal": False},
+            "transactions": [{
+                "id": "entry-1",
+                "type": "expense",
+                "category": "Food and groceries",
+                "date": "2026-10-29",
+                "amount": 250.5,
+                "note": "Vegetables",
+            }],
+        }
+        status, saved = self.request("/api/finance-data", "PATCH", data)
+        self.assertEqual(status, 200)
+        self.assertEqual(saved["data"], data)
+        self.assertEqual(self.request("/api/finance-data")[1]["data"], data)
+
+        self.assertEqual(self.request("/api/logout", "POST", {})[0], 200)
+        other_user = create_user(self.database_file, self.valid_fields(
+            name="Ravi Kumar",
+            email="ravi-finance@example.com",
+        ))
+        status, _ = self.request("/api/login", "POST", {
+            "email": "ravi-finance@example.com",
+            "password": "long-enough-example-123",
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(self.request("/api/finance-data")[1]["data"], {})
+        self.assertEqual(get_finance_data(self.database_file, other_user["id"]), {})
+
+    def test_finance_data_api_rejects_cross_origin_updates(self):
+        self.assertEqual(self.request("/api/signup", "POST", {
+            "name": "Asha Rao",
+            "email": "asha-origin@example.com",
+            "region": "Pune, Maharashtra",
+            "password": "long-enough-example-123",
+        })[0], 201)
+        status, _ = self.request(
+            "/api/finance-data",
+            "PATCH",
+            {"transactions": []},
+            origin="http://attacker.example",
+        )
+        self.assertEqual(status, 403)
 
     def test_signup_profile_session_logout_and_login_end_to_end(self):
         status, created = self.request("/api/signup", "POST", {

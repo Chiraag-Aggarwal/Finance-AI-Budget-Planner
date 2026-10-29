@@ -16,7 +16,7 @@ The planner uses transparent arithmetic for budget and goal guidance. It does no
 
 ## Project layout
 
-- `app/` — HTML/CSS/JavaScript interface and Python standard-library account server.
+- `app/` — HTML/CSS/JavaScript interface and Python account server, with MongoDB for deployed accounts and finance data.
 - `ml/` — experimental, separate HCES food-consumption training script and saved model/evaluation artifacts.
 - `data/goal_planning_sources.md` — data choices and limitations for future goal-planning models.
 - `prepare_hces_model_data.py` — creates a model-ready copy from a locally supplied CSV.
@@ -37,7 +37,7 @@ $env:FINANCE_AI_PORT = "8001"
 python server.py
 ```
 
-Account profiles are stored in a local SQLite database. Budget figures are saved in the browser only when the user opts in. The database and local user data are excluded from this repository.
+For local development, accounts are stored in a private SQLite file. Set `MONGODB_URI` to use MongoDB for accounts, saved plans, and income and expense entries. Signed-in users' planner drafts, budget entries, and profile changes save automatically. Deployment must set `FINANCE_AI_ENV=production` and `FINANCE_AI_COOKIE_SECURE=1`; the server refuses to start in production without MongoDB. See [the app setup and deployment guide](app/README.md). The database credentials and local user data are excluded from this repository.
 
 ## Run the checks
 

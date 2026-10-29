@@ -10,8 +10,20 @@ const profileMenu = document.querySelector("#profile-menu");
 const profileAvatar = document.querySelector("#profile-avatar");
 const signOutButton = document.querySelector("#sign-out-button");
 const signedInName = document.querySelector("#signed-in-name");
+const saveErrorAlert = document.querySelector("#save-error-alert");
 
 let signedInUser = null;
+let saveErrorTimer = null;
+
+window.addEventListener("finance-save-error", (event) => {
+  if (!saveErrorAlert) return;
+  saveErrorAlert.textContent = event.detail?.message || "A change could not be saved.";
+  saveErrorAlert.hidden = false;
+  window.clearTimeout(saveErrorTimer);
+  saveErrorTimer = window.setTimeout(() => {
+    saveErrorAlert.hidden = true;
+  }, 10000);
+});
 
 
 function setAuthError(message) {
@@ -209,6 +221,13 @@ signOutButton.addEventListener("click", async () => {
 
 // Restore a valid server-side session when the page opens again.
 async function restoreSession() {
+  // Let the planner and budget modules register their account-ready listeners first.
+  if (document.readyState !== "complete") {
+    await new Promise((resolve) => {
+      document.addEventListener("DOMContentLoaded", resolve, { once: true });
+    });
+  }
+
   try {
     const result = await sendAccountRequest("/api/me", "GET");
     showSignedIn(result.user);

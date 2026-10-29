@@ -6,7 +6,7 @@
   --green-light: #e5f6ef;
   --action: #137565;
   --action-text: #ffffff;
-  --paper: #f4f7f5;
+  --paper: #ffffff;
   --white: #ffffff;
   --line: #dce6df;
   --focus-ring: #789582;
@@ -679,28 +679,6 @@ h2 {
   margin-top: 1rem;
 }
 
-.savings-target-form {
-  display: block;
-  margin: 1rem 0;
-}
-
-.savings-target-form .field {
-  max-width: 520px;
-}
-
-.savings-target-form input {
-  min-height: 42px;
-  padding: 0.5rem 0.65rem;
-  color: var(--ink);
-  background: var(--white);
-  border: 1px solid #cbd6ce;
-  border-radius: 0.48rem;
-}
-
-.savings-target-form .button {
-  min-height: 42px;
-}
-
 .savings-plan-message {
   margin: 0.9rem 0;
 }
@@ -781,15 +759,10 @@ h2 {
 }
 
 .field-full,
-.tracker-save-choice,
 .tracker-actions,
 .tracker-status,
 .tracker-errors {
   grid-column: 1 / -1;
-}
-
-.tracker-save-choice {
-  margin: 0.1rem 0;
 }
 
 .tracker-actions {
@@ -1123,10 +1096,29 @@ h2 {
 }
 
 .save-status {
+  display: none;
   min-height: 1.2em;
   margin: 0;
   color: var(--muted);
   font-size: 0.8rem;
+}
+
+.save-error-alert {
+  position: fixed;
+  z-index: 1000;
+  top: 1rem;
+  right: 1rem;
+  max-width: min(28rem, calc(100vw - 2rem));
+  padding: 0.9rem 1rem;
+  color: #772f2a;
+  background: #fff1ef;
+  border: 1px solid #e4b7b1;
+  border-radius: 0.7rem;
+  box-shadow: 0 0.6rem 1.8rem rgb(22 45 34 / 14%);
+}
+
+.save-error-alert[hidden] {
+  display: none;
 }
 
 .error-box {
@@ -1649,8 +1641,7 @@ h2 {
 
 :root[data-theme="dark"] .field input,
 :root[data-theme="dark"] .field select,
-:root[data-theme="dark"] .advice-chat-form input,
-:root[data-theme="dark"] .savings-target-form input {
+:root[data-theme="dark"] .advice-chat-form input {
   color: var(--ink);
   border-color: #465467;
 }
@@ -1989,8 +1980,6 @@ h2 {
 .profile-edit-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; }
 .profile-page-header .header-actions { width: auto; }
 
-.savings-target-form .field { max-width: 480px; }
-.savings-target-form input { width: 100%; }
 .savings-draft-note { margin: -0.35rem 0 1rem; color: var(--muted); font-size: 0.78rem; }
 .budget-coach-summary { margin-top: 1rem; }
 .savings-recommendations {
@@ -2059,8 +2048,7 @@ h2 {
 :root[data-theme="dark"] .field input,
 :root[data-theme="dark"] .field select,
 :root[data-theme="dark"] .month-picker input,
-:root[data-theme="dark"] .advice-chat-form input,
-:root[data-theme="dark"] .savings-target-form input {
+:root[data-theme="dark"] .advice-chat-form input {
   color: var(--ink);
   background: #0b130e;
   border-color: #34483a;

@@ -1,7 +1,8 @@
 // Keep appearance preferences in this browser only.
-const STORAGE_KEY = "finance-ai-display-settings-v1";
+const STORAGE_KEY_PREFIX = "finance-ai-display-settings-v1";
+let currentUserId = null;
 const defaults = Object.freeze({
-  theme: "dark",
+  theme: "light",
   accent: "mint",
   textSize: "standard",
   reduceMotion: false,
@@ -21,9 +22,20 @@ const saveStatus = document.querySelector("#settings-save-status");
 const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
 const preferences = { ...defaults };
 
+function getStorageKey() {
+  return `${STORAGE_KEY_PREFIX}-${currentUserId || "guest"}`;
+}
+
+function loadPreferencesForUser(userId) {
+  currentUserId = userId ? String(userId) : null;
+  Object.assign(preferences, defaults);
+  readSavedPreferences();
+  applyPreferences();
+}
+
 function readSavedPreferences() {
   try {
-    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "{}");
+    const saved = JSON.parse(window.localStorage.getItem(getStorageKey()) || "{}");
     if (allowedThemes.has(saved.theme)) preferences.theme = saved.theme;
     if (allowedAccents.has(saved.accent)) preferences.accent = saved.accent;
     if (allowedTextSizes.has(saved.textSize)) preferences.textSize = saved.textSize;
@@ -57,12 +69,13 @@ function savePreferences() {
   applyPreferences();
 
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+    window.localStorage.setItem(getStorageKey(), JSON.stringify(preferences));
     saveStatus.textContent = "Appearance saved in this browser.";
   } catch {
     saveStatus.textContent = "Appearance changed for this visit, but could not be saved.";
   }
 }
+
 
 function openSettings() {
   if (!dialog) return;
@@ -98,5 +111,11 @@ systemTheme.addEventListener("change", () => {
   if (preferences.theme === "system") applyPreferences();
 });
 
-readSavedPreferences();
+// Start in light mode until the signed-in user's own settings are loaded.
 applyPreferences();
+window.addEventListener("finance-user-ready", (event) => {
+  loadPreferencesForUser(event.detail.id);
+});
+window.addEventListener("finance-user-logout", () => {
+  loadPreferencesForUser(null);
+});
