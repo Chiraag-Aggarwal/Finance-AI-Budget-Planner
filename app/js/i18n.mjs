@@ -29,6 +29,7 @@ const HINDI_TEXT = {
   "Enter a monthly target between ₹0 and ₹1 crore.": "₹0 से ₹1 करोड़ के बीच मासिक लक्ष्य दर्ज करें।",
   "Add expenses to see where spending may be adjusted. Missing expenses are not assumed to be zero.": "खर्च कहाँ घट सकते हैं, यह देखने के लिए खर्च दर्ज करें। छूटे खर्चों को शून्य नहीं माना जाता।",
   "Your current balance already meets this monthly target. No cuts are suggested.": "आपकी मौजूदा शेष राशि इस मासिक लक्ष्य के लिए पर्याप्त है। खर्च घटाने का सुझाव नहीं है।",
+  "Your balance meets this target, but no adjustable spending was found in the selected month's entries.": "आपकी शेष राशि इस लक्ष्य के लिए पर्याप्त है, लेकिन चुने महीने की प्रविष्टियों में बदलाव योग्य खर्च नहीं मिला।",
   "Add flexible expenses to see possible changes.": "संभावित बदलाव देखने के लिए लचीले खर्च दर्ज करें।",
   "Adjust suggestions": "सुझाव बदलें",
   "Tell the coach what cannot change": "बताएँ कि कौन-सा खर्च नहीं बदल सकता",
@@ -643,6 +644,8 @@ function localizedValue(english, requestedLanguage) {
   if (adjustedGoalPartial) return `यहाँ उपलब्ध छोटी कटौतियाँ हर महीने ${adjustedGoalPartial[1]} हैं। इनसे मदद मिलेगी, फिर भी लक्ष्य योगदान में ${adjustedGoalPartial[2]} की मासिक कमी रहेगी। आप लक्ष्य तारीख, लागत या बचत का हिस्सा भी बदल सकते हैं।`;
   const plannedContributionTime = cleanText.match(/^At your selected monthly saving amount, reaching the planned contribution could take about (\d+) months\.$/);
   if (plannedContributionTime) return `आपकी चुनी मासिक बचत राशि से तय योगदान तक पहुँचने में लगभग ${plannedContributionTime[1]} महीने लग सकते हैं।`;
+  const optionalSavings = cleanText.match(/^Your monthly balance already meets this target\. Optional changes below could free (.+) more each month\.$/);
+  if (optionalSavings) return `आपकी मासिक शेष राशि इस लक्ष्य के लिए पर्याप्त है। नीचे दिए वैकल्पिक बदलाव हर महीने ${optionalSavings[1]} की अतिरिक्त बचत कर सकते हैं।`;
   const cashReferenceRate = cleanText.match(/^Cash-only reference: (.+)\. Enter a lender's quoted annual interest rate to estimate the total time including loan repayment\.$/);
   if (cashReferenceRate) return `केवल नकद बचत का अनुमान: ${localizedValue(cashReferenceRate[1], "hi")}। ऋण भुगतान सहित कुल समय निकालने के लिए ऋणदाता द्वारा बताई सालाना ब्याज दर दर्ज करें।`;
   const cashReferenceEmi = cleanText.match(/^Cash-only reference: (.+)\. No example loan term fits your monthly EMI comfort limit, so the time including a loan cannot be estimated\.$/);

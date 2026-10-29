@@ -191,8 +191,10 @@ export function buildSavingsBudget(budgetSummary, monthlySavingsTarget = 0, cons
     .filter((category) => adjustable.has(category) && !locked.has(category))
     .filter((category) => category !== EMI_CATEGORY && Number.isFinite(spending.get(category)) && spending.get(category) > 0);
 
-  // Without a target, offer small possible cuts. With a target, calculate only the gap.
-  const requiredCut = monthlySavingsTarget === 0
+  const targetAlreadyMet = monthlySavingsTarget > 0 && currentBalance >= monthlySavingsTarget;
+
+  // If the target is already met, show modest optional ways to save even more.
+  const requiredCut = monthlySavingsTarget === 0 || targetAlreadyMet
     ? Number.POSITIVE_INFINITY
     : Math.max(monthlySavingsTarget - currentBalance, 0);
   let remainingCut = requiredCut;
@@ -225,6 +227,11 @@ export function buildSavingsBudget(budgetSummary, monthlySavingsTarget = 0, cons
   if (currentBalance < 0 && afterBalance < 0) {
     status = "monthly-shortfall";
     message = `The recorded entries show spending ${formatRupees(Math.abs(currentBalance))} above income. The possible changes reduce that by ${formatRupees(totalCut)}, leaving a recorded shortfall of ${formatRupees(Math.abs(afterBalance))}.`;
+  } else if (monthlySavingsTarget > 0 && targetAlreadyMet) {
+    status = "already-on-track";
+    message = totalCut > 0
+      ? `Your monthly balance already meets this target. Optional changes below could free ${formatRupees(totalCut)} more each month.`
+      : "Your balance meets this target, but no adjustable spending was found in the selected month's entries.";
   } else if (monthlySavingsTarget > 0 && targetGap === 0) {
     status = totalCut > 0 ? "target-reached" : "already-on-track";
     message = totalCut > 0

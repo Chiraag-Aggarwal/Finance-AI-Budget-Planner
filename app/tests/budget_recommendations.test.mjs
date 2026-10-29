@@ -184,13 +184,15 @@ test("keeps the user's saved region in the savings output context", () => {
 });
 
 
-test("does not suggest cuts when the recorded balance already meets a savings target", () => {
+test("shows optional places to save more when the recorded balance already meets a target", () => {
   const result = buildSavingsBudget(makeSavingsSummary(), 40000);
 
   assert.equal(result.status, "already-on-track");
-  assert.equal(result.totalCut, 0);
+  assert.equal(result.totalCut, 5000);
+  assert.equal(result.availableToSave, 50000);
   assert.equal(result.targetGap, 0);
-  assert.deepEqual(result.cuts, []);
+  assert.deepEqual(result.cuts.map(({ category }) => category), ["Other", "Personal"]);
+  assert.match(result.message, /Optional changes below could free/);
 });
 
 

@@ -56,7 +56,9 @@ function savingsMessage(plan, target) {
   }
 
   if (plan.status === "already-on-track") {
-    return "Your current balance already meets this monthly target. No cuts are suggested.";
+    return plan.totalCut > 0
+      ? `Your monthly balance already meets this target. Optional changes below could free ${formatRupees(plan.totalCut)} more each month.`
+      : "Your balance meets this target, but no adjustable spending was found in the selected month's entries.";
   }
   if (plan.status === "target-reached") {
     return `These changes could free ${formatRupees(plan.totalCut)} each month and meet your target.`;
