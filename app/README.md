@@ -82,7 +82,13 @@ Run this before opening the public site. The migration keeps existing numeric ac
 
 ## Privacy and deployment
 
-Account name, email, region, password hash, and session records are stored in the configured database. Planner form values, monthly budget entries, and profile changes save automatically with the signed-in account and can be loaded on another device. Appearance choices are saved separately for each account in that browser; language remains in that browser. Sign-out clears the active server session. There is no email verification or password-reset flow yet.
+Account name, email, region, password hash, and session records are stored in the configured database. Planner form values, monthly budget entries, and profile changes save automatically with the signed-in account and can be loaded on another device. Appearance choices are saved separately for each account in that browser; language remains in that browser. Sign-out clears the active server session. Sign-up allows one Finance AI account per normalized email address; trying the same address with different letter casing is still treated as the same account. The app cannot tell whether one person owns multiple different email addresses.
+
+### Forgot password
+
+On the sign-in form, choose **Forgot password?**, enter the account email, and use the link sent to that inbox. The link expires after 30 minutes and works only once. The database stores a hash of the reset token, and a successful password change signs out existing sessions. The app returns the same response for existing and unknown email addresses to avoid revealing who has an account.
+
+Password recovery email is disabled until the app owner configures SMTP. For Gmail, enable 2-Step Verification and create a Google App Password; use that App Password as `FINANCE_AI_SMTP_PASSWORD`, never your normal Gmail password. Add the SMTP settings shown in `.env.example` to the existing private `app/.env` file, keeping its MongoDB settings. Set `FINANCE_AI_PUBLIC_URL` to `http://127.0.0.1:8000` for local use or the full HTTPS site address in production. Never commit the real `.env` file or share its secrets in chat. If the settings are missing, the app explains that recovery email is not configured.
 
 The app is not deployed publicly. For a hosting provider, install `app/requirements.txt` and set `MONGODB_URI`, `MONGODB_DATABASE`, `FINANCE_AI_ENV=production`, and `FINANCE_AI_COOKIE_SECURE=1` in its private environment settings. The app binds to `0.0.0.0` in production and uses the hosting provider's `PORT` when supplied. Serve it over HTTPS, allow the hosting service to reach your MongoDB cluster, and configure database backups and access rules in MongoDB Atlas. Production startup fails if the MongoDB URI is missing or secure cookies are disabled. Do not expose the local development server directly to the internet.
 

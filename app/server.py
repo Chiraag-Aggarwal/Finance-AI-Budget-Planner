@@ -8,16 +8,19 @@ import math
 import os
 import re
 import secrets
+import smtplib
 import sqlite3
+import ssl
 import threading
 import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+from email.message import EmailMessage
 from http import HTTPStatus
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlsplit
+from urllib.parse import quote, unquote, urlsplit
 
 
 APP_FOLDER = Path(__file__).resolve().parent
@@ -52,6 +55,7 @@ DATABASE_FILE = Path(os.environ.get(
 SESSION_COOKIE = "finance_ai_session"
 SESSION_LIFETIME_SECONDS = 60 * 60 * 24 * 7
 PASSWORD_HASH_ROUNDS = 310_000
+PASSWORD_RESET_LIFETIME_SECONDS = 30 * 60
 MAX_REQUEST_BYTES = 16_384
 MAX_FINANCE_DATA_BYTES = 1_000_000
 COOKIE_SECURE = os.environ.get(
@@ -110,6 +114,16 @@ def initialize_database(database_file: Path = DATABASE_FILE) -> None:
                 payload TEXT NOT NULL,
                 updated_at INTEGER NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                token_hash TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                expires_at INTEGER NOT NULL,
+                created_at INTEGER NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS password_reset_tokens_by_user
+                ON password_reset_tokens(user_id);
             """
         )
 
@@ -135,9 +149,11 @@ class MongoStore:
         self.users = database["users"]
         self.sessions = database["sessions"]
         self.finance_data = database["finance_data"]
+        self.password_resets = database["password_resets"]
         self.users.create_index([("email", ASCENDING)], unique=True)
         self.sessions.create_index("expires_at", expireAfterSeconds=0)
         self.finance_data.create_index("updated_at")
+        self.password_resets.create_index("expires_at", expireAfterSeconds=0)
 
     def create_user(self, fields: dict) -> dict:
         from pymongo.errors import DuplicateKeyError
@@ -170,6 +186,33 @@ class MongoStore:
             return None
         user["id"] = user.pop("_id")
         return user
+
+    def create_password_reset(self, user_id: int | str, token_hash: str, expires_at: int) -> None:
+        # Keep only the newest reset link for each account.
+        self.password_resets.delete_many({"user_id": user_id})
+        self.password_resets.insert_one({
+            "_id": token_hash,
+            "user_id": user_id,
+            "expires_at": datetime.fromtimestamp(expires_at, timezone.utc),
+        })
+
+    def use_password_reset(self, token_hash: str, password_salt: str, password_hash_value: str, now: int) -> bool:
+        reset = self.password_resets.find_one_and_delete({
+            "_id": token_hash,
+            "expires_at": {"$gt": datetime.fromtimestamp(now, timezone.utc)},
+        })
+        if not reset:
+            return False
+
+        changed = self.users.update_one(
+            {"_id": reset["user_id"]},
+            {"$set": {"password_salt": password_salt, "password_hash": password_hash_value}},
+        )
+        if changed.matched_count != 1:
+            return False
+        self.sessions.delete_many({"user_id": reset["user_id"]})
+        self.password_resets.delete_many({"user_id": reset["user_id"]})
+        return True
 
     def update_user_profile(self, user_id: int | str, name: str, region: str) -> dict | None:
         self.users.update_one(
@@ -295,6 +338,118 @@ def password_matches(password: str, salt_hex: str, expected_hash: str) -> bool:
     except (TypeError, ValueError):
         return False
     return secrets.compare_digest(submitted_hash, expected_hash)
+
+
+def hash_password_reset_token(token: str) -> str:
+    """Store only a hash of a one-time reset token."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def create_password_reset(database_file: Path | MongoStore, user_id: int | str, token_hash: str, expires_at: int) -> None:
+    if isinstance(database_file, MongoStore):
+        database_file.create_password_reset(user_id, token_hash, expires_at)
+        return
+
+    with open_database(database_file) as connection:
+        connection.execute("DELETE FROM password_reset_tokens WHERE user_id = ?", (user_id,))
+        connection.execute(
+            "INSERT INTO password_reset_tokens (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)",
+            (token_hash, user_id, expires_at, int(time.time())),
+        )
+
+
+def use_password_reset(
+    database_file: Path | MongoStore,
+    token_hash: str,
+    new_password: str,
+    now: int | None = None,
+) -> bool:
+    """Use one valid reset link, change the password, and end old sessions."""
+    current_time = int(time.time()) if now is None else int(now)
+    password_salt, password_hash_value = hash_password(new_password)
+    if isinstance(database_file, MongoStore):
+        return database_file.use_password_reset(
+            token_hash, password_salt, password_hash_value, current_time
+        )
+
+    with open_database(database_file) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        reset = connection.execute(
+            "SELECT user_id FROM password_reset_tokens WHERE token_hash = ? AND expires_at > ?",
+            (token_hash, current_time),
+        ).fetchone()
+        if not reset:
+            return False
+        deleted = connection.execute(
+            "DELETE FROM password_reset_tokens WHERE token_hash = ? AND expires_at > ?",
+            (token_hash, current_time),
+        )
+        if deleted.rowcount != 1:
+            return False
+        changed = connection.execute(
+            "UPDATE users SET password_salt = ?, password_hash = ? WHERE id = ?",
+            (password_salt, password_hash_value, reset["user_id"]),
+        )
+        if changed.rowcount != 1:
+            return False
+        connection.execute("DELETE FROM sessions WHERE user_id = ?", (reset["user_id"],))
+        connection.execute("DELETE FROM password_reset_tokens WHERE user_id = ?", (reset["user_id"],))
+    return True
+
+
+def password_reset_smtp_settings() -> dict | None:
+    """Return SMTP settings only when the app owner has configured email delivery."""
+    host = os.environ.get("FINANCE_AI_SMTP_HOST", "").strip()
+    username = os.environ.get("FINANCE_AI_SMTP_USERNAME", "").strip()
+    password = os.environ.get("FINANCE_AI_SMTP_PASSWORD", "")
+    sender = os.environ.get("FINANCE_AI_SMTP_FROM", username).strip()
+    try:
+        port = int(os.environ.get("FINANCE_AI_SMTP_PORT", "587"))
+    except ValueError:
+        return None
+    if not host or not username or not password or not sender or not 1 <= port <= 65535:
+        return None
+    return {"host": host, "port": port, "username": username, "password": password, "sender": sender}
+
+
+def send_password_reset_email(recipient: str, reset_url: str) -> None:
+    """Send a plain-text reset message through the app owner's SMTP account."""
+    settings = password_reset_smtp_settings()
+    if not settings:
+        raise RuntimeError("Password reset email settings are incomplete.")
+
+    message = EmailMessage()
+    message["Subject"] = "Reset your Finance AI password"
+    message["From"] = settings["sender"]
+    message["To"] = recipient
+    message.set_content(
+        "We received a request to reset your Finance AI password.\n\n"
+        f"Use this one-time link within 30 minutes:\n{reset_url}\n\n"
+        "If you did not request this, you can ignore this email."
+    )
+
+    with smtplib.SMTP(settings["host"], settings["port"], timeout=15) as mail_server:
+        mail_server.ehlo()
+        mail_server.starttls(context=ssl.create_default_context())
+        mail_server.ehlo()
+        mail_server.login(settings["username"], settings["password"])
+        mail_server.send_message(message)
+
+
+def get_password_reset_base_url(port: int) -> str | None:
+    """Use a configured public URL in production and localhost during development."""
+    base_url = os.environ.get("FINANCE_AI_PUBLIC_URL", "").strip().rstrip("/")
+    if not base_url:
+        if os.environ.get("FINANCE_AI_ENV", "development").lower() == "production":
+            return None
+        base_url = f"http://127.0.0.1:{port}"
+
+    parsed = urlsplit(base_url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.username or parsed.password:
+        return None
+    if parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
+        return None
+    return base_url
 
 
 def create_user(database_file: Path | MongoStore, fields: dict) -> dict:
@@ -478,7 +633,12 @@ def hash_session_token(token: str) -> str:
 def account_request_allowed(client_ip: str, route: str, now: float | None = None) -> bool:
     """Slow repeated sign-in and account-creation attempts from one address."""
     current_time = time.monotonic() if now is None else now
-    maximum_attempts = 10 if route == "/api/login" else 5
+    if route == "/api/login":
+        maximum_attempts = 10
+    elif route == "/api/password-reset/request":
+        maximum_attempts = 3
+    else:
+        maximum_attempts = 8 if route == "/api/password-reset/complete" else 5
     key = (client_ip, route)
     with _RATE_LIMIT_LOCK:
         attempts = [
@@ -694,7 +854,13 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         if not self.request_is_same_origin():
             self.send_error_json(HTTPStatus.FORBIDDEN, "This account request was blocked.")
             return
-        if path in ("/api/login", "/api/signup"):
+        account_paths = {
+            "/api/login",
+            "/api/signup",
+            "/api/password-reset/request",
+            "/api/password-reset/complete",
+        }
+        if path in account_paths:
             client_ip = self.client_address[0]
             if not account_request_allowed(client_ip, path):
                 self.send_error_json(HTTPStatus.TOO_MANY_REQUESTS, "Too many attempts. Wait a little and try again.")
@@ -711,6 +877,10 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
                 self.handle_login(payload)
             elif path == "/api/logout":
                 self.handle_logout()
+            elif path == "/api/password-reset/request":
+                self.handle_password_reset_request(payload)
+            elif path == "/api/password-reset/complete":
+                self.handle_password_reset_complete(payload)
             else:
                 self.send_error_json(HTTPStatus.NOT_FOUND, "Account action not found.")
         except Exception as error:
@@ -785,6 +955,71 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
                 return
             raise
         self.send_json(HTTPStatus.OK, {"data": data})
+
+    def handle_password_reset_request(self, payload: dict):
+        email = str(payload.get("email") or "").strip().lower()
+        if len(email) > 254 or not EMAIL_PATTERN.fullmatch(email):
+            self.send_error_json(HTTPStatus.BAD_REQUEST, "Enter a valid email address.")
+            return
+
+        if not password_reset_smtp_settings():
+            self.send_error_json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                "Password recovery email is not configured. Ask the app owner to set it up.",
+            )
+            return
+
+        base_url = get_password_reset_base_url(self.server.server_port)
+        if not base_url:
+            self.send_error_json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                "The app's public address is not configured for password recovery.",
+            )
+            return
+
+        # Always show the same result so someone cannot check which emails have accounts.
+        user = get_user_by_email(self.database_file, email)
+        if user:
+            token = secrets.token_urlsafe(32)
+            expires_at = int(time.time()) + PASSWORD_RESET_LIFETIME_SECONDS
+            create_password_reset(
+                self.database_file,
+                user["id"],
+                hash_password_reset_token(token),
+                expires_at,
+            )
+            reset_url = f"{base_url}/#reset_token={quote(token, safe='')}"
+            try:
+                send_password_reset_email(email, reset_url)
+            except Exception as error:
+                # Never include the address, reset link, or SMTP details in server logs.
+                print(f"Password reset email delivery failed: {type(error).__name__}")
+
+        self.send_json(HTTPStatus.OK, {
+            "message": "If this email belongs to an account, a password reset link will be sent shortly."
+        })
+
+    def handle_password_reset_complete(self, payload: dict):
+        token = str(payload.get("token") or "").strip()
+        new_password = str(payload.get("password") or "")
+        if not 32 <= len(token) <= 128:
+            self.send_error_json(HTTPStatus.BAD_REQUEST, "This reset link is invalid or expired. Request a new one.")
+            return
+        if not 10 <= len(new_password) <= 128:
+            self.send_error_json(HTTPStatus.BAD_REQUEST, "Use a password between 10 and 128 characters.")
+            return
+
+        changed = use_password_reset(
+            self.database_file,
+            hash_password_reset_token(token),
+            new_password,
+        )
+        if not changed:
+            self.send_error_json(HTTPStatus.BAD_REQUEST, "This reset link is invalid or expired. Request a new one.")
+            return
+        self.send_json(HTTPStatus.OK, {
+            "message": "Your password was changed. Sign in using your new password."
+        })
 
     def handle_signup(self, payload: dict):
         fields, error = validate_signup(

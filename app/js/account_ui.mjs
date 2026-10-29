@@ -3,8 +3,14 @@ const appShell = document.querySelector("#app-shell");
 const appNavigation = document.querySelector("#app-navigation");
 const siteFooter = document.querySelector("#site-footer");
 const authError = document.querySelector("#auth-error");
+const authMessage = document.querySelector("#auth-message");
+const authTitle = document.querySelector("#auth-title");
+const authIntro = document.querySelector(".auth-intro");
+const authTabs = document.querySelector("#auth-tabs");
 const loginForm = document.querySelector("#login-form");
 const signupForm = document.querySelector("#signup-form");
+const resetRequestForm = document.querySelector("#password-reset-request-form");
+const resetForm = document.querySelector("#password-reset-form");
 const profileMenuButton = document.querySelector("#profile-menu-button");
 const profileMenu = document.querySelector("#profile-menu");
 const profileAvatar = document.querySelector("#profile-avatar");
@@ -27,8 +33,17 @@ window.addEventListener("finance-save-error", (event) => {
 
 
 function setAuthError(message) {
+  authMessage.textContent = "";
+  authMessage.hidden = true;
   authError.textContent = message;
   authError.hidden = false;
+}
+
+
+function setAuthMessage(message) {
+  clearAuthError();
+  authMessage.textContent = message;
+  authMessage.hidden = false;
 }
 
 
@@ -149,21 +164,51 @@ document.addEventListener("keydown", (event) => {
 
 function setAccountView(view) {
   const signup = view === "signup";
-  loginForm.hidden = signup;
+  const requestingReset = view === "reset-request";
+  const completingReset = view === "reset-complete";
+  loginForm.hidden = signup || requestingReset || completingReset;
   signupForm.hidden = !signup;
-  document.querySelector("#show-login-button").classList.toggle("active", !signup);
-  document.querySelector("#show-signup-button").classList.toggle("active", signup);
-  document.querySelector("#show-login-button").setAttribute("aria-pressed", String(!signup));
-  document.querySelector("#show-signup-button").setAttribute("aria-pressed", String(signup));
-  document.querySelector("#auth-title").textContent = signup
-    ? "Create your Finance AI account"
-    : "Sign in to Finance AI";
+  resetRequestForm.hidden = !requestingReset;
+  resetForm.hidden = !completingReset;
+  authTabs.hidden = requestingReset || completingReset;
+
+  const loginButton = document.querySelector("#show-login-button");
+  const signupButton = document.querySelector("#show-signup-button");
+  loginButton.classList.toggle("active", !signup);
+  signupButton.classList.toggle("active", signup);
+  loginButton.setAttribute("aria-pressed", String(!signup));
+  signupButton.setAttribute("aria-pressed", String(signup));
+
+  const titles = {
+    login: "Sign in to Finance AI",
+    signup: "Create your Finance AI account",
+    "reset-request": "Reset your password",
+    "reset-complete": "Set a new password",
+  };
+  const introductions = {
+    login: "Create an account to keep your profile and region together when you return.",
+    signup: "Create an account to keep your profile and region together when you return.",
+    "reset-request": "Enter the email address used for your Finance AI account.",
+    "reset-complete": "Choose a new password for your account.",
+  };
+  authTitle.textContent = titles[view] || titles.login;
+  authIntro.textContent = introductions[view] || introductions.login;
   clearAuthError();
+  authMessage.textContent = "";
+  authMessage.hidden = true;
 }
 
 
 document.querySelector("#show-login-button").addEventListener("click", () => setAccountView("login"));
 document.querySelector("#show-signup-button").addEventListener("click", () => setAccountView("signup"));
+document.querySelector("#forgot-password-button").addEventListener("click", () => {
+  resetRequestForm.elements.email.value = loginForm.elements.email.value.trim();
+  setAccountView("reset-request");
+  resetRequestForm.elements.email.focus();
+});
+document.querySelectorAll("[data-show-login]").forEach((button) => {
+  button.addEventListener("click", () => setAccountView("login"));
+});
 
 
 loginForm.addEventListener("submit", async (event) => {
@@ -206,6 +251,43 @@ signupForm.addEventListener("submit", async (event) => {
 });
 
 
+resetRequestForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!resetRequestForm.reportValidity()) return;
+  clearAuthError();
+  const fields = Object.fromEntries(new FormData(resetRequestForm));
+  try {
+    const result = await sendAccountRequest("/api/password-reset/request", "POST", fields);
+    setAuthMessage(result.message);
+  } catch (error) {
+    setAuthError(error.message);
+  }
+});
+
+
+resetForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!resetForm.reportValidity()) return;
+  clearAuthError();
+  const fields = Object.fromEntries(new FormData(resetForm));
+  if (fields.password !== fields.confirmPassword) {
+    setAuthError("The passwords do not match.");
+    return;
+  }
+  delete fields.confirmPassword;
+
+  try {
+    const result = await sendAccountRequest("/api/password-reset/complete", "POST", fields);
+    resetForm.reset();
+    window.history.replaceState({}, "", window.location.pathname);
+    setAccountView("login");
+    setAuthMessage(result.message);
+  } catch (error) {
+    setAuthError(error.message);
+  }
+});
+
+
 signOutButton.addEventListener("click", async () => {
   closeProfileMenu();
   try {
@@ -240,4 +322,12 @@ async function restoreSession() {
 }
 
 
-restoreSession();
+const resetToken = new URLSearchParams(window.location.hash.slice(1)).get("reset_token");
+if (resetToken) {
+  resetForm.elements.token.value = resetToken;
+  // Remove the one-time token from the address bar as soon as it is read.
+  window.history.replaceState({}, "", window.location.pathname);
+  setAccountView("reset-complete");
+} else {
+  restoreSession();
+}

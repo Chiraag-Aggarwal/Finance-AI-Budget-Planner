@@ -268,13 +268,39 @@ nav a:hover,
   margin-top: 0.2rem;
 }
 
-.auth-error {
+.auth-error,
+.auth-message {
   margin: 1rem 0 0;
   padding: 0.75rem 0.9rem;
-  color: #742b27;
-  background: #fbefed;
   border-radius: 0.55rem;
   font-size: 0.86rem;
+}
+
+.auth-error {
+  color: #742b27;
+  background: #fbefed;
+}
+
+.auth-message {
+  color: var(--green);
+  background: var(--green-light);
+}
+
+.auth-link {
+  justify-self: start;
+  padding: 0.25rem 0;
+  color: var(--green);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.15rem;
+  cursor: pointer;
+}
+
+.auth-link:hover {
+  color: var(--ink);
 }
 
 .auth-privacy {
@@ -1675,10 +1701,23 @@ h2 {
 :root[data-theme="dark"] .button-primary,
 :root[data-theme="dark"] .brand-mark,
 :root[data-theme="dark"] .skip-link,
-:root[data-theme="dark"] .site-footer,
 :root[data-theme="dark"] .user-message {
   background: var(--action);
   color: #fff;
+}
+
+:root[data-theme="dark"] .site-footer {
+  color: var(--muted);
+  background: var(--paper);
+  border-top-color: var(--line);
+}
+
+:root[data-theme="dark"] .footer-inner a {
+  color: var(--green);
+}
+
+:root[data-theme="dark"] .footer-inner a:hover {
+  color: var(--ink);
 }
 
 @media (max-width: 620px) {
@@ -2037,6 +2076,7 @@ h2 {
 }
 :root[data-theme="dark"] .site-header { background: rgb(7 13 9 / 93%); }
 :root[data-theme="dark"] .auth-tabs { background: #111a14; }
+:root[data-theme="dark"] .auth-message { color: #bce8cf; background: #173326; border: 1px solid #28563e; }
 :root[data-theme="dark"] .auth-error,
 :root[data-theme="dark"] .error-box,
 :root[data-theme="dark"] .tracker-errors {

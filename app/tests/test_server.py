@@ -3,11 +3,14 @@
 import sqlite3
 import http.cookiejar
 import json
+import os
 import tempfile
 import threading
 import unittest
 import urllib.error
 import urllib.request
+from urllib.parse import parse_qs, urlsplit
+from unittest.mock import patch
 from functools import partial
 from pathlib import Path
 
@@ -278,12 +281,100 @@ class AccountServerTests(unittest.TestCase):
         fields["region"] = "Pune"
         self.assertEqual(self.request("/api/signup", "POST", fields)[0], 201)
         self.assertEqual(self.request("/api/signup", "POST", fields)[0], 409)
+        self.assertEqual(self.request("/api/signup", "POST", {**fields, "email": "ASHA@EXAMPLE.COM"})[0], 409)
         self.assertEqual(self.request(
             "/api/profile",
             "PUT",
             {"name": "Asha Rao", "region": "Delhi"},
             origin="http://attacker.example",
         )[0], 403)
+
+
+    def test_password_reset_changes_password_once_and_ends_old_sessions(self):
+        status, _ = self.request("/api/signup", "POST", {
+            "name": "Asha Rao",
+            "email": "asha-reset@example.com",
+            "region": "Pune, Maharashtra",
+            "password": "long-enough-example-123",
+        })
+        self.assertEqual(status, 201)
+        smtp_settings = {
+            "FINANCE_AI_ENV": "development",
+            "FINANCE_AI_SMTP_HOST": "smtp.example.com",
+            "FINANCE_AI_SMTP_PORT": "587",
+            "FINANCE_AI_SMTP_USERNAME": "sender@example.com",
+            "FINANCE_AI_SMTP_PASSWORD": "test-only-secret",
+            "FINANCE_AI_SMTP_FROM": "sender@example.com",
+        }
+        with patch.dict(os.environ, smtp_settings), patch("server.send_password_reset_email") as send_email:
+            status, requested = self.request("/api/password-reset/request", "POST", {
+                "email": "ASHA-RESET@example.com",
+            })
+        self.assertEqual(status, 200)
+        self.assertIn("If this email belongs to an account", requested["message"])
+        self.assertEqual(send_email.call_count, 1)
+
+        reset_url = send_email.call_args.args[1]
+        parsed_url = urlsplit(reset_url)
+        self.assertEqual(parsed_url.query, "")
+        token = parse_qs(parsed_url.fragment)["reset_token"][0]
+        status, changed = self.request("/api/password-reset/complete", "POST", {
+            "token": token,
+            "password": "new-safe-password-456",
+        })
+        self.assertEqual(status, 200)
+        self.assertIn("password was changed", changed["message"])
+        self.assertEqual(self.request("/api/me")[0], 401)
+        self.assertEqual(self.request("/api/login", "POST", {
+            "email": "asha-reset@example.com",
+            "password": "long-enough-example-123",
+        })[0], 401)
+        self.assertEqual(self.request("/api/login", "POST", {
+            "email": "asha-reset@example.com",
+            "password": "new-safe-password-456",
+        })[0], 200)
+        self.assertEqual(self.request("/api/password-reset/complete", "POST", {
+            "token": token,
+            "password": "another-safe-password-789",
+        })[0], 400)
+
+    def test_password_reset_request_does_not_reveal_unknown_email(self):
+        smtp_settings = {
+            "FINANCE_AI_ENV": "development",
+            "FINANCE_AI_SMTP_HOST": "smtp.example.com",
+            "FINANCE_AI_SMTP_PORT": "587",
+            "FINANCE_AI_SMTP_USERNAME": "sender@example.com",
+            "FINANCE_AI_SMTP_PASSWORD": "test-only-secret",
+            "FINANCE_AI_SMTP_FROM": "sender@example.com",
+        }
+        with patch.dict(os.environ, smtp_settings), patch("server.send_password_reset_email") as send_email:
+            unknown_status, unknown = self.request("/api/password-reset/request", "POST", {
+                "email": "nobody@example.com",
+            })
+            create_user(self.database_file, self.valid_fields(email="known@example.com"))
+            known_status, known = self.request("/api/password-reset/request", "POST", {
+                "email": "known@example.com",
+            })
+
+        self.assertEqual(unknown_status, 200)
+        self.assertEqual(known_status, 200)
+        self.assertEqual(unknown["message"], known["message"])
+        self.assertEqual(send_email.call_count, 1)
+
+    def test_password_reset_requires_configured_email_settings(self):
+        smtp_keys = (
+            "FINANCE_AI_SMTP_HOST",
+            "FINANCE_AI_SMTP_PORT",
+            "FINANCE_AI_SMTP_USERNAME",
+            "FINANCE_AI_SMTP_PASSWORD",
+            "FINANCE_AI_SMTP_FROM",
+        )
+        with patch.dict(os.environ, {key: "" for key in smtp_keys}):
+            status, result = self.request("/api/password-reset/request", "POST", {
+                "email": "nobody@example.com",
+            })
+        self.assertEqual(status, 503)
+        self.assertIn("not configured", result["error"])
 
 
 if __name__ == "__main__":
