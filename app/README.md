@@ -30,11 +30,17 @@ A beginner-friendly Indian household budgeting and goal-planning app. The browse
 - `js/budget_recommendations.mjs` calculates possible category changes and interprets short English or Hindi chat instructions.
 - `ml/` and `data/` are outside this `app` folder. They contain the separate experimental HCES food-consumption model and its data.
 
-## Region and model limits
+## Region and regional cost data review
 
-The account asks for a city, district, or region and saves it in the profile. The goal planner and savings output show that location as context. The current budget calculations still use the user's actual entered amounts; they do not change costs based on local prices.
+**Reviewed 31 October 2026.** The profile's city, district, or region is saved and displayed as location context only. The app does not turn it into a cost adjustment. Budget, savings, and loan calculations use the amounts the user enters; a goal price must come from the user's own current quote.
 
-The experimental HCES model has a `state_code` input and predicts recorded survey food consumption. That survey value is not necessarily cash spent on food and is not a savings or affordability label. The free-text profile location is not yet mapped to the model's state codes, and the model is not used to make budget recommendations. A validated state-code mapping and appropriate regional price data are needed before location can safely change numerical advice.
+I reviewed these official Indian sources for reusable regional price data:
+
+- **Department of Consumer Affairs (DoCA), Price Monitoring System (PMS):** the Department's [Price Monitoring Division page](https://consumeraffairs.gov.in/pages/price-monitoring-division), last updated 15 October 2026, reports daily retail and wholesale prices for 41 essential food commodities from 579 reporting centres. Its [commodity list](https://fcainfoweb.nic.in/ListofCommodity.aspx) and [centre list](https://fcainfoweb.nic.in/ListofCentersRevamp.aspx) show the item and location coverage. The Department says prices are reported by State/UT Civil Supplies Departments and collected through a mobile app, including averages from three markets. This is useful for checking individual food-item prices, but it is not a household budget: it does not provide the quantities a household buys or cover broad costs such as rent, healthcare, education, transport, and services. Centre observations may not represent every nearby market; reported quality and variety can differ. The [public price-report interface](https://fcainfoweb.nic.in/reports/report_menu_web.aspx) also uses a CAPTCHA, and I found no documented stable public API for automated regional price retrieval during this review. Therefore, the app does not convert this source into a monthly grocery or household-cost estimate.
+- **MoSPI Consumer Price Index (CPI):** the [official CPI catalogue](https://esankhyiki.mospi.gov.in/catalogue-main/catalogue?product=CPI) provides monthly State/UT and Rural/Urban/Combined index series. At the review date, the catalogue listed August 2026 as provisional, released 14 September 2026, under the new 2024=100 base. MoSPI describes CPI as measuring price changes over time for a selected basket. It is an inflation index, not an absolute rupee cost-of-living comparison between cities or States, so the app does not use State index values to multiply or alter a user's expenses.
+- **HCES 2023-24:** the [official HCES report](https://mospi.gov.in/sites/default/files/publication_reports/Final_Report_HCES_2023-24L.pdf) gives household consumption statistics, including regional estimates. Its method values purchases at purchase price, home-produced food at ex-farm prices, and gifts/free collections at imputed local retail prices; the survey also includes some goods received free through programmes. These are consumption valuations and are not necessarily cash outflows. HCES is not used to adjust budget or goal calculations.
+
+No reviewed source is a suitable, complete regional household-cost estimate for this app's current inputs. Region remains context only; users should enter their own expenses and a current local goal quote. The experimental HCES model predicts survey food consumption only; it is not used for local-price or cash-spending advice.
 
 ## Start the app
 
@@ -131,4 +137,4 @@ node --test tests/budget_tracker.test.mjs
 node --test tests/budget_recommendations.test.mjs
 ```
 
-The Python API and storage tests use Python's standard library and a temporary SQLite database. MongoDB connectivity requires the `pymongo[srv]` dependency and a reachable database URI; production deployment must use MongoDB. JavaScript tests use Node's built-in test runner.
+The Python API and storage tests use Python's standard library and a temporary SQLite database. MongoDB connectivity requires the `pymongo[srv]` dependency and a reachable database URI; production deployment must use MongoDB. JavaScript tests use Node's built-in test runner. Region regression tests verify that changing the saved location changes only its displayed context, not budget, savings, or goal calculations.

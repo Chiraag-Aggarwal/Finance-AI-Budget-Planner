@@ -177,10 +177,14 @@ test("offers a modest general savings plan without requiring a purchase goal", (
 });
 
 
-test("keeps the user's saved region in the savings output context", () => {
-  const result = buildSavingsBudget(makeSavingsSummary(), 0, { region: "Pune, Maharashtra" });
+test("keeps region as context without changing savings suggestions", () => {
+  const pune = buildSavingsBudget(makeSavingsSummary(), 0, { region: "Pune, Maharashtra" });
+  const delhi = buildSavingsBudget(makeSavingsSummary(), 0, { region: "Delhi" });
+  const withoutRegion = ({ region, ...result }) => result;
 
-  assert.equal(result.region, "Pune, Maharashtra");
+  assert.equal(pune.region, "Pune, Maharashtra");
+  assert.equal(delhi.region, "Delhi");
+  assert.deepEqual(withoutRegion(pune), withoutRegion(delhi));
 });
 
 

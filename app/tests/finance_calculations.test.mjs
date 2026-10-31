@@ -47,6 +47,20 @@ test("calculates monthly surplus, emergency target, and goal savings", () => {
 });
 
 
+test("changing region leaves cash-flow, savings, and goal calculations unchanged", () => {
+  const pune = calculatePlan(makeProfile({ region: "Pune, Maharashtra" }));
+  const delhi = calculatePlan(makeProfile({ region: "Delhi" }));
+  const withoutDisplayedRegion = ({ goal, ...plan }) => {
+    const { region, ...goalValues } = goal;
+    return { ...plan, goal: goalValues };
+  };
+
+  assert.equal(pune.goal.region, "Pune, Maharashtra");
+  assert.equal(delhi.goal.region, "Delhi");
+  assert.deepEqual(withoutDisplayedRegion(pune), withoutDisplayedRegion(delhi));
+});
+
+
 test("counts the current EMI before estimating goal savings", () => {
   const withoutEmi = calculatePlan(makeProfile({ monthlyDebtPayment: 0 }));
   const withEmi = calculatePlan(makeProfile({ monthlyDebtPayment: 5000 }));

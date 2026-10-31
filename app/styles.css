@@ -85,6 +85,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
 }
 
 body {
@@ -1769,6 +1770,10 @@ h2 {
 }
 
 @media (max-width: 600px) {
+  html {
+    scroll-padding-top: 10rem;
+  }
+
   .header-inner,
   .footer-inner,
   .quick-view,

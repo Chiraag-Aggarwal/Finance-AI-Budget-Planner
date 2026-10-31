@@ -471,6 +471,99 @@ class AccountServerTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(logged_in["user"]["region"], "Jaipur, Rajasthan")
 
+    def test_full_account_and_budget_journey_survives_refresh_logout_and_password_reset(self):
+        """Exercise the public account and saved-budget flow over HTTP."""
+        signup_fields = {
+            "name": "Asha Rao",
+            "email": "JOURNEY@example.com",
+            "region": "Pune, Maharashtra",
+            "password": "long-enough-example-123",
+        }
+        with patch.dict(os.environ, self.smtp_settings()), patch("server.send_email_verification") as send_verification:
+            status, created = self.request("/api/signup", "POST", signup_fields)
+            self.assertEqual(status, 201, created)
+
+            duplicate_status, duplicate = self.request(
+                "/api/signup",
+                "POST",
+                {**signup_fields, "email": "journey@example.com"},
+            )
+            self.assertEqual(duplicate_status, 409)
+            self.assertIn("already exists", duplicate["error"])
+            self.assertEqual(send_verification.call_count, 1)
+
+        verification_url = send_verification.call_args.args[1]
+        verification_token = parse_qs(urlsplit(verification_url).fragment)["verify_email"][0]
+        self.assertEqual(
+            self.request("/api/email-verification/complete", "POST", {"token": verification_token})[0],
+            200,
+        )
+
+        status, signed_in = self.request("/api/login", "POST", {
+            "email": "journey@example.com",
+            "password": signup_fields["password"],
+        })
+        self.assertEqual(status, 200)
+        owner_id = signed_in["user"]["id"]
+
+        saved_data = {
+            "plannerProfile": {"monthlyTakeHomeIncome": 65000, "includeGoal": False},
+            "transactions": [{
+                "id": "journey-entry-1",
+                "type": "expense",
+                "category": "Food and groceries",
+                "date": "2026-10-29",
+                "amount": 1800,
+                "note": "Monthly groceries",
+            }],
+        }
+        status, saved = self.request("/api/finance-data", "PATCH", saved_data)
+        self.assertEqual(status, 200)
+        self.assertEqual(saved["data"], saved_data)
+
+        # Re-fetch the app page, then exercise the session and saved-data requests it makes on load.
+        with self.client.open(self.base_url + "/") as page:
+            self.assertEqual(page.status, 200)
+            self.assertIn(b'id="auth-screen"', page.read())
+        self.assertEqual(self.request("/api/me")[1]["user"]["id"], owner_id)
+        self.assertEqual(self.request("/api/finance-data")[1]["data"], saved_data)
+
+        self.assertEqual(self.request("/api/logout", "POST", {})[0], 200)
+        self.assertEqual(self.request("/api/me")[0], 401)
+        self.assertEqual(self.request("/api/login", "POST", {
+            "email": "journey@example.com",
+            "password": signup_fields["password"],
+        })[0], 200)
+        self.assertEqual(self.request("/api/finance-data")[1]["data"], saved_data)
+
+        with patch.dict(os.environ, self.smtp_settings()), patch("server.send_password_reset_email") as send_reset:
+            status, reset_requested = self.request("/api/password-reset/request", "POST", {
+                "email": "journey@example.com",
+            })
+        self.assertEqual(status, 200)
+        self.assertIn("If this email belongs to an account", reset_requested["message"])
+        self.assertEqual(send_reset.call_count, 1)
+
+        reset_url = send_reset.call_args.args[1]
+        reset_token = parse_qs(urlsplit(reset_url).fragment)["reset_token"][0]
+        new_password = "recovered-password-456"
+        self.assertEqual(
+            self.request("/api/password-reset/complete", "POST", {
+                "token": reset_token,
+                "password": new_password,
+            })[0],
+            200,
+        )
+        self.assertEqual(self.request("/api/login", "POST", {
+            "email": "journey@example.com",
+            "password": signup_fields["password"],
+        })[0], 401)
+        self.assertEqual(self.request("/api/login", "POST", {
+            "email": "journey@example.com",
+            "password": new_password,
+        })[0], 200)
+        self.assertEqual(self.request("/api/finance-data")[1]["data"], saved_data)
+
     def test_http_api_requires_region_and_rejects_cross_origin_changes(self):
         fields = {
             "name": "Asha Rao",
