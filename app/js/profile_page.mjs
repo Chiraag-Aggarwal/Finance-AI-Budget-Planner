@@ -1,6 +1,14 @@
 const form = document.querySelector("#profile-edit-form");
 const statusMessage = document.querySelector("#profile-page-status");
 const saveButton = form.querySelector('button[type="submit"]');
+const accountDataSection = document.querySelector("#account-data-section");
+const accountDataStatus = document.querySelector("#account-data-status");
+const exportButton = document.querySelector("#export-account-data");
+const deleteDialog = document.querySelector("#delete-account-dialog");
+const deleteForm = document.querySelector("#delete-account-form");
+const deleteError = document.querySelector("#delete-account-error");
+const confirmDeleteButton = document.querySelector("#confirm-delete-account");
+let signedInUserId = null;
 let profileSaveTimer = null;
 let profileSaveQueue = Promise.resolve();
 let lastSavedProfileSignature = null;
@@ -26,6 +34,20 @@ async function requestJSON(path, method = "GET", fields = null) {
     throw error;
   }
   return result;
+}
+
+function clearThisBrowserAccountData(userId) {
+  try {
+    for (const prefix of [
+      "finance-ai-display-settings-v1",
+      "finance-ai-planner-profile-v1",
+      "finance-ai-monthly-entries-v1",
+    ]) {
+      window.localStorage.removeItem(`${prefix}-${userId}`);
+    }
+  } catch {
+    // Account records are already deleted from the server if browser storage is unavailable.
+  }
 }
 
 function fillForm(user) {
@@ -82,8 +104,10 @@ async function loadProfile() {
   try {
     const result = await requestJSON("/api/me");
     fillForm(result.user);
+    signedInUserId = String(result.user.id);
     window.dispatchEvent(new CustomEvent("finance-user-ready", { detail: result.user }));
     form.hidden = false;
+    accountDataSection.hidden = false;
     statusMessage.textContent = "";
   } catch (error) {
     if (error.status === 401) {
@@ -108,6 +132,67 @@ form.addEventListener("submit", async (event) => {
     console.error("Finance AI could not save the profile.", error);
   } finally {
     saveButton.disabled = false;
+  }
+});
+
+exportButton.addEventListener("click", async () => {
+  exportButton.disabled = true;
+  accountDataStatus.textContent = "Preparing your download…";
+  try {
+    const response = await fetch("/api/account/export", { credentials: "same-origin" });
+    if (!response.ok) {
+      let result = {};
+      try { result = await response.json(); } catch { /* Keep a short fallback message. */ }
+      throw new Error(result.error || "Your account data could not be exported.");
+    }
+    const file = await response.blob();
+    const address = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = address;
+    link.download = "finance-ai-account-export.json";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(address), 1000);
+    accountDataStatus.textContent = "Your data export has been downloaded.";
+  } catch (error) {
+    accountDataStatus.textContent = error.message || "Your account data could not be exported.";
+  } finally {
+    exportButton.disabled = false;
+  }
+});
+
+document.querySelector("#open-delete-account").addEventListener("click", () => {
+  deleteForm.reset();
+  deleteError.textContent = "";
+  deleteError.hidden = true;
+  deleteDialog.showModal();
+  deleteForm.elements.namedItem("password").focus();
+});
+
+document.querySelector("#cancel-delete-account").addEventListener("click", () => deleteDialog.close());
+
+deleteForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!deleteForm.reportValidity()) return;
+  const fields = Object.fromEntries(new FormData(deleteForm));
+  confirmDeleteButton.disabled = true;
+  deleteError.textContent = "";
+  deleteError.hidden = true;
+  try {
+    const result = await requestJSON("/api/account/delete", "POST", fields);
+    deleteDialog.close();
+    clearThisBrowserAccountData(signedInUserId);
+    form.hidden = true;
+    exportButton.hidden = true;
+    document.querySelector("#open-delete-account").hidden = true;
+    accountDataStatus.textContent = result.message;
+    window.setTimeout(() => window.location.replace("/"), 1500);
+  } catch (error) {
+    deleteError.textContent = error.message || "Your account could not be deleted.";
+    deleteError.hidden = false;
+  } finally {
+    confirmDeleteButton.disabled = false;
   }
 });
 

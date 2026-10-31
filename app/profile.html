@@ -52,7 +52,45 @@
         </form>
         <p id="profile-page-status" class="save-status" role="status" aria-live="polite">Loading your profile…</p>
       </section>
+
+      <section id="account-data-section" class="profile-edit-card profile-data-card" aria-labelledby="account-data-title" hidden>
+        <p class="eyebrow">Account controls</p>
+        <h2 id="account-data-title">Privacy and your data</h2>
+        <p>Finance AI stores your name, email, region, email-verification status, account creation date, and a salted password hash. It also stores sign-in sessions, password-reset and email-verification token hashes, and resend-limit details. Planner inputs and budget entries you save are linked to your account. Display preferences and language are stored in this browser.</p>
+        <p>The export contains your profile, saved planner information, budget entries, and any optional settings saved in the account database. It does not include your password hash or active sign-in and recovery tokens.</p>
+        <div class="profile-edit-actions account-data-actions">
+          <button id="export-account-data" class="button button-primary" type="button">Download my data</button>
+          <button id="open-delete-account" class="button button-danger" type="button">Delete account and data</button>
+        </div>
+        <p id="account-data-status" class="save-status" role="status" aria-live="polite"></p>
+        <p class="small-print">Deletion removes this account’s database records and clears its account-specific saved data in this browser. Browser-only preferences or unsynced drafts on other devices cannot be removed remotely.</p>
+        <p class="small-print">This privacy summary is a product description, not a legal privacy policy. Professional review is required before public release.</p>
+      </section>
     </main>
+
+    <dialog id="delete-account-dialog" class="settings-dialog" aria-labelledby="delete-account-title">
+      <div class="settings-panel">
+        <p class="eyebrow">Permanent action</p>
+        <h2 id="delete-account-title">Delete your account and all saved data?</h2>
+        <p>This permanently removes your account profile, planner and budget data, account settings, sign-in sessions, and password-reset and verification records. You cannot undo this.</p>
+        <form id="delete-account-form" class="profile-edit-form" novalidate>
+          <label class="field">
+            <span>Current account password</span>
+            <input name="password" type="password" minlength="10" maxlength="128" autocomplete="current-password" required>
+          </label>
+          <label class="field">
+            <span>Type DELETE to confirm</span>
+            <input name="confirmation" type="text" minlength="6" maxlength="6" pattern="DELETE" autocomplete="off" required>
+            <small>Enter the word DELETE in capital letters.</small>
+          </label>
+          <div class="profile-edit-actions">
+            <button id="confirm-delete-account" class="button button-danger" type="submit">Permanently delete account</button>
+            <button id="cancel-delete-account" class="button button-quiet" type="button">Keep my account</button>
+          </div>
+        </form>
+        <p id="delete-account-error" class="auth-error" role="alert" aria-live="polite" hidden></p>
+      </div>
+    </dialog>
     <footer class="site-footer">
       <div class="footer-inner"><span>Finance AI · Personal finance planner</span><a href="/">Back to dashboard ↑</a></div>
     </footer>

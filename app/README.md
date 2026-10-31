@@ -4,7 +4,7 @@ A beginner-friendly Indian household budgeting and goal-planning app. The browse
 
 ## Main features
 
-- Create an account with name, email, password, and a required city, district, or region.
+- Create an account with name, email, password, and a required city, district, or region. New accounts must verify their email with a one-time link that expires after 24 hours.
 - Sign in and out using a server-side session. Passwords are stored as salted PBKDF2 hashes, never as plain text; only a hash of each session token is saved.
 - Edit the account name and region in the profile section. The profile region is prefilled in the goal planner and shown with savings guidance.
 - Switch between English and Hindi. The selected language is remembered in this browser.
@@ -66,11 +66,13 @@ For local use, copy `app/.env.example` to `app/.env`, replace the URI placeholde
 
 For deployment, configure `MONGODB_URI`, `MONGODB_DATABASE`, `FINANCE_AI_ENV=production`, and `FINANCE_AI_COOKIE_SECURE=1` in the hosting provider's private environment settings. Do not use the local `.env` file in a public repository.
 
-The MongoDB database has three collections:
+The MongoDB database uses these collections:
 
-- `users` stores a user's name, email, region, salted password hash, and account creation time. Emails have a unique index.
+- `users` stores a user's name, email, region, salted password hash, email verification status, and account creation time. Emails have a unique index.
 - `sessions` stores hashed browser session tokens and expiration times. Expired sessions are removed by MongoDB's TTL index.
 - `finance_data` stores each account's planner inputs, income and expense entries, and update time. The API derives the account ID from the signed-in session, so a request cannot choose another user's account.
+- `password_resets` stores one-time password-reset token hashes and expiry times.
+- `email_verifications` stores only a hash of each active verification token and its expiry and resend-limit timestamps. MongoDB removes expired verification records with a TTL index.
 
 The MongoDB connection is checked when the server starts; MongoDB connection or configuration errors stop startup instead of silently switching to SQLite. To move a current local SQLite account database, first set `MONGODB_URI` and `MONGODB_DATABASE`, then run:
 
@@ -82,13 +84,35 @@ Run this before opening the public site. The migration keeps existing numeric ac
 
 ## Privacy and deployment
 
-Account name, email, region, password hash, and session records are stored in the configured database. Planner form values, monthly budget entries, and profile changes save automatically with the signed-in account and can be loaded on another device. Appearance choices are saved separately for each account in that browser; language remains in that browser. Sign-out clears the active server session. Sign-up allows one Finance AI account per normalized email address; trying the same address with different letter casing is still treated as the same account. The app cannot tell whether one person owns multiple different email addresses.
+Account profile fields (name, email, and region), a salted password hash, email-verification status, and account creation time are stored in the configured database. The signed-in account’s planner inputs and budget entries are saved separately under that account ID. Appearance settings and language are stored in the browser, not in the account database. Sign-out clears the active server session. Sign-up allows one Finance AI account per normalized email address; trying the same address with different letter casing is still treated as the same account. The app cannot tell whether one person owns multiple different email addresses.
+
+### What the database stores
+
+MongoDB stores account profiles in `users`, hashed session tokens and expiry times in `sessions`, planner inputs, budget transactions, and any account settings saved through the API in `finance_data`, password-reset token hashes in `password_resets`, and verification token hashes and resend-limit data in `email_verifications`. The planner and budget records are selected by the signed-in account ID.
+
+Local SQLite uses the matching `users`, `sessions`, and `user_finance_data` tables plus `password_reset_tokens` and `email_verification_tokens`. The `user_finance_data` payload holds planner inputs, budget transactions, and any submitted account settings. Foreign-key cascades connect those records to the account row. In both storage paths, raw passwords and raw one-time email links are not stored. The current appearance and language controls save preferences locally in each browser.
+
+### Export and delete account data
+
+From the signed-in Profile page, **Download my data** downloads a JSON file with the account profile, planner information, budget entries, and any settings saved in the account database. The export does not include password hashes, session tokens, or password-reset and email-verification tokens. The export endpoint derives the account ID from the signed-in session and does not accept a caller-selected user ID.
+
+**Delete account and data** requires the current password and typing `DELETE`. The server uses the signed-in account ID, removes the profile and every linked database record, invalidates all sessions, and clears the current browser’s account-specific saved data. SQLite deletes related rows through foreign-key cascades. MongoDB removes the related documents in a transaction. The action cannot be undone. Browser-only preferences or unsynced drafts on another device cannot be erased remotely; they need to be cleared on that device.
+
+**Professional review required before public release:** this app’s privacy wording is a factual product description, not a legal privacy policy or a claim of legal compliance. Have a qualified privacy professional review it and prepare any required public-facing policy before release.
+
+### Email verification
+
+New sign-ups are not signed in until they open the email link. Each link can be used once and expires after 24 hours. Only a SHA-256 hash of its random token is stored in the database. The resend screen always gives the same response for known and unknown email addresses. A resend is limited to one per minute and five per account per hour; requests are also rate-limited by IP. English and Hindi instructions are available in the app, and the email includes both languages.
+
+Configure the same SMTP sender settings listed in `.env.example` before allowing sign-ups. Set `FINANCE_AI_PUBLIC_URL` to the exact address users will open (use `http://127.0.0.1:8000` locally and the full HTTPS address after deployment). Without complete SMTP and public URL settings, new sign-ups are safely refused; existing accounts can still sign in. If mail delivery fails after an account is created, the user can use **Resend verification email** after one minute.
+
+Existing users are not locked out: older SQLite databases are migrated with `email_verified = 1` by default, while new accounts are explicitly stored as unverified. Existing MongoDB user documents without an `email_verified` field are treated as verified. The SQLite-to-MongoDB migration preserves the verification status.
 
 ### Forgot password
 
 On the sign-in form, choose **Forgot password?**, enter the account email, and use the link sent to that inbox. The link expires after 30 minutes and works only once. The database stores a hash of the reset token, and a successful password change signs out existing sessions. The app returns the same response for existing and unknown email addresses to avoid revealing who has an account.
 
-Password recovery email is disabled until the app owner configures SMTP. For Gmail, enable 2-Step Verification and create a Google App Password; use that App Password as `FINANCE_AI_SMTP_PASSWORD`, never your normal Gmail password. Add the SMTP settings shown in `.env.example` to the existing private `app/.env` file, keeping its MongoDB settings. Set `FINANCE_AI_PUBLIC_URL` to `http://127.0.0.1:8000` for local use or the full HTTPS site address in production. Never commit the real `.env` file or share its secrets in chat. If the settings are missing, the app explains that recovery email is not configured.
+Password recovery email uses the same configured SMTP sender. For Gmail, enable 2-Step Verification and create a Google App Password; use that App Password as `FINANCE_AI_SMTP_PASSWORD`, never your normal Gmail password. Add the SMTP settings shown in `.env.example` to the existing private `app/.env` file, keeping its MongoDB settings. Set `FINANCE_AI_PUBLIC_URL` to `http://127.0.0.1:8000` for local use or the full HTTPS site address in production. Never commit the real `.env` file or share its secrets in chat. If the settings are missing, the app explains that recovery email is not configured.
 
 The app is not deployed publicly. For a hosting provider, install `app/requirements.txt` and set `MONGODB_URI`, `MONGODB_DATABASE`, `FINANCE_AI_ENV=production`, and `FINANCE_AI_COOKIE_SECURE=1` in its private environment settings. The app binds to `0.0.0.0` in production and uses the hosting provider's `PORT` when supplied. Serve it over HTTPS, allow the hosting service to reach your MongoDB cluster, and configure database backups and access rules in MongoDB Atlas. Production startup fails if the MongoDB URI is missing or secure cookies are disabled. Do not expose the local development server directly to the internet.
 

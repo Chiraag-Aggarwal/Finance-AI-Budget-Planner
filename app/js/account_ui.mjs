@@ -10,6 +10,7 @@ const authTabs = document.querySelector("#auth-tabs");
 const loginForm = document.querySelector("#login-form");
 const signupForm = document.querySelector("#signup-form");
 const resetRequestForm = document.querySelector("#password-reset-request-form");
+const verificationRequestForm = document.querySelector("#email-verification-request-form");
 const resetForm = document.querySelector("#password-reset-form");
 const profileMenuButton = document.querySelector("#profile-menu-button");
 const profileMenu = document.querySelector("#profile-menu");
@@ -165,12 +166,14 @@ document.addEventListener("keydown", (event) => {
 function setAccountView(view) {
   const signup = view === "signup";
   const requestingReset = view === "reset-request";
+  const requestingVerification = view === "verification-request";
   const completingReset = view === "reset-complete";
-  loginForm.hidden = signup || requestingReset || completingReset;
+  loginForm.hidden = signup || requestingReset || requestingVerification || completingReset;
   signupForm.hidden = !signup;
   resetRequestForm.hidden = !requestingReset;
+  verificationRequestForm.hidden = !requestingVerification;
   resetForm.hidden = !completingReset;
-  authTabs.hidden = requestingReset || completingReset;
+  authTabs.hidden = requestingReset || requestingVerification || completingReset;
 
   const loginButton = document.querySelector("#show-login-button");
   const signupButton = document.querySelector("#show-signup-button");
@@ -183,12 +186,14 @@ function setAccountView(view) {
     login: "Sign in to Finance AI",
     signup: "Create your Finance AI account",
     "reset-request": "Reset your password",
+    "verification-request": "Verify your email",
     "reset-complete": "Set a new password",
   };
   const introductions = {
     login: "Create an account to keep your profile and region together when you return.",
     signup: "Create an account to keep your profile and region together when you return.",
     "reset-request": "Enter the email address used for your Finance AI account.",
+    "verification-request": "Enter the email address you used to create your account.",
     "reset-complete": "Choose a new password for your account.",
   };
   authTitle.textContent = titles[view] || titles.login;
@@ -205,6 +210,11 @@ document.querySelector("#forgot-password-button").addEventListener("click", () =
   resetRequestForm.elements.email.value = loginForm.elements.email.value.trim();
   setAccountView("reset-request");
   resetRequestForm.elements.email.focus();
+});
+document.querySelector("#resend-verification-button").addEventListener("click", () => {
+  verificationRequestForm.elements.email.value = loginForm.elements.email.value.trim();
+  setAccountView("verification-request");
+  verificationRequestForm.elements.email.focus();
 });
 document.querySelectorAll("[data-show-login]").forEach((button) => {
   button.addEventListener("click", () => setAccountView("login"));
@@ -244,7 +254,23 @@ signupForm.addEventListener("submit", async (event) => {
   try {
     const result = await sendAccountRequest("/api/signup", "POST", fields);
     signupForm.reset();
-    showSignedIn(result.user);
+    loginForm.elements.email.value = fields.email;
+    setAccountView("login");
+    setAuthMessage(result.message);
+  } catch (error) {
+    setAuthError(error.message);
+  }
+});
+
+
+verificationRequestForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!verificationRequestForm.reportValidity()) return;
+  clearAuthError();
+  const fields = Object.fromEntries(new FormData(verificationRequestForm));
+  try {
+    const result = await sendAccountRequest("/api/email-verification/resend", "POST", fields);
+    setAuthMessage(result.message);
   } catch (error) {
     setAuthError(error.message);
   }
@@ -322,8 +348,17 @@ async function restoreSession() {
 }
 
 
+const emailVerificationToken = new URLSearchParams(window.location.hash.slice(1)).get("verify_email");
 const resetToken = new URLSearchParams(window.location.hash.slice(1)).get("reset_token");
-if (resetToken) {
+if (emailVerificationToken) {
+  // Remove the one-time token from the address bar before sending it to the server.
+  window.history.replaceState({}, "", window.location.pathname);
+  setAccountView("login");
+  setAuthMessage("Checking your verification link…");
+  sendAccountRequest("/api/email-verification/complete", "POST", { token: emailVerificationToken })
+    .then((result) => setAuthMessage(result.message))
+    .catch((error) => setAuthError(error.message));
+} else if (resetToken) {
   resetForm.elements.token.value = resetToken;
   // Remove the one-time token from the address bar as soon as it is read.
   window.history.replaceState({}, "", window.location.pathname);

@@ -66,6 +66,7 @@
             <label class="field"><span>Password</span><input name="password" type="password" minlength="10" maxlength="128" autocomplete="current-password" required></label>
             <button class="button button-primary" type="submit">Sign in</button>
             <button id="forgot-password-button" class="auth-link" type="button">Forgot password?</button>
+            <button id="resend-verification-button" class="auth-link" type="button">Resend verification email</button>
           </form>
 
           <form id="signup-form" class="account-form" novalidate hidden>
@@ -75,6 +76,13 @@
             <label class="field"><span>Create a password</span><input name="password" type="password" minlength="10" maxlength="128" autocomplete="new-password" required><small>Use at least 10 characters.</small></label>
             <label class="field"><span>Confirm password</span><input name="confirmPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" required></label>
             <button class="button button-primary" type="submit">Create account</button>
+          </form>
+
+          <form id="email-verification-request-form" class="account-form" novalidate hidden>
+            <label class="field"><span>Email address</span><input name="email" type="email" maxlength="254" autocomplete="email" required></label>
+            <small>If you created an account but did not receive a verification link, enter your email and we’ll send a new link if it is still needed.</small>
+            <button class="button button-primary" type="submit">Send verification link</button>
+            <button class="auth-link" type="button" data-show-login>Back to sign in</button>
           </form>
 
           <form id="password-reset-request-form" class="account-form" novalidate hidden>
@@ -94,7 +102,7 @@
           </form>
           <p id="auth-error" class="auth-error" role="alert" aria-live="polite" hidden></p>
           <p id="auth-message" class="auth-message" role="status" aria-live="polite" hidden></p>
-          <p class="auth-privacy">Your password is stored as a one-way hash. Your profile, saved plan, and income and expense entries are linked to your account.</p>
+          <p class="auth-privacy">Your profile, planner information, and budget entries are saved to your account. Passwords and one-time links are stored as hashes. You can export or delete your account from Profile.</p>
         </div>
       </section>
 
@@ -506,14 +514,13 @@
 
           <aside class="privacy-card" aria-labelledby="privacy-title">
             <span class="privacy-icon" aria-hidden="true">✓</span>
-            <h3 id="privacy-title">Private by design</h3>
-            <p>Your calculations run in this app. Your profile, planner details, and budget entries are saved automatically to your account in the configured database.</p>
+            <h3 id="privacy-title">How your data is stored</h3>
+            <p>When you sign in, your name, email, region, verification status, salted password hash, planner information, and budget entries are stored in the configured database. Optional settings submitted to the account-data API are stored there too. Sign-in sessions and password-reset and verification tokens are stored as hashes.</p>
             <ul>
-              <li>Passwords are stored as salted hashes</li>
-              <li>Your data is separated by account</li>
-              <li>Clear saved details any time</li>
+              <li>Your saved records are accessed through your signed-in account</li>
+              <li>Export or permanently delete your account from Profile</li>
             </ul>
-            <p class="small-print">Avoid entering names, bank account numbers, card details, or passwords.</p>
+            <p class="small-print">Language and display preferences are stored in this browser. Finance AI does not connect to a bank. This is a product summary, not a legal privacy policy; professional review is required before public release.</p>
           </aside>
         </div>
 

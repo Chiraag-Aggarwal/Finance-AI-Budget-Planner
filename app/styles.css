@@ -2018,6 +2018,20 @@ h2 {
 .profile-edit-form { display: grid; gap: 1rem; margin-top: 1.5rem; }
 .profile-edit-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; }
 .profile-page-header .header-actions { width: auto; }
+.profile-data-card { margin-top: 1.25rem; }
+.profile-data-card h2 { margin-bottom: 0.65rem; font-size: clamp(1.45rem, 4vw, 2rem); }
+.profile-data-card p { color: var(--muted); line-height: 1.65; }
+.account-data-actions { margin: 1.2rem 0 0.8rem; }
+.button-danger {
+  color: #fff;
+  background: #a52e29;
+  border: 1px solid #a52e29;
+}
+.button-danger:hover,
+.button-danger:focus-visible { background: #86241f; border-color: #86241f; }
+:root[data-theme="dark"] .button-danger { color: #fff; background: #a3332d; border-color: #c35a52; }
+:root[data-theme="dark"] .button-danger:hover,
+:root[data-theme="dark"] .button-danger:focus-visible { background: #842923; border-color: #e27870; }
 
 .savings-draft-note { margin: -0.35rem 0 1rem; color: var(--muted); font-size: 0.78rem; }
 .budget-coach-summary { margin-top: 1rem; }

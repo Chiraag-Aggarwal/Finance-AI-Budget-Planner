@@ -45,6 +45,7 @@ def migrate(sqlite_file: Path, mongo_uri: str, database_name: str) -> int:
                         "region": user["region"],
                         "password_salt": user["password_salt"],
                         "password_hash": user["password_hash"],
+                        "email_verified": bool(user["email_verified"]),
                         "created_at": user["created_at"],
                     }
                 },

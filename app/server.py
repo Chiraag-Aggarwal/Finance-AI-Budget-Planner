@@ -56,6 +56,10 @@ SESSION_COOKIE = "finance_ai_session"
 SESSION_LIFETIME_SECONDS = 60 * 60 * 24 * 7
 PASSWORD_HASH_ROUNDS = 310_000
 PASSWORD_RESET_LIFETIME_SECONDS = 30 * 60
+EMAIL_VERIFICATION_LIFETIME_SECONDS = 24 * 60 * 60
+EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS = 60
+EMAIL_VERIFICATION_WINDOW_SECONDS = 60 * 60
+EMAIL_VERIFICATION_MAX_PER_HOUR = 5
 MAX_REQUEST_BYTES = 16_384
 MAX_FINANCE_DATA_BYTES = 1_000_000
 COOKIE_SECURE = os.environ.get(
@@ -94,6 +98,7 @@ def initialize_database(database_file: Path = DATABASE_FILE) -> None:
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
                 email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                email_verified INTEGER NOT NULL DEFAULT 1,
                 region TEXT NOT NULL,
                 password_salt TEXT NOT NULL,
                 password_hash TEXT NOT NULL,
@@ -124,8 +129,26 @@ def initialize_database(database_file: Path = DATABASE_FILE) -> None:
 
             CREATE INDEX IF NOT EXISTS password_reset_tokens_by_user
                 ON password_reset_tokens(user_id);
+
+            CREATE TABLE IF NOT EXISTS email_verification_tokens (
+                token_hash TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                expires_at INTEGER NOT NULL,
+                window_started_at INTEGER NOT NULL,
+                send_count INTEGER NOT NULL,
+                last_sent_at INTEGER NOT NULL
+            );
             """
         )
+
+        # Old SQLite accounts become verified; new accounts explicitly use 0.
+        user_columns = {row["name"] for row in connection.execute("PRAGMA table_info(users)")}
+        if "email_verified" not in user_columns:
+            connection.execute(
+                "ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1"
+            )
+        # Treat any incomplete legacy migration as an existing, trusted account.
+        connection.execute("UPDATE users SET email_verified = 1 WHERE email_verified IS NULL")
 
 
 class DuplicateEmailError(Exception):
@@ -150,12 +173,14 @@ class MongoStore:
         self.sessions = database["sessions"]
         self.finance_data = database["finance_data"]
         self.password_resets = database["password_resets"]
+        self.email_verifications = database["email_verifications"]
         self.users.create_index([("email", ASCENDING)], unique=True)
         self.sessions.create_index("expires_at", expireAfterSeconds=0)
         self.finance_data.create_index("updated_at")
         self.password_resets.create_index("expires_at", expireAfterSeconds=0)
+        self.email_verifications.create_index("expires_at", expireAfterSeconds=0)
 
-    def create_user(self, fields: dict) -> dict:
+    def create_user(self, fields: dict, email_verified: bool = False) -> dict:
         from pymongo.errors import DuplicateKeyError
 
         salt, password_hash_value = hash_password(fields["password"])
@@ -166,6 +191,7 @@ class MongoStore:
                 "_id": user_id,
                 "name": fields["name"],
                 "email": fields["email"],
+                "email_verified": bool(email_verified),
                 "region": fields["region"],
                 "password_salt": salt,
                 "password_hash": password_hash_value,
@@ -184,8 +210,72 @@ class MongoStore:
         user = self.users.find_one({"email": email.strip().lower()})
         if not user:
             return None
+        # Existing MongoDB documents without this field remain trusted.
+        if user.get("email_verified") is None:
+            user["email_verified"] = True
         user["id"] = user.pop("_id")
         return user
+
+    def create_email_verification(self, user_id: int | str, token_hash: str, expires_at: int, now: int) -> bool:
+        from pymongo.errors import DuplicateKeyError
+
+        current = self.email_verifications.find_one({"_id": user_id})
+        expires = datetime.fromtimestamp(expires_at, timezone.utc)
+        if current:
+            last_sent = int(current["last_sent_at"])
+            if now - last_sent < EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS:
+                return False
+            window_started = int(current["window_started_at"])
+            send_count = int(current["send_count"])
+            if now - window_started >= EMAIL_VERIFICATION_WINDOW_SECONDS:
+                window_started, send_count = now, 1
+            elif send_count >= EMAIL_VERIFICATION_MAX_PER_HOUR:
+                return False
+            else:
+                send_count += 1
+            changed = self.email_verifications.update_one(
+                {
+                    "_id": user_id,
+                    "token_hash": current["token_hash"],
+                    "last_sent_at": last_sent,
+                    "send_count": int(current["send_count"]),
+                },
+                {"$set": {
+                    "token_hash": token_hash,
+                    "expires_at": expires,
+                    "window_started_at": window_started,
+                    "send_count": send_count,
+                    "last_sent_at": now,
+                }},
+            )
+            return changed.matched_count == 1
+
+        try:
+            self.email_verifications.insert_one({
+                "_id": user_id,
+                "user_id": user_id,
+                "token_hash": token_hash,
+                "expires_at": expires,
+                "window_started_at": now,
+                "send_count": 1,
+                "last_sent_at": now,
+            })
+        except DuplicateKeyError:
+            return False
+        return True
+
+    def verify_email(self, token_hash: str, now: int) -> bool:
+        token = self.email_verifications.find_one_and_delete({
+            "token_hash": token_hash,
+            "expires_at": {"$gt": datetime.fromtimestamp(now, timezone.utc)},
+        })
+        if not token:
+            return False
+        changed = self.users.update_one(
+            {"_id": token["user_id"], "email_verified": {"$ne": True}},
+            {"$set": {"email_verified": True}},
+        )
+        return changed.matched_count == 1
 
     def create_password_reset(self, user_id: int | str, token_hash: str, expires_at: int) -> None:
         # Keep only the newest reset link for each account.
@@ -271,6 +361,25 @@ class MongoStore:
             if key in FINANCE_DATA_FIELDS
         }
 
+    def export_account_data(self, user_id: int | str) -> dict | None:
+        user = self.users.find_one({"_id": user_id})
+        if not user:
+            return None
+        return build_account_export(user, self.get_finance_data(user_id))
+
+    def delete_account_data(self, user_id: int | str) -> bool:
+        # MongoDB transactions keep every collection change together.
+        with self.client.start_session() as session:
+            with session.start_transaction():
+                if not self.users.find_one({"_id": user_id}, session=session):
+                    return False
+                self.sessions.delete_many({"user_id": user_id}, session=session)
+                self.finance_data.delete_one({"_id": user_id}, session=session)
+                self.password_resets.delete_many({"user_id": user_id}, session=session)
+                self.email_verifications.delete_many({"user_id": user_id}, session=session)
+                result = self.users.delete_one({"_id": user_id}, session=session)
+        return result.deleted_count == 1
+
     def update_finance_data(self, user_id: int | str, changes: dict) -> dict:
         self.finance_data.update_one(
             {"_id": user_id},
@@ -340,9 +449,66 @@ def password_matches(password: str, salt_hex: str, expected_hash: str) -> bool:
     return secrets.compare_digest(submitted_hash, expected_hash)
 
 
-def hash_password_reset_token(token: str) -> str:
-    """Store only a hash of a one-time reset token."""
+def hash_one_time_token(token: str) -> str:
+    """Store only a hash of a random one-time token."""
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def create_email_verification(
+    database_file: Path | MongoStore, user_id: int | str, token_hash: str, expires_at: int, now: int | None = None
+) -> bool:
+    current_time = int(time.time()) if now is None else int(now)
+    if isinstance(database_file, MongoStore):
+        return database_file.create_email_verification(user_id, token_hash, expires_at, current_time)
+    with open_database(database_file) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        existing = connection.execute(
+            "SELECT * FROM email_verification_tokens WHERE user_id = ?", (user_id,)
+        ).fetchone()
+        window_started, send_count = current_time, 1
+        if existing:
+            if current_time - existing["last_sent_at"] < EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS:
+                return False
+            window_started = existing["window_started_at"]
+            if current_time - window_started >= EMAIL_VERIFICATION_WINDOW_SECONDS:
+                window_started, send_count = current_time, 1
+            elif existing["send_count"] >= EMAIL_VERIFICATION_MAX_PER_HOUR:
+                return False
+            else:
+                send_count = existing["send_count"] + 1
+            connection.execute("DELETE FROM email_verification_tokens WHERE user_id = ?", (user_id,))
+        connection.execute(
+            "INSERT INTO email_verification_tokens "
+            "(token_hash, user_id, expires_at, window_started_at, send_count, last_sent_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (token_hash, user_id, expires_at, window_started, send_count, current_time),
+        )
+    return True
+
+
+def verify_email_token(database_file: Path | MongoStore, token_hash: str, now: int | None = None) -> bool:
+    current_time = int(time.time()) if now is None else int(now)
+    if isinstance(database_file, MongoStore):
+        return database_file.verify_email(token_hash, current_time)
+    with open_database(database_file) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        token = connection.execute(
+            "SELECT user_id FROM email_verification_tokens "
+            "WHERE token_hash = ? AND expires_at > ?", (token_hash, current_time)
+        ).fetchone()
+        if not token:
+            return False
+        deleted = connection.execute(
+            "DELETE FROM email_verification_tokens WHERE token_hash = ? AND expires_at > ?",
+            (token_hash, current_time),
+        )
+        if deleted.rowcount != 1:
+            return False
+        changed = connection.execute(
+            "UPDATE users SET email_verified = 1 WHERE id = ? AND email_verified = 0",
+            (token["user_id"],),
+        )
+    return changed.rowcount == 1
 
 
 def create_password_reset(database_file: Path | MongoStore, user_id: int | str, token_hash: str, expires_at: int) -> None:
@@ -397,7 +563,7 @@ def use_password_reset(
     return True
 
 
-def password_reset_smtp_settings() -> dict | None:
+def email_smtp_settings() -> dict | None:
     """Return SMTP settings only when the app owner has configured email delivery."""
     host = os.environ.get("FINANCE_AI_SMTP_HOST", "").strip()
     username = os.environ.get("FINANCE_AI_SMTP_USERNAME", "").strip()
@@ -414,7 +580,7 @@ def password_reset_smtp_settings() -> dict | None:
 
 def send_password_reset_email(recipient: str, reset_url: str) -> None:
     """Send a plain-text reset message through the app owner's SMTP account."""
-    settings = password_reset_smtp_settings()
+    settings = email_smtp_settings()
     if not settings:
         raise RuntimeError("Password reset email settings are incomplete.")
 
@@ -428,6 +594,30 @@ def send_password_reset_email(recipient: str, reset_url: str) -> None:
         "If you did not request this, you can ignore this email."
     )
 
+    with smtplib.SMTP(settings["host"], settings["port"], timeout=15) as mail_server:
+        mail_server.ehlo()
+        mail_server.starttls(context=ssl.create_default_context())
+        mail_server.ehlo()
+        mail_server.login(settings["username"], settings["password"])
+        mail_server.send_message(message)
+
+
+def send_email_verification(recipient: str, verification_url: str) -> None:
+    """Send an email verification link through the configured sender."""
+    settings = email_smtp_settings()
+    if not settings:
+        raise RuntimeError("Email verification settings are incomplete.")
+    message = EmailMessage()
+    message["Subject"] = "Verify your Finance AI email | ईमेल सत्यापित करें"
+    message["From"] = settings["sender"]
+    message["To"] = recipient
+    message.set_content(
+        "Welcome to Finance AI. Verify that you own this email address.\n"
+        "इस ईमेल पते की पुष्टि करके अपना Finance AI खाता सत्यापित करें।\n\n"
+        f"Use this one-time link within 24 hours / इस एक बार इस्तेमाल होने वाले लिंक का उपयोग 24 घंटे के भीतर करें:\n{verification_url}\n\n"
+        "If you did not create this account, you can ignore this email.\n"
+        "यदि आपने यह खाता नहीं बनाया है, तो इस ईमेल को अनदेखा कर सकते हैं।"
+    )
     with smtplib.SMTP(settings["host"], settings["port"], timeout=15) as mail_server:
         mail_server.ehlo()
         mail_server.starttls(context=ssl.create_default_context())
@@ -452,16 +642,16 @@ def get_password_reset_base_url(port: int) -> str | None:
     return base_url
 
 
-def create_user(database_file: Path | MongoStore, fields: dict) -> dict:
+def create_user(database_file: Path | MongoStore, fields: dict, email_verified: bool = False) -> dict:
     """Insert an account and return its non-secret profile fields."""
     if isinstance(database_file, MongoStore):
-        return database_file.create_user(fields)
+        return database_file.create_user(fields, email_verified=email_verified)
 
     salt, password_hash_value = hash_password(fields["password"])
     with open_database(database_file) as connection:
         cursor = connection.execute(
-            """INSERT INTO users (name, email, region, password_salt, password_hash, created_at)
-               VALUES (?, ?, ?, ?, ?, ?)""",
+            """INSERT INTO users (name, email, region, password_salt, password_hash, created_at, email_verified)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (
                 fields["name"],
                 fields["email"],
@@ -469,6 +659,7 @@ def create_user(database_file: Path | MongoStore, fields: dict) -> dict:
                 salt,
                 password_hash_value,
                 int(time.time()),
+                int(bool(email_verified)),
             ),
         )
         return {
@@ -594,6 +785,59 @@ def validate_finance_data_patch(payload: dict) -> tuple[dict, str | None]:
     return clean, None
 
 
+def build_account_export(user: dict, finance_data: dict) -> dict:
+    """Return user-owned data without credentials or active authentication tokens."""
+    created_at = user.get("created_at")
+    created_at_text = (
+        datetime.fromtimestamp(int(created_at), timezone.utc).isoformat().replace("+00:00", "Z")
+        if created_at is not None else None
+    )
+    email_verified = user.get("email_verified")
+    return {
+        "format": "finance-ai-account-export-v1",
+        "exportedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "account": {
+            "name": user["name"],
+            "email": user["email"],
+            "region": user["region"],
+            "emailVerified": True if email_verified is None else bool(email_verified),
+            "createdAt": created_at_text,
+        },
+        "financeData": finance_data,
+    }
+
+
+def export_account_data(database_file: Path | MongoStore, user_id: int | str) -> dict | None:
+    """Export only the profile and finance records belonging to this account ID."""
+    if isinstance(database_file, MongoStore):
+        return database_file.export_account_data(user_id)
+    with open_database(database_file) as connection:
+        user = connection.execute(
+            "SELECT name, email, region, email_verified, created_at FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+        if not user:
+            return None
+        finance_row = connection.execute(
+            "SELECT payload FROM user_finance_data WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+    finance_data = json.loads(finance_row["payload"]) if finance_row else {}
+    return build_account_export(dict(user), finance_data)
+
+
+def delete_account_data(database_file: Path | MongoStore, user_id: int | str) -> bool:
+    """Permanently delete an account and every stored record linked to its ID."""
+    if isinstance(database_file, MongoStore):
+        return database_file.delete_account_data(user_id)
+    with open_database(database_file) as connection:
+        deleted_count = connection.execute(
+            "DELETE FROM users WHERE id = ?", (user_id,)
+        ).rowcount
+    # SQLite's enabled foreign keys cascade to sessions, finance data, and tokens.
+    return deleted_count == 1
+
+
 def get_finance_data(database_file: Path | MongoStore, user_id: int | str) -> dict:
     if isinstance(database_file, MongoStore):
         return database_file.get_finance_data(user_id)
@@ -635,10 +879,12 @@ def account_request_allowed(client_ip: str, route: str, now: float | None = None
     current_time = time.monotonic() if now is None else now
     if route == "/api/login":
         maximum_attempts = 10
-    elif route == "/api/password-reset/request":
+    elif route in {"/api/password-reset/request", "/api/email-verification/resend"}:
         maximum_attempts = 3
+    elif route in {"/api/password-reset/complete", "/api/email-verification/complete"}:
+        maximum_attempts = 8
     else:
-        maximum_attempts = 8 if route == "/api/password-reset/complete" else 5
+        maximum_attempts = 5
     key = (client_ip, route)
     with _RATE_LIMIT_LOCK:
         attempts = [
@@ -822,6 +1068,27 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             user.pop("expires_at", None)
             self.send_json(HTTPStatus.OK, {"user": user})
             return
+        if path == "/api/account/export":
+            try:
+                user = self.current_user()
+                if not user:
+                    self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in.")
+                    return
+                export = export_account_data(self.database_file, user["id"])
+            except Exception as error:
+                if is_database_error(error):
+                    self.send_database_unavailable()
+                    return
+                raise
+            if not export:
+                self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in again.")
+                return
+            self.send_json(
+                HTTPStatus.OK,
+                export,
+                {"Content-Disposition": 'attachment; filename="finance-ai-account-export.json"'},
+            )
+            return
         if path == "/api/finance-data":
             try:
                 user = self.current_user()
@@ -859,6 +1126,9 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             "/api/signup",
             "/api/password-reset/request",
             "/api/password-reset/complete",
+            "/api/email-verification/resend",
+            "/api/email-verification/complete",
+            "/api/account/delete",
         }
         if path in account_paths:
             client_ip = self.client_address[0]
@@ -881,6 +1151,12 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
                 self.handle_password_reset_request(payload)
             elif path == "/api/password-reset/complete":
                 self.handle_password_reset_complete(payload)
+            elif path == "/api/email-verification/resend":
+                self.handle_email_verification_resend(payload)
+            elif path == "/api/email-verification/complete":
+                self.handle_email_verification_complete(payload)
+            elif path == "/api/account/delete":
+                self.handle_account_delete(payload)
             else:
                 self.send_error_json(HTTPStatus.NOT_FOUND, "Account action not found.")
         except Exception as error:
@@ -962,7 +1238,7 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             self.send_error_json(HTTPStatus.BAD_REQUEST, "Enter a valid email address.")
             return
 
-        if not password_reset_smtp_settings():
+        if not email_smtp_settings():
             self.send_error_json(
                 HTTPStatus.SERVICE_UNAVAILABLE,
                 "Password recovery email is not configured. Ask the app owner to set it up.",
@@ -985,7 +1261,7 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             create_password_reset(
                 self.database_file,
                 user["id"],
-                hash_password_reset_token(token),
+                hash_one_time_token(token),
                 expires_at,
             )
             reset_url = f"{base_url}/#reset_token={quote(token, safe='')}"
@@ -1011,7 +1287,7 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
 
         changed = use_password_reset(
             self.database_file,
-            hash_password_reset_token(token),
+            hash_one_time_token(token),
             new_password,
         )
         if not changed:
@@ -1020,6 +1296,82 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         self.send_json(HTTPStatus.OK, {
             "message": "Your password was changed. Sign in using your new password."
         })
+
+    def send_email_verification_link(self, user: dict, base_url: str) -> str:
+        """Create and send a one-time link, respecting stored resend limits."""
+        now = int(time.time())
+        token = secrets.token_urlsafe(32)
+        allowed = create_email_verification(
+            self.database_file, user["id"], hash_one_time_token(token),
+            now + EMAIL_VERIFICATION_LIFETIME_SECONDS, now,
+        )
+        if not allowed:
+            return "limited"
+        verification_url = f"{base_url}/#verify_email={quote(token)}"
+        try:
+            send_email_verification(user["email"], verification_url)
+        except Exception as error:
+            # Do not log addresses, links, or SMTP settings.
+            print(f"Email verification delivery failed: {type(error).__name__}")
+            return "failed"
+        return "sent"
+
+    def handle_email_verification_resend(self, payload: dict):
+        email = str(payload.get("email") or "").strip().lower()
+        if len(email) > 254 or not EMAIL_PATTERN.fullmatch(email):
+            self.send_error_json(HTTPStatus.BAD_REQUEST, "Enter a valid email address.")
+            return
+        if not email_smtp_settings():
+            self.send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "Email verification is not configured. Ask the app owner to set it up.")
+            return
+        base_url = get_password_reset_base_url(self.server.server_port)
+        if not base_url:
+            self.send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "The app public address is not configured for email verification.")
+            return
+        user = get_user_by_email(self.database_file, email)
+        if user and not user["email_verified"]:
+            self.send_email_verification_link(user, base_url)
+        self.send_json(HTTPStatus.OK, {
+            "message": "If this email needs verification, a link will be sent. If you requested one recently, wait one minute before trying again."
+        })
+
+    def handle_email_verification_complete(self, payload: dict):
+        token = str(payload.get("token") or "").strip()
+        if not 32 <= len(token) <= 128:
+            self.send_error_json(HTTPStatus.BAD_REQUEST, "This verification link is invalid or expired. Request a new one.")
+            return
+        if not verify_email_token(self.database_file, hash_one_time_token(token)):
+            self.send_error_json(HTTPStatus.BAD_REQUEST, "This verification link is invalid or expired. Request a new one.")
+            return
+        self.send_json(HTTPStatus.OK, {"message": "Your email is verified. Sign in to continue."})
+
+    def handle_account_delete(self, payload: dict):
+        user = self.current_user()
+        if not user:
+            self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in again.")
+            return
+        if payload.get("confirmation") != "DELETE":
+            self.send_error_json(HTTPStatus.BAD_REQUEST, "Type DELETE exactly to confirm permanent removal.")
+            return
+        password = str(payload.get("password") or "")
+        if not 10 <= len(password) <= 128:
+            self.send_error_json(HTTPStatus.BAD_REQUEST, "Enter your current password to confirm deletion.")
+            return
+        account = get_user_by_email(self.database_file, user["email"])
+        if not account or account["id"] != user["id"]:
+            self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in again.")
+            return
+        if not password_matches(password, account["password_salt"], account["password_hash"]):
+            self.send_error_json(HTTPStatus.FORBIDDEN, "Your password did not match. No data was deleted.")
+            return
+        if not delete_account_data(self.database_file, user["id"]):
+            self.send_error_json(HTTPStatus.NOT_FOUND, "Your account could not be found.")
+            return
+        self.send_json(
+            HTTPStatus.OK,
+            {"message": "Your account and saved data were permanently deleted."},
+            {"Set-Cookie": self.clear_session_cookie()},
+        )
 
     def handle_signup(self, payload: dict):
         fields, error = validate_signup(
@@ -1031,14 +1383,27 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         if error:
             self.send_error_json(HTTPStatus.BAD_REQUEST, error)
             return
+        if not email_smtp_settings():
+            self.send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "Email verification is not configured. Ask the app owner to set it up.")
+            return
+        base_url = get_password_reset_base_url(self.server.server_port)
+        if not base_url:
+            self.send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "The app public address is not configured for email verification.")
+            return
         try:
             user = create_user(self.database_file, fields)
         except (sqlite3.IntegrityError, DuplicateEmailError):
             self.send_error_json(HTTPStatus.CONFLICT, "An account with that email already exists.")
             return
 
-        _, cookie = self.make_session(user["id"])
-        self.send_json(HTTPStatus.CREATED, {"user": user}, {"Set-Cookie": cookie})
+        delivery = self.send_email_verification_link(user, base_url)
+        if delivery == "limited":
+            self.send_error_json(HTTPStatus.TOO_MANY_REQUESTS, "Too many verification emails were requested. Wait before trying again.")
+            return
+        if delivery == "failed":
+            self.send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "Your account was created, but we could not send the verification email. Wait one minute, then resend it.")
+            return
+        self.send_json(HTTPStatus.CREATED, {"message": "Account created. Check your email for a verification link. The link expires in 24 hours."})
 
     def handle_login(self, payload: dict):
         email = str(payload.get("email") or "").strip().lower()
@@ -1057,6 +1422,9 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
 
         if not valid_password:
             self.send_error_json(HTTPStatus.UNAUTHORIZED, "Email or password is incorrect.")
+            return
+        if not bool(user["email_verified"]):
+            self.send_error_json(HTTPStatus.FORBIDDEN, "Verify your email address before signing in. Use Resend verification email if you need a new link.")
             return
 
         profile = {key: user[key] for key in ("id", "name", "email", "region")}
