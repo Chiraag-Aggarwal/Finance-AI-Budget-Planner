@@ -751,6 +751,7 @@ function showNotes(notes, plan, profile) {
 function showPlan(profile, plan) {
   activeProfile = profile;
   activePlan = plan;
+  window.dispatchEvent(new CustomEvent("finance-planner-profile", { detail: profile }));
   showOverview(profile, plan);
   showCashFlow(profile, plan);
   showEmergencyFund(plan);
@@ -795,6 +796,7 @@ function schedulePlannerAutoSave() {
     try {
       await saveFinanceDataField("plannerProfile", profile);
       lastSavedPlannerSignature = signature;
+      window.dispatchEvent(new CustomEvent("finance-planner-profile", { detail: profile }));
     } catch (error) {
       console.error("Finance AI planner auto-save failed.", error);
     }
@@ -908,6 +910,7 @@ clearButton.addEventListener("click", () => {
 
   form.reset();
   updateGoalFields();
+  window.dispatchEvent(new CustomEvent("finance-planner-profile", { detail: null }));
   activeProfile = null;
   activePlan = null;
   showValidationErrors([]);
@@ -952,6 +955,7 @@ window.addEventListener("finance-user-logout", () => {
   currentUserId = null;
   activeProfile = null;
   activePlan = null;
+  window.dispatchEvent(new CustomEvent("finance-planner-profile", { detail: null }));
   form.reset();
   updateGoalFields();
   results.hidden = true;

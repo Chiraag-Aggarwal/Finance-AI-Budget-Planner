@@ -12,6 +12,7 @@ import smtplib
 import sqlite3
 import ssl
 import threading
+import urllib.request
 import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
@@ -45,8 +46,6 @@ def load_local_environment():
         if name and not os.environ.get(name):
             os.environ[name] = value
 
-
-load_local_environment()
 
 DATABASE_FILE = Path(os.environ.get(
     "FINANCE_AI_DATABASE",
@@ -578,21 +577,60 @@ def email_smtp_settings() -> dict | None:
     return {"host": host, "port": port, "username": username, "password": password, "sender": sender}
 
 
-def send_password_reset_email(recipient: str, reset_url: str) -> None:
-    """Send a plain-text reset message through the app owner's SMTP account."""
-    settings = email_smtp_settings()
+def email_delivery_settings() -> dict | None:
+    """Choose SMTP locally or the Brevo HTTPS API on Render."""
+    provider = os.environ.get("FINANCE_AI_EMAIL_PROVIDER", "smtp").strip().lower()
+
+    if provider == "smtp":
+        settings = email_smtp_settings()
+        if settings:
+            return {"provider": "smtp", **settings}
+        return None
+
+    if provider == "brevo":
+        api_key = os.environ.get("FINANCE_AI_BREVO_API_KEY", "").strip()
+        sender = os.environ.get("FINANCE_AI_BREVO_SENDER", "").strip()
+        if api_key and sender:
+            return {"provider": "brevo", "api_key": api_key, "sender": sender}
+
+    return None
+
+
+def send_email_message(recipient: str, subject: str, body: str) -> None:
+    """Send through the configured provider without logging credentials."""
+    settings = email_delivery_settings()
     if not settings:
-        raise RuntimeError("Password reset email settings are incomplete.")
+        raise RuntimeError("Email delivery settings are incomplete.")
+
+    if settings["provider"] == "brevo":
+        payload = json.dumps(
+            {
+                "sender": {"name": "Finance AI", "email": settings["sender"]},
+                "to": [{"email": recipient}],
+                "subject": subject,
+                "textContent": body,
+            }
+        ).encode("utf-8")
+        request = urllib.request.Request(
+            "https://api.brevo.com/v3/smtp/email",
+            data=payload,
+            headers={
+                "accept": "application/json",
+                "api-key": settings["api_key"],
+                "content-type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=15) as response:
+            if response.status < 200 or response.status >= 300:
+                raise RuntimeError("The email provider rejected the message.")
+        return
 
     message = EmailMessage()
-    message["Subject"] = "Reset your Finance AI password"
+    message["Subject"] = subject
     message["From"] = settings["sender"]
     message["To"] = recipient
-    message.set_content(
-        "We received a request to reset your Finance AI password.\n\n"
-        f"Use this one-time link within 30 minutes:\n{reset_url}\n\n"
-        "If you did not request this, you can ignore this email."
-    )
+    message.set_content(body)
 
     with smtplib.SMTP(settings["host"], settings["port"], timeout=15) as mail_server:
         mail_server.ehlo()
@@ -600,30 +638,33 @@ def send_password_reset_email(recipient: str, reset_url: str) -> None:
         mail_server.ehlo()
         mail_server.login(settings["username"], settings["password"])
         mail_server.send_message(message)
+    return
+
+
+def send_password_reset_email(recipient: str, reset_url: str) -> None:
+    """Send a one-time password-reset link through the configured email provider."""
+    send_email_message(
+        recipient,
+        "Reset your Finance AI password",
+        "We received a request to reset your Finance AI password.\n\n"
+        f"Use this one-time link within 30 minutes:\n{reset_url}\n\n"
+        "If you did not request this, you can ignore this email.",
+    )
 
 
 def send_email_verification(recipient: str, verification_url: str) -> None:
-    """Send an email verification link through the configured sender."""
-    settings = email_smtp_settings()
-    if not settings:
-        raise RuntimeError("Email verification settings are incomplete.")
-    message = EmailMessage()
-    message["Subject"] = "Verify your Finance AI email | ईमेल सत्यापित करें"
-    message["From"] = settings["sender"]
-    message["To"] = recipient
-    message.set_content(
+    """Send a one-time verification link through the configured email provider."""
+    send_email_message(
+        recipient,
+        "Verify your Finance AI email | ईमेल सत्यापित करें",
         "Welcome to Finance AI. Verify that you own this email address.\n"
         "इस ईमेल पते की पुष्टि करके अपना Finance AI खाता सत्यापित करें।\n\n"
-        f"Use this one-time link within 24 hours / इस एक बार इस्तेमाल होने वाले लिंक का उपयोग 24 घंटे के भीतर करें:\n{verification_url}\n\n"
+        "Use this one-time link within 24 hours / इस एक बार इस्तेमाल होने वाले लिंक का उपयोग 24 घंटे के भीतर करें:\n"
+        f"{verification_url}\n\n"
         "If you did not create this account, you can ignore this email.\n"
-        "यदि आपने यह खाता नहीं बनाया है, तो इस ईमेल को अनदेखा कर सकते हैं।"
+        "यदि आपने यह खाता नहीं बनाया है, तो इस ईमेल को अनदेखा कर सकते हैं।",
     )
-    with smtplib.SMTP(settings["host"], settings["port"], timeout=15) as mail_server:
-        mail_server.ehlo()
-        mail_server.starttls(context=ssl.create_default_context())
-        mail_server.ehlo()
-        mail_server.login(settings["username"], settings["password"])
-        mail_server.send_message(message)
+
 
 
 def get_password_reset_base_url(port: int) -> str | None:
@@ -631,8 +672,11 @@ def get_password_reset_base_url(port: int) -> str | None:
     base_url = os.environ.get("FINANCE_AI_PUBLIC_URL", "").strip().rstrip("/")
     if not base_url:
         if os.environ.get("FINANCE_AI_ENV", "development").lower() == "production":
-            return None
-        base_url = f"http://127.0.0.1:{port}"
+            base_url = os.environ.get("RENDER_EXTERNAL_URL", "").strip().rstrip("/")
+            if not base_url:
+                return None
+        else:
+            base_url = f"http://127.0.0.1:{port}"
 
     parsed = urlsplit(base_url)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.username or parsed.password:
@@ -701,7 +745,7 @@ def update_user_profile(database_file: Path | MongoStore, user_id: int, name: st
         return dict(row) if row else None
 
 
-FINANCE_DATA_FIELDS = {"plannerProfile", "transactions", "settings"}
+FINANCE_DATA_FIELDS = {"plannerProfile", "transactions", "settings", "completedMonths"}
 TRANSACTION_FIELDS = {"id", "type", "category", "date", "amount", "note"}
 PLANNER_PROFILE_FIELDS = {
     "includeGoal", "monthlyTakeHomeIncome", "monthlyEssentialExpenses",
@@ -764,6 +808,22 @@ def validate_finance_data_patch(payload: dict) -> tuple[dict, str | None]:
                     datetime.strptime(entry["date"], "%Y-%m-%d")
                 except ValueError:
                     return {}, "An income or expense date is invalid."
+        elif field == "completedMonths":
+            if not isinstance(value, list) or len(value) > 120:
+                return {}, "The completed-month list is invalid or too large."
+            seen_months = set()
+            for month in value:
+                if (
+                    not isinstance(month, str)
+                    or not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", month)
+                    or month in seen_months
+                ):
+                    return {}, "A completed month is invalid or repeated."
+                try:
+                    datetime.strptime(month + "-01", "%Y-%m-%d")
+                except ValueError:
+                    return {}, "A completed month is invalid or repeated."
+                seen_months.add(month)
         elif field == "settings":
             if not isinstance(value, dict) or set(value) - {
                 "theme", "accent", "textSize", "reduceMotion"
@@ -1238,7 +1298,7 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             self.send_error_json(HTTPStatus.BAD_REQUEST, "Enter a valid email address.")
             return
 
-        if not email_smtp_settings():
+        if not email_delivery_settings():
             self.send_error_json(
                 HTTPStatus.SERVICE_UNAVAILABLE,
                 "Password recovery email is not configured. Ask the app owner to set it up.",
@@ -1321,7 +1381,7 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         if len(email) > 254 or not EMAIL_PATTERN.fullmatch(email):
             self.send_error_json(HTTPStatus.BAD_REQUEST, "Enter a valid email address.")
             return
-        if not email_smtp_settings():
+        if not email_delivery_settings():
             self.send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "Email verification is not configured. Ask the app owner to set it up.")
             return
         base_url = get_password_reset_base_url(self.server.server_port)
@@ -1383,7 +1443,7 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         if error:
             self.send_error_json(HTTPStatus.BAD_REQUEST, error)
             return
-        if not email_smtp_settings():
+        if not email_delivery_settings():
             self.send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "Email verification is not configured. Ask the app owner to set it up.")
             return
         base_url = get_password_reset_base_url(self.server.server_port)
@@ -1523,12 +1583,39 @@ class FinanceHTTPServer(ThreadingHTTPServer):
 
 
 def main():
+    global DATABASE_FILE, COOKIE_SECURE
+
+    # Read local settings only when actually starting the server, never on import.
+    load_local_environment()
     production = os.environ.get("FINANCE_AI_ENV", "development").lower() == "production"
+    DATABASE_FILE = Path(os.environ.get(
+        "FINANCE_AI_DATABASE",
+        str(APP_FOLDER / "data" / "finance_ai_accounts.sqlite3"),
+    ))
+    COOKIE_SECURE = os.environ.get(
+        "FINANCE_AI_COOKIE_SECURE",
+        "1" if production else "0",
+    ) == "1"
     mongo_uri = os.environ.get("MONGODB_URI", "").strip()
     if production and not mongo_uri:
         raise RuntimeError("Set MONGODB_URI before starting Finance AI in production.")
     if production and not COOKIE_SECURE:
         raise RuntimeError("Set FINANCE_AI_COOKIE_SECURE=1 when running the app over HTTPS.")
+
+    # Do not launch a public app that cannot send verification and recovery emails.
+    if production:
+        if not email_delivery_settings():
+            raise RuntimeError(
+                "Configure a complete email provider before starting in production: "
+                "SMTP settings or FINANCE_AI_BREVO_API_KEY and FINANCE_AI_BREVO_SENDER."
+            )
+        public_url = get_password_reset_base_url(
+            int(os.environ.get("FINANCE_AI_PORT", os.environ.get("PORT", "8000")))
+        )
+        if not public_url or urlsplit(public_url).scheme != "https":
+            raise RuntimeError(
+                "Set FINANCE_AI_PUBLIC_URL to the app's full HTTPS address in production."
+            )
 
     if mongo_uri:
         database_file = MongoStore(

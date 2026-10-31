@@ -232,7 +232,15 @@
               <label class="field field-full">
                 <span>Short note <span class="optional-mark">Optional</span></span>
                 <input id="transaction-note" name="note" type="text" maxlength="80" placeholder="For example, weekly groceries">
+                <small>A category suggestion may appear below when a note matches your saved history.</small>
               </label>
+              <div id="transaction-category-suggestion" class="field-full transaction-ml-helper" role="status" aria-live="polite" hidden>
+                <button class="button button-quiet transaction-ml-suggestion-button" id="use-transaction-category-suggestion" type="button" aria-label="Use suggested category">
+                  <span>Suggested category:</span>
+                  <strong id="transaction-category-suggestion-name"></strong>
+                  <span class="transaction-ml-action">Select</span>
+                </button>
+              </div>
               <div class="tracker-actions">
                 <button class="button button-primary" type="submit">Add entry <span aria-hidden="true">+</span></button>
                 <button class="button button-quiet" id="clear-transactions" type="button">Clear history</button>
@@ -256,6 +264,38 @@
             <ul id="category-summary" class="category-summary" aria-label="Expenses grouped by category"></ul>
           </article>
         </div>
+
+        <article class="tracker-panel spending-forecast-panel" aria-labelledby="spending-forecast-title">
+          <div class="panel-heading">
+            <span class="result-icon icon-sage" aria-hidden="true">↗</span>
+            <div>
+              <h3 id="spending-forecast-title">Next month’s cash spending forecast</h3>
+              <p>Suggested category amounts based on your completed spending history.</p>
+            </div>
+          </div>
+          <p id="spending-forecast-status" class="forecast-status" role="status" aria-live="polite">
+            Mark 3 consecutive recent months complete to get a personal forecast.
+          </p>
+          <div id="spending-forecast-results" hidden>
+            <div class="forecast-metrics">
+              <div>
+                <span>Forecast total</span>
+                <strong id="spending-forecast-total">₹0</strong>
+              </div>
+              <div id="spending-forecast-income-card" hidden>
+                <span>Take-home income in your plan</span>
+                <strong id="spending-forecast-income">—</strong>
+              </div>
+            </div>
+            <ul id="spending-forecast-categories" class="forecast-category-list"></ul>
+            <p id="spending-forecast-no-categories" class="forecast-status" hidden>
+              No expenses were recorded in those complete months, so the forecast is ₹0.
+            </p>
+            <p class="forecast-note">
+              Use this as a starting estimate. Review it alongside upcoming bills, current EMIs, and your savings plan.
+            </p>
+          </div>
+        </article>
 
         <article class="tracker-panel transactions-panel">
           <div class="panel-heading">
@@ -287,7 +327,7 @@
             <span class="result-icon icon-sage" aria-hidden="true">↗</span>
             <div>
               <h3 id="savings-coach-title">Find ways to save each month</h3>
-              <p>See practical changes based on the spending you recorded this month.</p>
+              <p id="savings-coach-intro">See practical changes based on the spending you recorded this month.</p>
             </div>
           </div>
 
@@ -295,7 +335,7 @@
           <p id="savings-draft-note" class="savings-draft-note" hidden>Draft estimate based on entries so far. Mark the month complete for a fuller estimate.</p>
 
           <div class="tracker-summary-grid budget-coach-summary" aria-live="polite">
-            <article class="tracker-summary-card"><span class="card-label">Current balance this month</span><strong id="savings-recorded-balance">—</strong></article>
+            <article class="tracker-summary-card"><span id="savings-balance-label" class="card-label">Current balance this month</span><strong id="savings-recorded-balance">—</strong></article>
             <article class="tracker-summary-card"><span class="card-label">Could free up each month</span><strong id="savings-adjustment-total">—</strong></article>
             <article class="tracker-summary-card"><span class="card-label">Estimated monthly savings</span><strong id="savings-available-amount">—</strong></article>
           </div>
@@ -303,12 +343,12 @@
           <div class="savings-recommendations">
             <div class="savings-recommendations-heading">
               <h4>Where you can save</h4>
-              <p>Monthly amounts from categories you recorded.</p>
+              <p id="savings-model-note">Savings ideas use this month's recorded spending now. A personal forecast needs 3 consecutive recent months marked complete.</p>
             </div>
             <div class="table-scroll" id="savings-budget-table-wrap" hidden>
               <table class="scenario-table adjustment-table">
-                <caption class="visually-hidden">Current monthly spending, suggested spending, and possible savings by category</caption>
-                <thead><tr><th scope="col">Category</th><th scope="col">Current monthly spend</th><th scope="col">Suggested monthly spend</th><th scope="col">Could save monthly</th></tr></thead>
+                <caption id="savings-budget-caption" class="visually-hidden">Current monthly spending, suggested spending, and possible savings by category</caption>
+                <thead><tr><th scope="col">Category</th><th id="savings-current-heading" scope="col">Current monthly spend</th><th id="savings-suggested-heading" scope="col">Suggested monthly spend</th><th scope="col">Could save monthly</th></tr></thead>
                 <tbody id="savings-budget-rows"></tbody>
               </table>
             </div>
@@ -549,6 +589,18 @@
             <strong>How to read this plan</strong>
             <p>Balance is your take-home income after the expenses and current EMIs listed above. Your emergency fund is money kept for unexpected costs. When a suitable loan is available, the completion estimate adds the time before purchase to the loan repayment period. The planner calculates a comfortable EMI limit from your monthly balance and selected savings share.</p>
           </aside>
+          <details class="calculation-details">
+            <summary>How the calculations work</summary>
+            <ul>
+              <li>Monthly balance = take-home income − essential expenses − flexible expenses − current loan/EMI payments. A negative balance is shown as a shortfall.</li>
+              <li>Suggested monthly saving = positive balance × the share you selected. The rest is not counted as committed savings.</li>
+              <li>Emergency-fund target = (essential monthly expenses + current loan/EMI payments) × the number of months you selected. Your current fund is subtracted to show the remaining gap.</li>
+              <li>For a purchase goal, existing goal savings and only the assets or family support you choose to use count toward the planned contribution.</li>
+              <li>If loan comparison is on, EMI uses the annual rate you entered and a standard reducing-balance formula. A custom EMI limit is capped at your positive monthly balance; otherwise, the limit uses the share you selected.</li>
+              <li>With a loan, estimated completion time is the later of your target date or the time needed to save your planned contribution, plus the selected repayment term. Estimates assume costs and monthly saving stay the same; they exclude investment returns, price changes, fees, rate changes, and lender approval.</li>
+            </ul>
+            <p>Savings examples can use this month's entries immediately. The personal spending forecast needs at least three consecutive complete months and uses only your account history.</p>
+          </details>
           <div class="results-grid">
             <article class="result-card">
               <div class="result-card-heading">

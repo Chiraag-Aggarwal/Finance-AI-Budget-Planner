@@ -132,7 +132,7 @@ export function buildBudgetAdjustment(profile, baselinePlan, budgetSummary, cons
 }
 
 
-// Build a savings estimate from the entries recorded for the selected month.
+// Build a savings estimate from recorded entries or a ready personal forecast.
 export function buildSavingsBudget(budgetSummary, monthlySavingsTarget = 0, constraints = {}) {
   if (!Number.isFinite(monthlySavingsTarget) || monthlySavingsTarget < 0) {
     throw new RangeError("The monthly savings target must be zero or a positive amount.");
@@ -175,8 +175,25 @@ export function buildSavingsBudget(budgetSummary, monthlySavingsTarget = 0, cons
     return emptyPlan("needs-expenses", "Add at least one expense entry. Unrecorded expenses are not treated as zero.");
   }
 
-  const currentBalance = totalIncome - totalExpenses;
-  const spending = new Map(categoryTotals.map(({ category, amount }) => [category, amount]));
+  const forecast = constraints.nextMonthForecast;
+  const historyMonths = Array.isArray(forecast?.historyMonths) ? forecast.historyMonths : [];
+  const modelUsed = isComplete
+    && forecast?.status === "ready"
+    && Array.isArray(forecast.categories)
+    && Number.isFinite(forecast.total)
+    && forecast.total >= 0
+    && historyMonths.length >= 3
+    && (!budgetSummary?.selectedMonth || historyMonths.at(-1) === budgetSummary.selectedMonth);
+  const forecastTotals = modelUsed
+    ? forecast.categories.filter((item) => typeof item?.category === "string" && Number.isFinite(item.amount) && item.amount > 0)
+    : [];
+  const spending = new Map((modelUsed ? forecastTotals : categoryTotals)
+    .map(({ category, amount }) => [category, amount]));
+  // Keep income at the amount recorded in this complete month; only expenses are forecast.
+  const estimatedExpenses = modelUsed && Number.isFinite(forecast.total)
+    ? forecast.total
+    : totalExpenses;
+  const currentBalance = totalIncome - estimatedExpenses;
   const adjustable = constraints.adjustableCategories instanceof Set
     ? constraints.adjustableCategories
     : DEFAULT_SAVINGS_CATEGORIES;
@@ -190,6 +207,10 @@ export function buildSavingsBudget(budgetSummary, monthlySavingsTarget = 0, cons
   const candidates = [...DEFAULT_SAVINGS_CATEGORIES, ...additionalCategories]
     .filter((category) => adjustable.has(category) && !locked.has(category))
     .filter((category) => category !== EMI_CATEGORY && Number.isFinite(spending.get(category)) && spending.get(category) > 0);
+  // With enough history, review the model's largest flexible category estimates first.
+  if (modelUsed) {
+    candidates.sort((first, second) => spending.get(second) - spending.get(first));
+  }
 
   const targetAlreadyMet = monthlySavingsTarget > 0 && currentBalance >= monthlySavingsTarget;
 
@@ -257,6 +278,8 @@ export function buildSavingsBudget(budgetSummary, monthlySavingsTarget = 0, cons
   return {
     status,
     message,
+    modelUsed,
+    modelHistoryMonths: modelUsed ? historyMonths : [],
     region,
     isComplete,
     incomeEntryCount,

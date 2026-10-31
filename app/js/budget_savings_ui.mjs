@@ -10,6 +10,8 @@ const table = document.querySelector("#savings-budget-table-wrap");
 const planMessage = document.querySelector("#savings-plan-message");
 const draftNote = document.querySelector("#savings-draft-note");
 const regionNote = document.querySelector("#savings-region-note");
+const modelNote = document.querySelector("#savings-model-note");
+const coachIntro = document.querySelector("#savings-coach-intro");
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -45,6 +47,10 @@ function addChatMessage(messageText, sender) {
 function savingsMessage(plan) {
   if (plan.status === "needs-income") return "Add income to see a monthly estimate.";
   if (plan.status === "needs-expenses") return "Add expenses to see where spending may be adjusted. Missing expenses are not assumed to be zero.";
+  if (plan.modelUsed) {
+    return window.financeTranslate?.("The values above use your personal spending forecast. Income is held at the amount recorded for the selected complete month.")
+      || "The values above use your personal spending forecast. Income is held at the amount recorded for the selected complete month.";
+  }
 
   if (plan.status === "monthly-shortfall") {
     const amountOver = formatRupees(Math.abs(plan.currentBalance));
@@ -63,14 +69,41 @@ function savingsMessage(plan) {
 
 // Show the remaining balance and practical reductions from flexible categories.
 function showSavingsBudget() {
+  const forecast = monthlySummary.isComplete
+    && monthlySummary.selectedMonth === monthlySummary.nextMonthForecast?.historyMonths?.at(-1)
+    ? monthlySummary.nextMonthForecast
+    : null;
   const plan = buildSavingsBudget(monthlySummary, 0, {
     adjustableCategories,
     lockedCategories,
     maximumCuts,
     region: profileRegion,
+    nextMonthForecast: forecast,
   });
 
   planMessage.textContent = savingsMessage(plan);
+  coachIntro.textContent = plan.modelUsed
+    ? (window.financeTranslate?.("Plan next month using your personal spending forecast.")
+      || "Plan next month using your personal spending forecast.")
+    : (window.financeTranslate?.("See practical changes based on the spending you recorded this month.")
+      || "See practical changes based on the spending you recorded this month.");
+  modelNote.textContent = plan.modelUsed
+    ? (window.financeTranslate?.("Forecast: a trend from 3–6 consecutive complete months. Savings ideas use optional fixed examples, not learned savings outcomes.")
+      || "Forecast: a trend from 3–6 consecutive complete months. Savings ideas use optional fixed examples, not learned savings outcomes.")
+    : (window.financeTranslate?.("Savings ideas use this month's recorded spending now. A personal forecast needs 3 consecutive recent months marked complete.")
+      || "Savings ideas use this month's recorded spending now. A personal forecast needs 3 consecutive recent months marked complete.");
+  document.querySelector("#savings-balance-label").textContent = plan.modelUsed
+    ? (window.financeTranslate?.("Estimated balance next month") || "Estimated balance next month")
+    : (window.financeTranslate?.("Current balance this month") || "Current balance this month");
+  document.querySelector("#savings-current-heading").textContent = plan.modelUsed
+    ? (window.financeTranslate?.("Estimated next-month spending") || "Estimated next-month spending")
+    : (window.financeTranslate?.("Current monthly spend") || "Current monthly spend");
+  document.querySelector("#savings-suggested-heading").textContent = plan.modelUsed
+    ? (window.financeTranslate?.("Suggested next-month spending") || "Suggested next-month spending")
+    : (window.financeTranslate?.("Suggested monthly spend") || "Suggested monthly spend");
+  document.querySelector("#savings-budget-caption").textContent = plan.modelUsed
+    ? (window.financeTranslate?.("Next-month spending forecast, suggested amount, and possible savings by category") || "Next-month spending forecast, suggested amount, and possible savings by category")
+    : (window.financeTranslate?.("Current monthly spending, suggested spending, and possible savings by category") || "Current monthly spending, suggested spending, and possible savings by category");
   regionNote.textContent = plan.region
     ? `Your profile region is ${plan.region}. Savings calculations use your tracked amounts; regional price differences are not included.`
     : "";

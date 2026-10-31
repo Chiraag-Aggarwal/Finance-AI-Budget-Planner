@@ -16,6 +16,9 @@ test("account and budget forms keep keyboard and error feedback hooks", () => {
   assert.match(html, /name="password" type="password"[^>]*required/);
   assert.match(html, /id="transaction-amount"[^>]*type="number"[^>]*required/);
   assert.match(html, /id="transaction-errors"[^>]*role="alert"[^>]*tabindex="-1"/);
+  assert.match(html, /id="spending-forecast-status"[^>]*role="status"[^>]*aria-live="polite"/);
+  assert.match(budgetUi, /saveFinanceDataField\("completedMonths"/);
+  assert.match(budgetUi, /forecastNextMonthSpending/);
   assert.match(accountUi, /loginForm\.reportValidity\(\)/);
   assert.match(accountUi, /signupForm\.reportValidity\(\)/);
   assert.match(accountUi, /resetRequestForm\.reportValidity\(\)/);

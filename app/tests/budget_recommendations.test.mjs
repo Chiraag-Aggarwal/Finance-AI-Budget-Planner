@@ -177,6 +177,62 @@ test("offers a modest general savings plan without requiring a purchase goal", (
 });
 
 
+test("uses the personal trend forecast as the basis for next-month savings suggestions", () => {
+  const result = buildSavingsBudget(makeSavingsSummary({
+    selectedMonth: "2026-09",
+    isComplete: true,
+  }), 0, {
+    nextMonthForecast: {
+      status: "ready",
+      targetMonth: "2026-10",
+      historyMonths: ["2026-07", "2026-08", "2026-09"],
+      total: 74000,
+      categories: [
+        { category: "Other", amount: 26000 },
+        { category: "Personal", amount: 35000 },
+        { category: "Transport", amount: 8000 },
+        { category: "Loan EMI", amount: 5000 },
+      ],
+    },
+  });
+
+  assert.equal(result.modelUsed, true);
+  assert.deepEqual(result.modelHistoryMonths, ["2026-07", "2026-08", "2026-09"]);
+  assert.equal(result.currentBalance, 26000);
+  assert.equal(result.totalCut, 6500);
+  assert.equal(result.afterBalance, 32500);
+  assert.deepEqual(result.cuts.map(({ category, currentAmount }) => [category, currentAmount]), [
+    ["Personal", 35000],
+    ["Other", 26000],
+    ["Transport", 8000],
+  ]);
+});
+
+
+test("uses recorded amounts when the trend model lacks a complete matching history", () => {
+  const forecast = {
+    status: "ready",
+    targetMonth: "2026-10",
+    historyMonths: ["2026-07", "2026-08", "2026-09"],
+    total: 74000,
+    categories: [{ category: "Personal", amount: 35000 }],
+  };
+  const incomplete = buildSavingsBudget(makeSavingsSummary({
+    selectedMonth: "2026-09",
+    isComplete: false,
+  }), 0, { nextMonthForecast: forecast });
+  const wrongMonth = buildSavingsBudget(makeSavingsSummary({
+    selectedMonth: "2026-08",
+    isComplete: true,
+  }), 0, { nextMonthForecast: forecast });
+
+  assert.equal(incomplete.modelUsed, false);
+  assert.equal(incomplete.currentBalance, 45000);
+  assert.equal(wrongMonth.modelUsed, false);
+  assert.equal(wrongMonth.currentBalance, 45000);
+});
+
+
 test("keeps region as context without changing savings suggestions", () => {
   const pune = buildSavingsBudget(makeSavingsSummary(), 0, { region: "Pune, Maharashtra" });
   const delhi = buildSavingsBudget(makeSavingsSummary(), 0, { region: "Delhi" });

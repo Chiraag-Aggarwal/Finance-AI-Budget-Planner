@@ -1,45 +1,21 @@
-# HCES food-consumption model
+# ML used by Finance AI
 
-This folder contains an experimental machine-learning exercise for the Finance AI project.
+This folder documents the small models that run in the app. They use personal finance entries entered by the signed-in user; the app does not train a shared model from everyone’s private records.
 
-## What the model estimates
+## 1. Transaction category helper
 
-It estimates a household's recorded 30-day food-consumption value from a few household details. HCES consumption can include home-produced or imputed items, so the value is not always the amount of cash a family paid for food.
+The optional helper compares a new note with the user's own saved notes and manually chosen categories. It can suggest a likely category when there is enough matching history. The user must review the suggestion. This model does not change the entry by itself.
 
-This is not a model for income, savings, loan affordability, or whether someone can afford a house or car. The app's finance guidance should come from transparent calculations using the person's own inputs.
+## 2. Next-month spending forecast
 
-## Files and simple workflow
+The app fits a simple linear trend to each category's monthly totals after the user has marked at least three consecutive months complete. It uses up to six recent months from the same account. It does not fill missing months with zero. The forecast is an estimate, not a promise.
 
-1. `prepare_hces_model_data.py` reads the original CSV and makes a smaller training table in `data/processed/`.
-2. `ml/train_food_model.py` trains the model and saves it and its evaluation results in `ml/artifacts/`.
+Users do not need to wait for this model to get savings ideas. The savings coach can use this month's recorded expenses immediately. Its proposed reductions are modest, visible rules, not machine-learned claims about which actions save money in real life.
 
-The scripts do not change the original CSV. The preparation step excludes rows without a food-consumption target only from the training copy. It does not fill unknown values with zero. It keeps households from the same survey FSU together in one split.
+## Training data decision
 
-## How training works
+There is not a suitable public, representative Indian household transaction dataset with verified outcomes showing which saving actions worked. Do not train a general Indian savings recommender on HCES consumption amounts, payment-network aggregates, synthetic transactions, or a small foreign bank-account sample. Those sources do not measure the required target.
 
-- The script uses survey weights when fitting and evaluating the model. A survey weight is not a prediction input.
-- It converts text categories to simple 0-or-1 columns and scales numeric columns.
-- It derives extra family-size and age-composition groups from existing inputs. The prepared CSV stays unchanged.
-- It compares seven feature versions and four target scales (rupees, square root, log, and fourth root), across twelve Ridge regularization settings. This is 336 candidate fits. Validation data chooses the best combination; test data checks it afterward.
-- It compares the model with a weighted-median baseline and reports weighted MAE and RMSE overall and for area/family-size groups.
-- If the model does not beat the baseline, the evaluation recommends not integrating it.
+The model will improve when the app has enough consented, correctly labeled personal history for a user's own forecast. To evaluate a future shared model, first obtain data that may legally be used, define the outcome, remove direct identifiers, split evaluation by household and time, and publish measured errors and limitations. Until then, use the per-user forecast and transparent calculations only.
 
-The extra categories are feature engineering, not new data. They let the model represent different patterns by state/area, family size, and household age composition. A target transformation compresses unusually large food-consumption values while training; predictions are converted back to rupees before scoring. The saved evaluation file records the validation comparison and selected model's test results. The test split has been used in earlier candidate checks, so treat it as exploratory. The goal is to reduce error without using the target as an input; zero error is not realistic for this survey and these limited household details.
-
-## Run it
-
-Open PowerShell in the Finance AI folder. Python with `pandas` and `numpy` must be available. Run:
-
-```powershell
-python prepare_hces_model_data.py
-python ml\train_food_model.py
-```
-
-The model and results are written to:
-
-- `ml/artifacts/food_consumption_ridge.json`
-- `ml/artifacts/food_model_evaluation.json`
-
-## Data limitations
-
-The supplied CSV is user-provided and derived; its original derivation notes were not supplied. Neither the raw CSV nor the generated row-level training CSV is committed. Before using the local source again, verify its provenance, definitions, and reuse terms. Survey consumption is not necessarily a cash expense. The data has no labels for income, savings, debts, or goal outcomes, so it cannot train those predictions. The food model remains experimental and is not used by the app for personalized financial advice or guaranteed predictions.
+See [the dataset review](../data/README.md) for sources and limitations.

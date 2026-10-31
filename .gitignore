@@ -15,3 +15,7 @@
 /_backups/
 .DS_Store
 Thumbs.db
+
+
+# Downloaded third-party datasets stay local unless explicitly reviewed for publication.
+/data/raw/

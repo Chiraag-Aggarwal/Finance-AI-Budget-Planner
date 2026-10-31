@@ -1,4 +1,6 @@
 import { summarizeMonth, TRANSACTION_CATEGORIES, validateTransaction } from "./budget_tracker.mjs";
+import { suggestCategoryFromHistory } from "./transaction_classifier.mjs";
+import { forecastNextMonthSpending } from "./budget_forecast.mjs";
 import { loadFinanceData, saveFinanceDataField } from "./finance_data.mjs";
 
 
@@ -9,12 +11,24 @@ const form = document.querySelector("#transaction-form");
 const typeInput = document.querySelector("#transaction-type");
 const categoryInput = document.querySelector("#transaction-category");
 const dateInput = document.querySelector("#transaction-date");
+const noteInput = document.querySelector("#transaction-note");
+const categorySuggestion = document.querySelector("#transaction-category-suggestion");
+const categorySuggestionButton = document.querySelector("#use-transaction-category-suggestion");
+const categorySuggestionName = document.querySelector("#transaction-category-suggestion-name");
+let suggestedCategory = null;
 const monthInput = document.querySelector("#budget-month");
 const completeMonthInput = document.querySelector("#budget-complete-month");
 const statusText = document.querySelector("#tracker-status");
 const errorBox = document.querySelector("#transaction-errors");
 const errorList = document.querySelector("#transaction-error-list");
 const transactionRows = document.querySelector("#transaction-rows");
+const forecastStatus = document.querySelector("#spending-forecast-status");
+const forecastResults = document.querySelector("#spending-forecast-results");
+const forecastTotal = document.querySelector("#spending-forecast-total");
+const forecastCategories = document.querySelector("#spending-forecast-categories");
+const forecastNoCategories = document.querySelector("#spending-forecast-no-categories");
+const forecastIncomeCard = document.querySelector("#spending-forecast-income-card");
+const forecastIncome = document.querySelector("#spending-forecast-income");
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -25,6 +39,8 @@ const currency = new Intl.NumberFormat("en-IN", {
 // Entries are kept here while the page is open.
 let transactions = [];
 let currentUserId = null;
+let completedMonths = new Set();
+let plannerMonthlyIncome = null;
 
 
 function getTransactionsKey() {
@@ -102,10 +118,70 @@ async function saveTransactions() {
   }
 }
 
+async function saveCompletedMonths() {
+  if (currentUserId === null) return;
+  try {
+    await saveFinanceDataField("completedMonths", [...completedMonths].sort());
+  } catch (error) {
+    console.error("Finance AI completed-month save failed.", error);
+  }
+}
+
+
+// Show the personal forecast and the saved take-home income for context.
+function updateSpendingForecast(forecast = null) {
+  forecastResults.hidden = true;
+  forecastIncomeCard.hidden = !Number.isFinite(plannerMonthlyIncome) || plannerMonthlyIncome <= 0;
+
+  if (currentUserId === null) {
+    forecastStatus.textContent = "Sign in to build a forecast from your saved budget history.";
+    return;
+  }
+
+  const spendingForecast = forecast ?? forecastNextMonthSpending(transactions, [...completedMonths], new Date());
+  if (spendingForecast.status === "needs-recent-month") {
+    forecastStatus.textContent = "Complete a recent month to refresh your forecast.";
+    return;
+  }
+  if (spendingForecast.status === "needs-more-history") {
+    forecastStatus.textContent = "Mark 3 consecutive recent months complete to get a personal forecast. Missing months are not assumed to be zero.";
+    return;
+  }
+
+  const monthParts = spendingForecast.targetMonth.split("-").map(Number);
+  const monthDate = new Date(monthParts[0], monthParts[1] - 1, 1, 12);
+  const locale = window.financeLanguage?.() === "hi" ? "hi-IN" : "en-IN";
+  const readyPrefix = window.financeTranslate?.("Starting budget estimate for")
+    || "Starting budget estimate for";
+  forecastStatus.textContent = readyPrefix + " "
+    + monthDate.toLocaleDateString(locale, { month: "long", year: "numeric" }) + ".";
+  forecastResults.hidden = false;
+  forecastTotal.textContent = formatRupees(spendingForecast.total);
+  forecastCategories.replaceChildren();
+  forecastNoCategories.hidden = spendingForecast.categories.length > 0;
+
+  if (Number.isFinite(plannerMonthlyIncome) && plannerMonthlyIncome > 0) {
+    forecastIncome.textContent = formatRupees(plannerMonthlyIncome);
+  }
+
+  for (const item of spendingForecast.categories) {
+    const row = document.createElement("li");
+    const category = document.createElement("span");
+    const amount = document.createElement("strong");
+    category.textContent = item.category;
+    amount.textContent = formatRupees(item.amount);
+    row.append(category, amount);
+    forecastCategories.append(row);
+  }
+}
+
+
 // Show totals, category bars, and the entry list for the selected month.
 function updateTracker() {
   const selectedMonth = monthInput.value || getCurrentMonth();
   monthInput.value = selectedMonth;
+  completeMonthInput.disabled = currentUserId === null || selectedMonth > getCurrentMonth();
+  completeMonthInput.checked = completedMonths.has(selectedMonth);
   const summary = summarizeMonth(transactions, selectedMonth);
 
   document.querySelector("#category-summary-caption").textContent =
@@ -117,8 +193,15 @@ function updateTracker() {
 
   showCategoryBreakdown(summary);
   showTransactionList(selectedMonth, summary.entryCount);
+  const spendingForecast = forecastNextMonthSpending(transactions, [...completedMonths], new Date());
+  updateSpendingForecast(spendingForecast);
   window.dispatchEvent(new CustomEvent("finance-budget-summary", {
-    detail: { ...summary, isComplete: completeMonthInput.checked },
+    detail: {
+      ...summary,
+      isComplete: completeMonthInput.checked,
+      selectedMonth,
+      nextMonthForecast: spendingForecast,
+    },
   }));
 }
 
@@ -215,6 +298,13 @@ async function loadTransactions() {
   }
   try {
     const accountData = await loadFinanceData();
+    completedMonths = new Set(
+      Array.isArray(accountData.completedMonths)
+        ? accountData.completedMonths.filter((month) => /^\d{4}-(0[1-9]|1[0-2])$/.test(month))
+        : [],
+    );
+    const savedIncome = Number(accountData.plannerProfile?.monthlyTakeHomeIncome);
+    plannerMonthlyIncome = Number.isFinite(savedIncome) && savedIncome > 0 ? savedIncome : null;
     if (Object.hasOwn(accountData, "transactions")) {
       const savedEntries = accountData.transactions;
       transactions = Array.isArray(savedEntries)
@@ -263,27 +353,74 @@ form.addEventListener("submit", (event) => {
   }
 
   transactions.push(entry);
-  monthInput.value = entry.date.slice(0, 7);
+  const entryMonth = entry.date.slice(0, 7);
+  const wasComplete = completedMonths.delete(entryMonth);
+  monthInput.value = entryMonth;
   completeMonthInput.checked = false;
   form.reset();
+  categorySuggestion.hidden = true;
+  suggestedCategory = null;
   typeInput.value = "expense";
   updateCategoryChoices();
   dateInput.value = getToday();
   updateTracker();
   saveTransactions();
+  if (wasComplete) saveCompletedMonths();
 });
 
+
+// Show a clickable category hint when this note matches the user's history.
+function updateCategorySuggestion() {
+  suggestedCategory = null;
+  categorySuggestion.hidden = true;
+
+  if (!currentUserId || !noteInput.value.trim()) return;
+
+  const result = suggestCategoryFromHistory(transactions, typeInput.value, noteInput.value);
+  if (result.status !== "suggestion") return;
+
+  const option = [...categoryInput.options]
+    .find((item) => item.value === result.category);
+  if (!option) return;
+
+  suggestedCategory = result.category;
+  categorySuggestionName.textContent = option.textContent;
+  categorySuggestion.hidden = false;
+}
+
+categorySuggestionButton.addEventListener("click", () => {
+  if (!suggestedCategory) return;
+
+  categoryInput.value = suggestedCategory;
+  categorySuggestion.hidden = true;
+  suggestedCategory = null;
+  categoryInput.focus();
+});
 
 // Update the category menu when the user chooses income or expense.
-typeInput.addEventListener("change", updateCategoryChoices);
+typeInput.addEventListener("change", () => {
+  updateCategoryChoices();
+  updateCategorySuggestion();
+});
+
+noteInput.addEventListener("input", updateCategorySuggestion);
+window.addEventListener("finance-language-change", () => {
+  updateCategorySuggestion();
+  updateSpendingForecast();
+});
 
 // Recalculate the totals when the user views a different month.
-monthInput.addEventListener("change", () => {
-  // A different month needs its own completeness confirmation.
-  completeMonthInput.checked = false;
+monthInput.addEventListener("change", updateTracker);
+completeMonthInput.addEventListener("change", () => {
+  const selectedMonth = monthInput.value || getCurrentMonth();
+  if (completeMonthInput.checked) {
+    completedMonths.add(selectedMonth);
+  } else {
+    completedMonths.delete(selectedMonth);
+  }
   updateTracker();
+  saveCompletedMonths();
 });
-completeMonthInput.addEventListener("change", updateTracker);
 
 
 
@@ -294,10 +431,13 @@ transactionRows.addEventListener("click", (event) => {
     return;
   }
 
+  const removedEntry = transactions.find((entry) => entry.id === button.dataset.entryId);
   transactions = transactions.filter((entry) => entry.id !== button.dataset.entryId);
-  completeMonthInput.checked = false;
+  updateCategorySuggestion();
+  const wasComplete = removedEntry && completedMonths.delete(removedEntry.date.slice(0, 7));
   updateTracker();
   saveTransactions();
+  if (wasComplete) saveCompletedMonths();
 });
 
 // Clear all account entries after the user confirms the action.
@@ -307,9 +447,11 @@ document.querySelector("#clear-transactions").addEventListener("click", () => {
   }
 
   transactions = [];
-  completeMonthInput.checked = false;
+  completedMonths.clear();
+  updateCategorySuggestion();
   updateTracker();
   saveTransactions();
+  saveCompletedMonths();
 });
 
 
@@ -324,7 +466,10 @@ updateTracker();
 window.addEventListener("finance-user-ready", async (event) => {
   currentUserId = String(event.detail.id);
   transactions = [];
+  completedMonths = new Set();
+  plannerMonthlyIncome = null;
   await loadTransactions();
+  updateCategorySuggestion();
   updateTracker();
 });
 
@@ -332,6 +477,14 @@ window.addEventListener("finance-user-ready", async (event) => {
 window.addEventListener("finance-user-logout", () => {
   currentUserId = null;
   transactions = [];
-  completeMonthInput.checked = false;
+  completedMonths = new Set();
+  plannerMonthlyIncome = null;
+  updateCategorySuggestion();
   updateTracker();
+});
+
+window.addEventListener("finance-planner-profile", (event) => {
+  const income = Number(event.detail?.monthlyTakeHomeIncome);
+  plannerMonthlyIncome = Number.isFinite(income) && income > 0 ? income : null;
+  updateSpendingForecast();
 });

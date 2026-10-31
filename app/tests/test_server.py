@@ -25,6 +25,7 @@ from server import (
     create_password_reset,
     create_user,
     delete_account_data,
+    email_delivery_settings,
     export_account_data,
     get_finance_data,
     get_user_by_email,
@@ -34,6 +35,7 @@ from server import (
     initialize_database,
     open_database,
     password_matches,
+    send_email_message,
     update_user_profile,
     validate_finance_data_patch,
     verify_email_token,
@@ -102,6 +104,50 @@ class AccountServerTests(unittest.TestCase):
             "FINANCE_AI_SMTP_PASSWORD": "test-only-secret",
             "FINANCE_AI_SMTP_FROM": "sender@example.com",
         }
+
+    def test_brevo_email_uses_https_api_and_configured_sender(self):
+        settings = {
+            "FINANCE_AI_EMAIL_PROVIDER": "brevo",
+            "FINANCE_AI_BREVO_API_KEY": "test-only-key",
+            "FINANCE_AI_BREVO_SENDER": "verified@example.com",
+        }
+
+        class FakeResponse:
+            status = 201
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+        with patch.dict(os.environ, settings, clear=True):
+            self.assertEqual(email_delivery_settings()["provider"], "brevo")
+            with patch("server.urllib.request.urlopen", return_value=FakeResponse()) as send_request:
+                send_email_message("person@example.com", "Verify", "Open this link")
+
+        request = send_request.call_args.args[0]
+        self.assertEqual(request.full_url, "https://api.brevo.com/v3/smtp/email")
+        headers = {name.lower(): value for name, value in request.header_items()}
+        self.assertEqual(headers["api-key"], "test-only-key")
+        payload = json.loads(request.data.decode("utf-8"))
+        self.assertEqual(payload["sender"]["email"], "verified@example.com")
+        self.assertEqual(payload["to"], [{"email": "person@example.com"}])
+        self.assertEqual(payload["textContent"], "Open this link")
+
+    def test_smtp_email_uses_tls_before_authentication(self):
+        settings = self.smtp_settings()
+        settings.pop("FINANCE_AI_ENV")
+
+        with patch.dict(os.environ, settings, clear=True):
+            with patch("server.smtplib.SMTP") as smtp_factory:
+                mail_server = smtp_factory.return_value.__enter__.return_value
+                send_email_message("person@example.com", "Verify", "Open this link")
+
+        smtp_factory.assert_called_once_with("smtp.example.com", 587, timeout=15)
+        mail_server.starttls.assert_called_once()
+        mail_server.login.assert_called_once_with("sender@example.com", "test-only-secret")
+        mail_server.send_message.assert_called_once()
 
     def signup_and_verify(self, fields=None, **changes):
         details = fields or {
@@ -188,15 +234,21 @@ class AccountServerTests(unittest.TestCase):
         clean, error = validate_finance_data_patch({
             "plannerProfile": {"monthlyTakeHomeIncome": 75_000, "includeGoal": False},
             "transactions": [valid_entry],
+            "completedMonths": ["2026-08", "2026-09", "2026-10"],
         })
         self.assertIsNone(error)
         self.assertEqual(clean["transactions"], [valid_entry])
+        self.assertEqual(clean["completedMonths"], ["2026-08", "2026-09", "2026-10"])
 
         _, error = validate_finance_data_patch({"userId": 12})
         self.assertIsNotNone(error)
         _, error = validate_finance_data_patch({"transactions": [{**valid_entry, "amount": float("nan")}]})
         self.assertIsNotNone(error)
         _, error = validate_finance_data_patch({"transactions": [{**valid_entry, "date": "2026-02-31"}]})
+        self.assertIsNotNone(error)
+        _, error = validate_finance_data_patch({"completedMonths": ["2026-13"]})
+        self.assertIsNotNone(error)
+        _, error = validate_finance_data_patch({"completedMonths": ["2026-09", "2026-09"]})
         self.assertIsNotNone(error)
 
     def test_mongo_finance_store_returns_only_user_data_fields(self):
@@ -216,9 +268,20 @@ class AccountServerTests(unittest.TestCase):
 
         store = object.__new__(MongoStore)
         store.finance_data = FakeCollection()
-        saved = store.update_finance_data("account-1", {"transactions": []})
-        self.assertEqual(saved, {"transactions": []})
-        self.assertEqual(store.get_finance_data("account-1"), {"transactions": []})
+        saved = store.update_finance_data(
+            "account-1",
+            {"transactions": [], "completedMonths": ["2026-09", "2026-10"]},
+        )
+        expected = {"transactions": [], "completedMonths": ["2026-09", "2026-10"]}
+        self.assertEqual(saved, expected)
+        self.assertEqual(store.get_finance_data("account-1"), expected)
+
+        other_data = store.update_finance_data("account-2", {
+            "transactions": [{"id": "other-user-entry"}],
+        })
+        self.assertNotEqual(other_data, expected)
+        self.assertEqual(store.get_finance_data("account-1"), expected)
+        self.assertEqual(store.get_finance_data("account-2"), other_data)
 
     def test_finance_data_api_saves_per_signed_in_user(self):
         self.assertEqual(self.request("/api/finance-data")[0], 401)
@@ -226,6 +289,7 @@ class AccountServerTests(unittest.TestCase):
 
         data = {
             "plannerProfile": {"monthlyTakeHomeIncome": 75_000, "includeGoal": False},
+            "completedMonths": ["2026-08", "2026-09", "2026-10"],
             "transactions": [{
                 "id": "entry-1",
                 "type": "expense",

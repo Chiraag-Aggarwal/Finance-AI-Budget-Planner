@@ -10,16 +10,17 @@ A beginner-friendly personal finance app for Indian households. It helps users u
 - Plans one optional goal at a time, such as a car, bike, house, plot, education, medical costs, travel, or another purchase.
 - Lets users explicitly include an accessible amount from assets or family support toward a goal; it does not treat total net worth or a property's full value as cash.
 - Compares example EMI periods when the user supplies an annual interest rate from a lender quote. Existing EMIs and household expenses reduce the available monthly amount.
-- Provides an English/Hindi interface and a small, rule-based budget helper.
+- Provides an English/Hindi interface, a private ML category helper, and a personal spending forecast.
 
-The planner uses transparent arithmetic for budget and goal guidance. It does not predict goal success, approve loans, or infer a lender's interest rate from income. The separate HCES model estimates recorded survey food consumption only; the app does not use it for personal budget or loan recommendations.
+The budget form's optional category helper learns from that account's saved descriptions and user-selected categories. A separate next-month spending forecast fits a simple linear trend to at least three consecutive completed months from the same account. Savings examples can use the current month's entries immediately; they are transparent fixed-rule examples, not learned savings outcomes. Accounts are never pooled.
+
+The planner uses transparent arithmetic for budget and goal guidance. It does not predict goal success, approve loans, or infer a lender's interest rate from income. HCES survey consumption is not used as cash spending, income, savings, debt, or goal labels.
 
 ## Project layout
 
 - `app/` — HTML/CSS/JavaScript interface and Python account server, with MongoDB for deployed accounts and finance data.
-- `ml/` — experimental, separate HCES food-consumption training script and saved model/evaluation artifacts.
-- `data/goal_planning_sources.md` — data choices and limitations for future goal-planning models.
-- `prepare_hces_model_data.py` — creates a model-ready copy from a locally supplied CSV.
+- `ml/` — notes on the small personal ML helpers used in the app and their limits.
+- `data/` — dataset-source reviews and finance-model data requirements.
 
 ## Run the app
 
@@ -54,18 +55,9 @@ Run the Python account tests from `app/`:
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-## Optional HCES experiment
+## Data and ML limits
 
-The original `india_hces_household_spending.csv` and the prepared row-level training CSV are not included. The supplied source is a derived file whose original derivation notes were not provided, and the raw file exceeds GitHub's 100 MB per-file limit. The project `.gitignore` keeps both CSVs out of commits.
-
-Only use a copy whose provenance, definitions, and reuse terms you have checked. Place it at the Finance AI folder root as `india_hces_household_spending.csv`, then run from that root:
-
-```powershell
-python prepare_hces_model_data.py
-python ml/train_food_model.py
-```
-
-The scripts need Python with `pandas` and `numpy` installed. Read `ml/README.md` before interpreting the results. HCES consumption is not necessarily cash spending and does not provide labels for savings, debt, or goal outcomes. The model remains an experiment and is not wired into the public-facing planner.
+There is no suitable open, representative India dataset of personal cash transactions with verified savings-action outcomes. The app starts savings examples from the user's own entries. Its personal spending forecast appears after three consecutive completed months; no external or synthetic records are mixed into a user's calculations. See [the data source review](data/README.md) and [ML notes](ml/README.md).
 
 ## Privacy and limitations
 

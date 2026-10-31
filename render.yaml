@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: finance-ai-budget-planner
+    runtime: python
+    plan: free
+    rootDir: app
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    healthCheckPath: /
+    autoDeployTrigger: "off"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.14
+      - key: FINANCE_AI_ENV
+        value: production
+      - key: FINANCE_AI_COOKIE_SECURE
+        value: "1"
+      - key: FINANCE_AI_EMAIL_PROVIDER
+        value: brevo
+      - key: MONGODB_DATABASE
+        value: finance_ai
+      - key: MONGODB_URI
+        sync: false
+      - key: FINANCE_AI_BREVO_API_KEY
+        sync: false
+      - key: FINANCE_AI_BREVO_SENDER
+        sync: false

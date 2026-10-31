@@ -10,7 +10,7 @@ The app instead calculates cash flow and goal scenarios from the user's own inco
 
 ### HCES 2023-24 (user-provided derived CSV)
 
-HCES measures household consumption. It is useful for the separate experimental food-consumption model, but it does not provide labels for income, savings, debt, or future purchase-goal success. The project's CSV is a user-provided derived file and its original derivation notes were not supplied. The browser planner does not load this CSV.
+HCES measures household consumption, including values that are not necessarily cash outflows. It does not provide labels for income, savings, debt, or future purchase-goal success. The project's CSV is a user-provided derived file and its original derivation notes were not supplied. The browser planner does not load this CSV, and its separate food-consumption experiment has been removed.
 
 Official sources:
 
