@@ -14,8 +14,7 @@ const signupForm = document.querySelector("#signup-form");
 const resetRequestForm = document.querySelector("#password-reset-request-form");
 const verificationRequestForm = document.querySelector("#email-verification-request-form");
 const resetForm = document.querySelector("#password-reset-form");
-const profileMenuButton = document.querySelector("#profile-menu-button");
-const profileMenu = document.querySelector("#profile-menu");
+const profileLink = document.querySelector("#profile-link");
 const profileAvatar = document.querySelector("#profile-avatar");
 const signOutButton = document.querySelector("#sign-out-button");
 const signedInName = document.querySelector("#signed-in-name");
@@ -91,7 +90,7 @@ function showSignedIn(user) {
   appShell.hidden = false;
   appNavigation.hidden = false;
   siteFooter.hidden = false;
-  profileMenuButton.hidden = false;
+  profileLink.hidden = false;
   signOutButton.hidden = false;
   signedInName.textContent = user.name;
   profileAvatar.textContent = user.name
@@ -100,7 +99,6 @@ function showSignedIn(user) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() || "")
     .join("");
-  closeProfileMenu();
   clearAuthError();
 
   // The account's saved region is the starting region for goal planning.
@@ -123,8 +121,7 @@ function showSignedOut() {
   appShell.hidden = true;
   appNavigation.hidden = true;
   siteFooter.hidden = true;
-  profileMenuButton.hidden = true;
-  closeProfileMenu();
+  profileLink.hidden = true;
   if (wasSignedIn) {
     window.dispatchEvent(new CustomEvent("finance-user-logout"));
   }
@@ -133,40 +130,6 @@ function showSignedOut() {
 window.addEventListener("finance-profile-updated", (event) => {
   if (signedInUser && String(event.detail.id) === String(signedInUser.id)) {
     showSignedIn(event.detail);
-  }
-});
-
-
-function closeProfileMenu(returnFocus = false) {
-  profileMenu.hidden = true;
-  profileMenuButton.setAttribute("aria-expanded", "false");
-  if (returnFocus) {
-    profileMenuButton.focus();
-  }
-}
-
-
-profileMenuButton.addEventListener("click", () => {
-  const shouldOpen = profileMenu.hidden;
-  profileMenu.hidden = !shouldOpen;
-  profileMenuButton.setAttribute("aria-expanded", String(shouldOpen));
-});
-
-profileMenu.addEventListener("click", (event) => {
-  if (event.target.closest("a")) {
-    closeProfileMenu();
-  }
-});
-
-document.addEventListener("click", (event) => {
-  if (!profileMenu.hidden && !event.target.closest("#account-menu-wrap")) {
-    closeProfileMenu();
-  }
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !profileMenu.hidden) {
-    closeProfileMenu(true);
   }
 });
 
@@ -323,7 +286,6 @@ resetForm.addEventListener("submit", async (event) => {
 
 
 signOutButton.addEventListener("click", async () => {
-  closeProfileMenu();
   try {
     await flushPageSaves();
     await sendAccountRequest("/api/logout", "POST", {});

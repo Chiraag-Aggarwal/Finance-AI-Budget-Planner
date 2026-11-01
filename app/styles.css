@@ -2010,8 +2010,7 @@ h2 {
 
 
 /* Screenshot-inspired single-page layout: a premium dark dashboard with optional light mode. */
-.account-menu-wrap { position: relative; }
-.profile-menu-trigger {
+.profile-link {
   min-height: 42px;
   display: inline-flex;
   align-items: center;
@@ -2023,8 +2022,8 @@ h2 {
   border-radius: 999px;
   cursor: pointer;
 }
-.profile-menu-trigger:hover,
-.profile-menu-trigger:focus-visible { border-color: var(--green); }
+.profile-link:hover,
+.profile-link:focus-visible { border-color: var(--green); }
 .profile-avatar {
   width: 1.9rem;
   height: 1.9rem;
