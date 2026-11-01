@@ -1,3 +1,5 @@
+import { flushPageSaves } from "./pending_saves.mjs";
+
 const authScreen = document.querySelector("#auth-screen");
 const appShell = document.querySelector("#app-shell");
 const appNavigation = document.querySelector("#app-navigation");
@@ -127,6 +129,12 @@ function showSignedOut() {
     window.dispatchEvent(new CustomEvent("finance-user-logout"));
   }
 }
+
+window.addEventListener("finance-profile-updated", (event) => {
+  if (signedInUser && String(event.detail.id) === String(signedInUser.id)) {
+    showSignedIn(event.detail);
+  }
+});
 
 
 function closeProfileMenu(returnFocus = false) {
@@ -317,6 +325,7 @@ resetForm.addEventListener("submit", async (event) => {
 signOutButton.addEventListener("click", async () => {
   closeProfileMenu();
   try {
+    await flushPageSaves();
     await sendAccountRequest("/api/logout", "POST", {});
   } catch (error) {
     setAuthError(error.message);

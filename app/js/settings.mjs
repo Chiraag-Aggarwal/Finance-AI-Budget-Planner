@@ -1,121 +1,91 @@
-// Keep appearance preferences in this browser only.
+// Preferences stay separate for each signed-in account, in this browser.
 const STORAGE_KEY_PREFIX = "finance-ai-display-settings-v1";
-let currentUserId = null;
-const defaults = Object.freeze({
-  theme: "light",
-  accent: "mint",
-  textSize: "standard",
-  reduceMotion: false,
+export const defaultAppearance = Object.freeze({
+  design: "bloom", theme: "light", accent: "violet", textSize: "standard", reduceMotion: false,
 });
-const allowedThemes = new Set(["system", "light", "dark"]);
-const allowedAccents = new Set(["mint", "ocean", "violet"]);
-const allowedTextSizes = new Set(["standard", "large"]);
-const root = document.documentElement;
-const dialog = document.querySelector("#display-settings-dialog");
-const controls = {
-  theme: document.querySelector("#setting-theme"),
-  accent: document.querySelector("#setting-accent"),
-  textSize: document.querySelector("#setting-text-size"),
-  reduceMotion: document.querySelector("#setting-reduce-motion"),
+const choices = {
+  design: new Set(["bloom", "sunrise", "ocean"]),
+  theme: new Set(["system", "light", "dark"]),
+  accent: new Set(["mint", "ocean", "violet", "coral"]),
+  textSize: new Set(["standard", "large"]),
 };
-const saveStatus = document.querySelector("#settings-save-status");
-const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
-const preferences = { ...defaults };
 
-function getStorageKey() {
-  return `${STORAGE_KEY_PREFIX}-${currentUserId || "guest"}`;
-}
-
-function loadPreferencesForUser(userId) {
-  currentUserId = userId ? String(userId) : null;
-  Object.assign(preferences, defaults);
-  readSavedPreferences();
-  applyPreferences();
-}
-
-function readSavedPreferences() {
-  try {
-    const saved = JSON.parse(window.localStorage.getItem(getStorageKey()) || "{}");
-    if (allowedThemes.has(saved.theme)) preferences.theme = saved.theme;
-    if (allowedAccents.has(saved.accent)) preferences.accent = saved.accent;
-    if (allowedTextSizes.has(saved.textSize)) preferences.textSize = saved.textSize;
-    if (typeof saved.reduceMotion === "boolean") preferences.reduceMotion = saved.reduceMotion;
-  } catch {
-    // Keep the simple defaults if browser storage is unavailable or invalid.
+// Old saved preferences remain valid; accounts without a design start in Bloom.
+export function normalizeAppearance(saved = {}) {
+  const result = { ...defaultAppearance };
+  if (!saved || typeof saved !== "object") return result;
+  for (const [name, allowed] of Object.entries(choices)) {
+    if (allowed.has(saved[name])) result[name] = saved[name];
   }
+  if (typeof saved.reduceMotion === "boolean") result.reduceMotion = saved.reduceMotion;
+  return result;
 }
+
+const root = document.documentElement;
+const controls = {
+  theme: document.querySelector("#setting-theme"), accent: document.querySelector("#setting-accent"),
+  textSize: document.querySelector("#setting-text-size"), reduceMotion: document.querySelector("#setting-reduce-motion"),
+};
+const status = document.querySelector("#settings-save-status");
+const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+let currentUserId = null;
+let preferences = { ...defaultAppearance };
 
 function applyPreferences() {
-  const theme = preferences.theme === "system"
-    ? (systemTheme.matches ? "dark" : "light")
-    : preferences.theme;
-
-  root.dataset.theme = theme;
+  root.dataset.design = preferences.design;
+  root.dataset.theme = preferences.theme === "system" ? (systemTheme.matches ? "dark" : "light") : preferences.theme;
   root.dataset.accent = preferences.accent;
   root.dataset.textSize = preferences.textSize;
   root.dataset.reduceMotion = String(preferences.reduceMotion);
-
-  if (controls.theme) controls.theme.value = preferences.theme;
-  if (controls.accent) controls.accent.value = preferences.accent;
-  if (controls.textSize) controls.textSize.value = preferences.textSize;
-  if (controls.reduceMotion) controls.reduceMotion.checked = preferences.reduceMotion;
+  for (const [name, control] of Object.entries(controls)) {
+    if (!control) continue;
+    if (name === "reduceMotion") control.checked = preferences[name];
+    else control.value = preferences[name];
+  }
+  document.querySelectorAll("[data-design-choice]").forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.designChoice === preferences.design));
+  });
 }
 
 function savePreferences() {
-  preferences.theme = controls.theme.value;
-  preferences.accent = controls.accent.value;
-  preferences.textSize = controls.textSize.value;
-  preferences.reduceMotion = controls.reduceMotion.checked;
   applyPreferences();
-
   try {
-    window.localStorage.setItem(getStorageKey(), JSON.stringify(preferences));
-    saveStatus.textContent = "Appearance saved in this browser.";
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}-${currentUserId || "guest"}`, JSON.stringify(preferences));
   } catch {
-    saveStatus.textContent = "Appearance changed for this visit, but could not be saved.";
+    window.dispatchEvent(new CustomEvent("finance-save-error", {
+      detail: { message: "Appearance changed for this visit, but could not be saved." },
+    }));
   }
 }
 
-
-function openSettings() {
-  if (!dialog) return;
-
-  const menu = document.querySelector("#profile-menu");
-  const menuButton = document.querySelector("#profile-menu-button");
-  if (menu && menuButton) {
-    menu.hidden = true;
-    menuButton.setAttribute("aria-expanded", "false");
-  }
-  dialog.showModal();
-  controls.theme?.focus();
+function loadPreferences(userId) {
+  currentUserId = userId ? String(userId) : null;
+  try {
+    preferences = normalizeAppearance(JSON.parse(localStorage.getItem(`${STORAGE_KEY_PREFIX}-${currentUserId || "guest"}`)));
+  } catch { preferences = { ...defaultAppearance }; }
+  applyPreferences();
 }
 
-if (dialog) {
-  document.querySelectorAll("[data-open-settings]").forEach((button) => {
-    button.addEventListener("click", openSettings);
-  });
-  document.querySelector("#settings-close-button").addEventListener("click", () => dialog.close());
-  document.querySelector("#settings-reset-button").addEventListener("click", () => {
-    Object.assign(preferences, defaults);
-    applyPreferences();
+document.querySelectorAll("[data-design-choice]").forEach((button) => {
+  button.addEventListener("click", () => {
+    preferences.design = button.dataset.designChoice;
+    preferences.accent = { bloom:"violet", sunrise:"coral", ocean:"ocean" }[preferences.design];
     savePreferences();
   });
-  Object.values(controls).forEach((control) => control.addEventListener("change", savePreferences));
-  dialog.addEventListener("click", (event) => {
-    if (event.target === dialog) dialog.close();
+});
+for (const [name, control] of Object.entries(controls)) {
+  control?.addEventListener("change", () => {
+    preferences[name] = name === "reduceMotion" ? control.checked : control.value;
+    savePreferences();
   });
-  document.addEventListener("finance-open-settings", openSettings);
 }
-
+document.querySelector("#settings-reset-button")?.addEventListener("click", () => {
+  preferences = { ...defaultAppearance }; savePreferences();
+});
+document.addEventListener("finance-open-settings", () => { location.assign("/settings.html"); });
 systemTheme.addEventListener("change", () => {
   if (preferences.theme === "system") applyPreferences();
 });
-
-// Start in light mode until the signed-in user's own settings are loaded.
 applyPreferences();
-window.addEventListener("finance-user-ready", (event) => {
-  loadPreferencesForUser(event.detail.id);
-});
-window.addEventListener("finance-user-logout", () => {
-  loadPreferencesForUser(null);
-});
+window.addEventListener("finance-user-ready", (event) => loadPreferences(event.detail.id));
+window.addEventListener("finance-user-logout", () => { preferences = { ...defaultAppearance }; currentUserId = null; applyPreferences(); });

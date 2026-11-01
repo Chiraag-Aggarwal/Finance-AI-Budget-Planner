@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+// Features now live on dedicated pages inside the same authenticated layout.
+const html = ["layout", "auth", "budget", "insights", "planner"].map(
+  (name) => readFileSync(new URL(`../${name}.html`, import.meta.url), "utf8")
+).join("\n");
 const styles = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
 const accountUi = readFileSync(new URL("../js/account_ui.mjs", import.meta.url), "utf8");
 const budgetUi = readFileSync(new URL("../js/budget_ui.mjs", import.meta.url), "utf8");

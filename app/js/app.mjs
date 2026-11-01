@@ -1,5 +1,6 @@
 import { calculatePlan, validateProfile } from "./finance_calculations.mjs";
 import { loadFinanceData, saveFinanceDataField } from "./finance_data.mjs";
+import { registerPageSave } from "./pending_saves.mjs";
 
 
 // This key is used only to import plans saved by an earlier browser-only version.
@@ -25,6 +26,7 @@ let activeProfile = null;
 let activePlan = null;
 let plannerSaveTimer = null;
 let lastSavedPlannerSignature = null;
+let plannerDraftDirty = false;
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -358,7 +360,8 @@ function readProfileFromForm() {
 
 // Put an amount or message in a page element without interpreting it as HTML.
 function showText(elementId, value) {
-  document.getElementById(elementId).textContent = value;
+  const element = document.getElementById(elementId);
+  if (element) element.textContent = value;
 }
 
 
@@ -382,7 +385,7 @@ function showValidationErrors(errors) {
 
 // Mark an amount as needing attention when it is below zero or above the budget.
 function setWarning(elementId, shouldWarn) {
-  document.getElementById(elementId).classList.toggle("warning", shouldWarn);
+  document.getElementById(elementId)?.classList.toggle("warning", shouldWarn);
 }
 
 
@@ -778,6 +781,7 @@ async function saveProfileToAccount(profile) {
   try {
     await saveFinanceDataField("plannerProfile", savedProfile);
     lastSavedPlannerSignature = JSON.stringify(savedProfile);
+    if (JSON.stringify(readProfileFromForm()) === lastSavedPlannerSignature) plannerDraftDirty = false;
   } catch (error) {
     console.error("Finance AI could not save the planner details.", error);
   }
@@ -785,6 +789,7 @@ async function saveProfileToAccount(profile) {
 
 // Save incomplete planner drafts in the background as the user edits.
 function schedulePlannerAutoSave() {
+  plannerDraftDirty = true;
   window.clearTimeout(plannerSaveTimer);
   if (currentUserId === null) return;
 
@@ -796,6 +801,7 @@ function schedulePlannerAutoSave() {
     try {
       await saveFinanceDataField("plannerProfile", profile);
       lastSavedPlannerSignature = signature;
+      if (JSON.stringify(readProfileFromForm()) === signature) plannerDraftDirty = false;
       window.dispatchEvent(new CustomEvent("finance-planner-profile", { detail: profile }));
     } catch (error) {
       console.error("Finance AI planner auto-save failed.", error);
@@ -803,6 +809,18 @@ function schedulePlannerAutoSave() {
   }, 250);
 }
 
+
+// Finish a pending draft before navigation or sign-out replaces this page.
+registerPageSave(async () => {
+  window.clearTimeout(plannerSaveTimer);
+  if (currentUserId === null || !plannerDraftDirty) return;
+  const profile = readProfileFromForm();
+  const signature = JSON.stringify(profile);
+  if (signature === lastSavedPlannerSignature) return;
+  await saveFinanceDataField("plannerProfile", profile);
+  lastSavedPlannerSignature = signature;
+  plannerDraftDirty = false;
+});
 
 // Put saved values back into their form fields when the page is reopened.
 function fillForm(profile) {
@@ -897,6 +915,7 @@ form.addEventListener("submit", (event) => {
 
 // Remove saved numbers and reset the page when the user asks to clear them.
 clearButton.addEventListener("click", () => {
+  plannerDraftDirty = false;
   window.clearTimeout(plannerSaveTimer);
   lastSavedPlannerSignature = null;
   saveFinanceDataField("plannerProfile", null)
@@ -928,6 +947,7 @@ clearButton.addEventListener("click", () => {
 
 // Load local finance details only after the account server confirms who signed in.
 window.addEventListener("finance-user-ready", async (event) => {
+  plannerDraftDirty = false;
   window.clearTimeout(plannerSaveTimer);
   lastSavedPlannerSignature = null;
   currentUserId = String(event.detail.id);
@@ -950,6 +970,7 @@ window.addEventListener("finance-user-profile", (event) => {
 
 
 window.addEventListener("finance-user-logout", () => {
+  plannerDraftDirty = false;
   window.clearTimeout(plannerSaveTimer);
   lastSavedPlannerSignature = null;
   currentUserId = null;

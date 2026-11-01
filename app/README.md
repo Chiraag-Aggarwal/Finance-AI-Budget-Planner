@@ -19,8 +19,15 @@ A beginner-friendly Indian household budgeting and goal-planning app. The browse
 
 - `server.py` serves the app, validates account requests, hashes passwords, creates server-side sessions, and saves account and finance data in MongoDB or local SQLite.
 - `migrate_sqlite_to_mongodb.py` safely copies existing SQLite account records and saved server data. It does not copy active login sessions; users sign in again afterward.
-- `index.html` contains the sign-in, sign-up, profile, planner, and savings coach screens.
-- `styles.css` contains the responsive layout and styles.
+- `layout.html` is the shared header, navigation, footer, and document shell. `auth.html` holds the existing sign-in, sign-up, verification, and password-recovery forms. Python combines these trusted templates with each page; neither template is a public URL.
+- `index.html` is the dashboard: the saved planner overview, this month's recorded totals, and useful shortcuts. It displays the signed-in user's actual saved figures, not demonstration numbers.
+- `budget.html` contains the monthly tracker and entries; `planner.html` contains all household, goal, asset, and loan inputs and their results.
+- `insights.html` contains the savings coach, adjustment chat, and next-month forecast. It reads the same account data as the tracker.
+- `profile.html` contains profile editing, data export, and account deletion. `settings.html` contains appearance preferences.
+- `styles.css` retains the existing component styles. `themes.css` adds Bloom, Sunrise, Ocean, light/dark variants, and responsive page layouts.
+- `js/dashboard.mjs` builds the overview with the same financial calculation module as the planner.
+- `js/navigation.mjs` handles the three-line menu, active links, and old section bookmarks. `js/pending_saves.mjs` finishes queued edits before internal page navigation or sign-out, preventing page changes from dropping pending edits.
+- `js/settings.mjs` stores each account's appearance preferences in this browser. Bloom with light mode is the default; existing light/dark preferences are preserved.
 - `js/i18n.mjs` switches the interface between English and Hindi using a local translation dictionary.
 - `js/account_ui.mjs` connects sign-in, sign-up, profile edits, and sign-out to the Python API.
 - `js/finance_data.mjs` sends signed-in users' saved plan and budget entries to the account-scoped API.
@@ -57,6 +64,21 @@ Open `http://localhost:8000`. Keep the PowerShell window open while using the ap
 $env:FINANCE_AI_PORT = "8001"
 python server.py
 ```
+
+Use the Python server to preview the redesigned app. Do not open the HTML fragments directly or use a static-only preview server: Python supplies the shared layout and authenticated APIs. Routes are `/`, `/budget.html`, `/planner.html`, `/insights.html`, `/profile.html`, and `/settings.html`. Restart the local Python process after changing server routes. This local redesign does not publish or update a deployed service.
+
+### Themes and page checks
+
+Settings offers **Bloom** (violet/lavender/yellow), **Sunrise** (coral/apricot/teal), and **Ocean** (cobalt/lime/peach). Color mode, accent, text size, and reduced motion remain available. These settings do not change financial inputs, formulas, or models. The same decorative piggy-bank illustration appears in all three designs. It is generated artwork, not a chart or a financial prediction.
+
+Run the automated checks from `app`:
+
+```powershell
+node --test tests/*.test.mjs
+python -m unittest discover -s tests -p "test_*.py"
+```
+
+The page tests check shared authentication forms, unique IDs, preserved planner inputs, valid module links, and private template routes. JavaScript tests also check backward-compatible preferences, all three themes, and queued-save failures. The UI redesign was checked in a local browser with a disposable account: page navigation, goal-specific questions, budget/profile/planner saving, refresh and sign-in again, savings adjustments, forecasts, English/Hindi switching, and phone-width layouts. Test figures are not included in the app. Automated database/email tests use test stores and mocked mail transports; they do not establish live Atlas or Brevo availability.
 
 The server listens on `127.0.0.1` by default. If `MONGODB_URI` is not set in development, account records and sessions are saved to `app/data/finance_ai_accounts.sqlite3`; saved plan and budget data use the same local SQLite database. The server does not expose the database or Python source as static files.
 

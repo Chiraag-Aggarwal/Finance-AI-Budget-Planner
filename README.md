@@ -16,6 +16,12 @@ The budget form's optional category helper learns from that account's saved desc
 
 The planner uses transparent arithmetic for budget and goal guidance. It does not predict goal success, approve loans, or infer a lender's interest rate from income. HCES survey consumption is not used as cash spending, income, savings, debt, or goal labels.
 
+## Interface and themes
+
+The app has separate Dashboard, Monthly budget, Planner, Savings & insights, Profile, and Settings pages. The three-line menu links to all pages. Bloom is the default design; Settings also offers Sunrise and Ocean, with light/dark mode, accent color, text size, and reduced motion. All three designs use the same piggy-bank illustration.
+
+The interface uses plain HTML, CSS, and JavaScript. Python assembles shared page templates and serves the authenticated APIs; run `app/server.py` rather than opening an HTML fragment directly. See [the app guide](app/README.md) for the page/module map.
+
 ## Project layout
 
 - `app/` — HTML/CSS/JavaScript interface and Python account server, with MongoDB for deployed accounts and finance data.

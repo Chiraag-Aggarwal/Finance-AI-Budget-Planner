@@ -79,6 +79,7 @@ function makeEntryId() {
 
 // Change the category choices when the user switches between income and expense.
 function updateCategoryChoices() {
+  if (!typeInput || !categoryInput) return; // The insights page has no entry form.
   const categories = TRANSACTION_CATEGORIES[typeInput.value];
   categoryInput.replaceChildren();
 
@@ -130,6 +131,7 @@ async function saveCompletedMonths() {
 
 // Show the personal forecast and the saved take-home income for context.
 function updateSpendingForecast(forecast = null) {
+  if (!forecastResults) return; // Forecasts now live on the insights page.
   forecastResults.hidden = true;
   forecastIncomeCard.hidden = !Number.isFinite(plannerMonthlyIncome) || plannerMonthlyIncome <= 0;
 
@@ -184,7 +186,8 @@ function updateTracker() {
   completeMonthInput.checked = completedMonths.has(selectedMonth);
   const summary = summarizeMonth(transactions, selectedMonth);
 
-  document.querySelector("#category-summary-caption").textContent =
+  const caption = document.querySelector("#category-summary-caption");
+  if (caption) caption.textContent =
     `For ${new Date(`${selectedMonth}-01T12:00:00`).toLocaleDateString("en-IN", { month: "long", year: "numeric" })}.`;
   document.querySelector("#tracker-income").textContent = formatRupees(summary.totalIncome);
   document.querySelector("#tracker-expenses").textContent = formatRupees(summary.totalExpenses);
@@ -209,6 +212,7 @@ function updateTracker() {
 // Make a short bar for each category so spending is easy to compare.
 function showCategoryBreakdown(summary) {
   const list = document.querySelector("#category-summary");
+  if (!list) return;
   const emptyMessage = document.querySelector("#category-summary-empty");
   list.replaceChildren();
   emptyMessage.hidden = summary.categoryTotals.length > 0;
@@ -247,6 +251,7 @@ function showCategoryBreakdown(summary) {
 
 // Add a safe text-only row for each income or expense entry.
 function showTransactionList(selectedMonth, entryCount) {
+  if (!transactionRows) return;
   const emptyMessage = document.querySelector("#transaction-empty");
   const tableWrap = document.querySelector("#transaction-table-wrap");
   const monthEntries = transactions
@@ -334,7 +339,7 @@ async function loadTransactions() {
 
 
 // Add one income or expense record.
-form.addEventListener("submit", (event) => {
+form?.addEventListener("submit", (event) => {
   event.preventDefault();
 
   const entry = {
@@ -371,6 +376,7 @@ form.addEventListener("submit", (event) => {
 
 // Show a clickable category hint when this note matches the user's history.
 function updateCategorySuggestion() {
+  if (!categorySuggestion || !noteInput) return;
   suggestedCategory = null;
   categorySuggestion.hidden = true;
 
@@ -388,7 +394,7 @@ function updateCategorySuggestion() {
   categorySuggestion.hidden = false;
 }
 
-categorySuggestionButton.addEventListener("click", () => {
+categorySuggestionButton?.addEventListener("click", () => {
   if (!suggestedCategory) return;
 
   categoryInput.value = suggestedCategory;
@@ -398,12 +404,12 @@ categorySuggestionButton.addEventListener("click", () => {
 });
 
 // Update the category menu when the user chooses income or expense.
-typeInput.addEventListener("change", () => {
+typeInput?.addEventListener("change", () => {
   updateCategoryChoices();
   updateCategorySuggestion();
 });
 
-noteInput.addEventListener("input", updateCategorySuggestion);
+noteInput?.addEventListener("input", updateCategorySuggestion);
 window.addEventListener("finance-language-change", () => {
   updateCategorySuggestion();
   updateSpendingForecast();
@@ -425,7 +431,7 @@ completeMonthInput.addEventListener("change", () => {
 
 
 // Remove one selected entry from the list.
-transactionRows.addEventListener("click", (event) => {
+transactionRows?.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-entry-id]");
   if (!button) {
     return;
@@ -441,7 +447,7 @@ transactionRows.addEventListener("click", (event) => {
 });
 
 // Clear all account entries after the user confirms the action.
-document.querySelector("#clear-transactions").addEventListener("click", () => {
+document.querySelector("#clear-transactions")?.addEventListener("click", () => {
   if (!window.confirm("Clear all income and expense entries saved to your account?")) {
     return;
   }
@@ -456,7 +462,7 @@ document.querySelector("#clear-transactions").addEventListener("click", () => {
 
 
 // Start with today's date and month, then load account entries after sign-in.
-dateInput.value = getToday();
+if (dateInput) dateInput.value = getToday();
 monthInput.value = getCurrentMonth();
 updateCategoryChoices();
 updateTracker();

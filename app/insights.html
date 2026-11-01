@@ -1,0 +1,107 @@
+<!-- Page content. server.py adds the shared layout and account forms. -->
+<section class="insights-page" aria-labelledby="insights-page-title">
+<div class="section-heading"><div><p class="eyebrow">Make space for what matters</p><h1 id="insights-page-title">Savings &amp; insights</h1><p class="section-intro">Your spending history, practical adjustments, and a little more breathing room.</p></div></div>
+<div class="insights-controls"><label class="month-picker">
+            <span>View month</span>
+            <input id="budget-month" type="month">
+          </label><label class="save-choice month-complete-choice">
+          <input id="budget-complete-month" type="checkbox">
+          <span>I have finished entering this month. Marking it complete makes the estimate more representative.</span>
+        </label></div><div class="tracker-summary-grid" aria-live="polite">
+          <article class="tracker-summary-card">
+            <span class="card-label">Income recorded</span>
+            <strong id="tracker-income">₹0</strong>
+          </article>
+          <article class="tracker-summary-card">
+            <span class="card-label">Expenses recorded</span>
+            <strong id="tracker-expenses">₹0</strong>
+          </article>
+          <article class="tracker-summary-card">
+            <span class="card-label">Recorded balance</span>
+            <strong id="tracker-balance">₹0</strong>
+          </article>
+        </div>
+<p id="tracker-status" hidden></p><div class="insights-grid"><article class="tracker-panel savings-coach" aria-labelledby="savings-coach-title">
+          <div class="panel-heading">
+            <span class="result-icon icon-sage" aria-hidden="true">↗</span>
+            <div>
+              <h3 id="savings-coach-title">Find ways to save each month</h3>
+              <p id="savings-coach-intro">See practical changes based on the spending you recorded this month.</p>
+            </div>
+          </div>
+
+          <p id="savings-plan-message" class="result-note savings-plan-message" aria-live="polite">Add income to see a monthly estimate.</p>
+          <p id="savings-draft-note" class="savings-draft-note" hidden>Draft estimate based on entries so far. Mark the month complete for a fuller estimate.</p>
+
+          <div class="tracker-summary-grid budget-coach-summary" aria-live="polite">
+            <article class="tracker-summary-card"><span id="savings-balance-label" class="card-label">Current balance this month</span><strong id="savings-recorded-balance">—</strong></article>
+            <article class="tracker-summary-card"><span class="card-label">Could free up each month</span><strong id="savings-adjustment-total">—</strong></article>
+            <article class="tracker-summary-card"><span class="card-label">Estimated monthly savings</span><strong id="savings-available-amount">—</strong></article>
+          </div>
+
+          <div class="savings-recommendations">
+            <div class="savings-recommendations-heading">
+              <h4>Where you can save</h4>
+              <p id="savings-model-note">Savings ideas use this month's recorded spending now. A personal forecast needs 3 consecutive recent months marked complete.</p>
+            </div>
+            <div class="table-scroll" id="savings-budget-table-wrap" hidden>
+              <table class="scenario-table adjustment-table">
+                <caption id="savings-budget-caption" class="visually-hidden">Current monthly spending, suggested spending, and possible savings by category</caption>
+                <thead><tr><th scope="col">Category</th><th id="savings-current-heading" scope="col">Current monthly spend</th><th id="savings-suggested-heading" scope="col">Suggested monthly spend</th><th scope="col">Could save monthly</th></tr></thead>
+                <tbody id="savings-budget-rows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <details class="savings-advanced">
+            <summary>Adjust suggestions</summary>
+            <div class="savings-advanced-content">
+              <p class="chat-help">Only flexible categories are suggested. Existing EMIs and essential expenses stay as recorded.</p>
+              <p id="savings-region-note" class="chat-help" aria-live="polite"></p>
+              <div class="advice-chat" aria-labelledby="savings-chat-title">
+                <h4 id="savings-chat-title">Tell the coach what cannot change</h4>
+                <p class="chat-help">For example, groceries may be fixed, or you may be able to reduce transport by ₹500.</p>
+                <ol id="savings-chat-messages" class="chat-messages" aria-live="polite" aria-relevant="additions text">
+                  <li class="chat-message assistant-message">Tell me a category and whether its spending can change. Preferences stay in this browser.</li>
+                </ol>
+                <form id="savings-chat-form" class="advice-chat-form">
+                  <label class="visually-hidden" for="savings-chat-input">Describe which spending can or cannot change</label>
+                  <input id="savings-chat-input" type="text" maxlength="300" autocomplete="off" placeholder="For example, transport is fixed…" required>
+                  <button class="button button-primary" type="submit">Update suggestions</button>
+                </form>
+                <p class="chat-disclaimer">These are optional estimates based on your entries. They do not change your transactions.</p>
+              </div>
+            </div>
+          </details>
+        </article><article class="tracker-panel spending-forecast-panel" aria-labelledby="spending-forecast-title">
+          <div class="panel-heading">
+            <span class="result-icon icon-sage" aria-hidden="true">↗</span>
+            <div>
+              <h3 id="spending-forecast-title">Next month’s cash spending forecast</h3>
+              <p>Suggested category amounts based on your completed spending history.</p>
+            </div>
+          </div>
+          <p id="spending-forecast-status" class="forecast-status" role="status" aria-live="polite">
+            Mark 3 consecutive recent months complete to get a personal forecast.
+          </p>
+          <div id="spending-forecast-results" hidden>
+            <div class="forecast-metrics">
+              <div>
+                <span>Forecast total</span>
+                <strong id="spending-forecast-total">₹0</strong>
+              </div>
+              <div id="spending-forecast-income-card" hidden>
+                <span>Take-home income in your plan</span>
+                <strong id="spending-forecast-income">—</strong>
+              </div>
+            </div>
+            <ul id="spending-forecast-categories" class="forecast-category-list"></ul>
+            <p id="spending-forecast-no-categories" class="forecast-status" hidden>
+              No expenses were recorded in those complete months, so the forecast is ₹0.
+            </p>
+            <p class="forecast-note">
+              Use this as a starting estimate. Review it alongside upcoming bills, current EMIs, and your savings plan.
+            </p>
+          </div>
+        </article></div>
+<div class="page-next"><a href="/budget.html">Add or review budget entries <span aria-hidden="true">→</span></a></div></section>

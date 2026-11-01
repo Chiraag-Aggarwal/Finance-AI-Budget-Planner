@@ -2,17 +2,20 @@
 let signedInUserId = null;
 let savedDataPromise = null;
 let saveQueue = Promise.resolve();
+let lastSaveError = null;
 
 window.addEventListener("finance-user-ready", (event) => {
   signedInUserId = String(event.detail.id);
   savedDataPromise = null;
   saveQueue = Promise.resolve();
+  lastSaveError = null;
 });
 
 window.addEventListener("finance-user-logout", () => {
   signedInUserId = null;
   savedDataPromise = null;
   saveQueue = Promise.resolve();
+  lastSaveError = null;
 });
 
 async function request(path, method = "GET", body = undefined) {
@@ -23,6 +26,8 @@ async function request(path, method = "GET", body = undefined) {
       credentials: "same-origin",
       headers: body === undefined ? {} : { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
+      // Small autosaves can finish even if the user refreshes during the request.
+      keepalive: body !== undefined && new Blob([JSON.stringify(body)]).size < 60000,
     });
   } catch {
     throw new Error("Could not sync your saved details. Check your connection and try again.");
@@ -56,19 +61,22 @@ export async function loadFinanceData() {
 
 export function saveFinanceDataField(field, value) {
   const ownerId = signedInUserId;
+  const snapshot = structuredClone(value);
   const operation = saveQueue.then(async () => {
     if (!ownerId || signedInUserId !== ownerId) {
       throw new Error("Sign in before saving personal finance details.");
     }
     // The server merges this patch with the account's existing data, so save directly.
-    const result = await request("/api/finance-data", "PATCH", { [field]: value });
+    const result = await request("/api/finance-data", "PATCH", { [field]: snapshot });
     if (signedInUserId !== ownerId) {
       throw new Error("Your account changed before the save finished. Please try again.");
     }
     savedDataPromise = Promise.resolve(result.data || {});
+    lastSaveError = null;
     return result.data || {};
   });
   const reportedOperation = operation.catch((error) => {
+    lastSaveError = error;
     window.dispatchEvent(new CustomEvent("finance-save-error", {
       detail: { message: error?.message || "A change could not be saved." },
     }));
@@ -76,6 +84,11 @@ export function saveFinanceDataField(field, value) {
   });
   saveQueue = reportedOperation.catch(() => {});
   return reportedOperation;
+}
+
+export async function waitForFinanceSaves() {
+  await saveQueue;
+  if (lastSaveError) throw lastSaveError;
 }
 
 

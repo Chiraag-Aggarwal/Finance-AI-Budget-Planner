@@ -26,6 +26,35 @@ from urllib.parse import quote, unquote, urlsplit
 
 APP_FOLDER = Path(__file__).resolve().parent
 
+# Each URL has its own content. The shared layout keeps account controls identical.
+# Only these pages are public; templates, secrets and database files stay private.
+APP_PAGES = {
+    "index.html": ("Dashboard", ("dashboard.mjs",)),
+    "budget.html": ("Monthly budget", ("budget_ui.mjs",)),
+    "planner.html": ("Planner", ("app.mjs",)),
+    "insights.html": ("Savings & insights", ("budget_savings_ui.mjs", "budget_ui.mjs")),
+    "profile.html": ("Profile details", ("profile_page.mjs",)),
+    "settings.html": ("Settings", ()),
+}
+
+
+def read_static_body(path: Path) -> bytes:
+    """Render HTML using trusted local fragments; other assets are sent as stored."""
+    if path.name not in APP_PAGES or path.parent != APP_FOLDER:
+        return path.read_bytes()
+    title, modules = APP_PAGES[path.name]
+    layout = (APP_FOLDER / "layout.html").read_text(encoding="utf-8")
+    values = {
+        "PAGE_TITLE": title,
+        "PAGE_NAME": path.stem,
+        "PAGE_SCRIPTS": "\n".join(f'<script type="module" src="/js/{name}"></script>' for name in modules),
+        "AUTH_CONTENT": (APP_FOLDER / "auth.html").read_text(encoding="utf-8"),
+        "PAGE_CONTENT": path.read_text(encoding="utf-8"),
+    }
+    for name, value in values.items():
+        layout = layout.replace(f"<!-- {name} -->", value)
+    return layout.encode("utf-8")
+
 
 def load_local_environment():
     """Read simple KEY=VALUE settings from app/.env for local development."""
@@ -1512,12 +1541,12 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
     @staticmethod
     def resolve_static_asset(path: str) -> Path | None:
         """Expose only the app shell, browser modules, and approved PNG assets."""
-        if path in ("/", "/index.html"):
+        if path == "/":
             return APP_FOLDER / "index.html"
-        if path == "/profile.html":
-            return APP_FOLDER / "profile.html"
-        if path == "/styles.css":
-            return APP_FOLDER / "styles.css"
+        if path.lstrip("/") in APP_PAGES and path.count("/") == 1:
+            return APP_FOLDER / path.lstrip("/")
+        if path in ("/styles.css", "/themes.css"):
+            return APP_FOLDER / path.lstrip("/")
         if path.startswith("/assets/") and Path(path).suffix.lower() == ".png":
             candidate = (APP_FOLDER / path.lstrip("/")).resolve()
             assets_folder = (APP_FOLDER / "assets").resolve()
@@ -1532,7 +1561,7 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
 
     def send_static_file(self, path: Path):
         try:
-            body = path.read_bytes()
+            body = read_static_body(path)
         except OSError:
             self.send_error_json(HTTPStatus.NOT_FOUND, "Page not found.")
             return
@@ -1569,7 +1598,7 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.OK)
         self.send_security_headers()
         self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(asset.stat().st_size))
+        self.send_header("Content-Length", str(len(read_static_body(asset))))
         self.end_headers()
 
 

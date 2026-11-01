@@ -203,3 +203,16 @@ window.addEventListener("finance-user-profile", (event) => {
 
 
 showSavingsBudget();
+
+// A new account must not inherit the previous account's chat constraints.
+window.addEventListener("finance-user-logout", () => {
+  adjustableCategories = new Set(["Other", "Personal", "Transport", "Utilities", "Food and groceries"]);
+  lockedCategories = new Set();
+  maximumCuts = new Map();
+  lastDiscussedCategory = null;
+  profileRegion = "";
+  monthlySummary = { categoryTotals: [], isComplete: false };
+  chatMessages.replaceChildren();
+  chatInput.value = "";
+  showSavingsBudget();
+});

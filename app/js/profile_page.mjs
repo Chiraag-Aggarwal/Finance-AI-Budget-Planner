@@ -1,3 +1,5 @@
+import { registerPageSave } from "./pending_saves.mjs";
+
 const form = document.querySelector("#profile-edit-form");
 const statusMessage = document.querySelector("#profile-page-status");
 const saveButton = form.querySelector('button[type="submit"]');
@@ -65,7 +67,7 @@ function getProfileFields() {
 }
 
 function saveProfileInBackground() {
-  if (!form.checkValidity()) return Promise.resolve();
+  if (!signedInUserId || !form.checkValidity()) return Promise.resolve();
   const fields = getProfileFields();
   const signature = JSON.stringify(fields);
 
@@ -79,6 +81,7 @@ function saveProfileInBackground() {
     if (JSON.stringify(getProfileFields()) === signature) {
       fillForm(result.user);
     }
+    window.dispatchEvent(new CustomEvent("finance-profile-updated", { detail: result.user }));
   });
   profileSaveQueue = operation.catch(() => {});
   return operation;
@@ -100,23 +103,26 @@ function scheduleProfileAutoSave(immediate = false) {
   }, 250);
 }
 
-async function loadProfile() {
-  try {
-    const result = await requestJSON("/api/me");
-    fillForm(result.user);
-    signedInUserId = String(result.user.id);
-    window.dispatchEvent(new CustomEvent("finance-user-ready", { detail: result.user }));
-    form.hidden = false;
-    accountDataSection.hidden = false;
-    statusMessage.textContent = "";
-  } catch (error) {
-    if (error.status === 401) {
-      window.location.replace("/");
-      return;
-    }
-    statusMessage.textContent = error.message;
-  }
-}
+// The shared account module restores the session once, on every page.
+window.addEventListener("finance-user-ready", (event) => {
+  fillForm(event.detail);
+  signedInUserId = String(event.detail.id);
+  form.hidden = false;
+  accountDataSection.hidden = false;
+  statusMessage.textContent = "";
+});
+window.addEventListener("finance-user-logout", () => {
+  window.clearTimeout(profileSaveTimer);
+  signedInUserId = null;
+  lastSavedProfileSignature = null;
+  form.reset();
+  form.hidden = true;
+  accountDataSection.hidden = true;
+});
+registerPageSave(() => {
+  window.clearTimeout(profileSaveTimer);
+  return saveProfileInBackground();
+});
 
 form.addEventListener("input", () => scheduleProfileAutoSave());
 form.addEventListener("change", () => scheduleProfileAutoSave(true));
@@ -195,5 +201,3 @@ deleteForm.addEventListener("submit", async (event) => {
     confirmDeleteButton.disabled = false;
   }
 });
-
-loadProfile();

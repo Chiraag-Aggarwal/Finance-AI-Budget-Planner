@@ -1,0 +1,54 @@
+<!-- Page content. server.py adds the shared layout and account forms. -->
+<section class="settings-page" aria-labelledby="settings-title"><div class="settings-panel">
+        <div class="settings-heading">
+          <div>
+            <p class="eyebrow">Personalize your workspace</p>
+            <h1 id="settings-title">Make yourself at home.</h1>
+            <p class="section-intro">Choose how the planner looks and feels. Changes apply right away.</p>
+          </div>
+
+        </div>
+
+        <div class="design-choices" role="group" aria-label="Choose a design">
+<button type="button" class="design-choice" data-design-choice="sunrise" aria-pressed="false"><span class="design-colours sunrise" aria-hidden="true"><i></i><i></i><i></i></span><strong>Sunrise</strong><small>Coral, apricot and teal</small></button>
+<button type="button" class="design-choice" data-design-choice="ocean" aria-pressed="false"><span class="design-colours ocean" aria-hidden="true"><i></i><i></i><i></i></span><strong>Ocean</strong><small>Cobalt, lime and peach</small></button>
+<button type="button" class="design-choice" data-design-choice="bloom" aria-pressed="true"><span class="design-colours bloom" aria-hidden="true"><i></i><i></i><i></i></span><strong>Bloom</strong><small>Violet, lavender and yellow</small></button>
+</div>
+<div class="settings-grid">
+          <label class="field settings-field">
+            <span>Color mode</span>
+            <select id="setting-theme">
+              <option value="system">Use device setting</option>
+              <option value="light" selected>Light</option>
+              <option value="dark">Dark</option>
+            </select>
+            <small>System mode follows your device’s light or dark preference.</small>
+          </label>
+          <label class="field settings-field">
+            <span>Accent color</span>
+            <select id="setting-accent">
+              <option value="mint">Mint</option><option value="coral">Coral</option>
+              <option value="ocean">Ocean blue</option>
+              <option value="violet">Violet</option>
+            </select>
+            <small>Changes the main buttons, highlights, and focus color.</small>
+          </label>
+          <label class="field settings-field">
+            <span>Text size</span>
+            <select id="setting-text-size">
+              <option value="standard">Standard</option>
+              <option value="large">Larger</option>
+            </select>
+            <small>Choose larger text if it is easier for you to read.</small>
+          </label>
+          <label class="settings-toggle">
+            <input id="setting-reduce-motion" type="checkbox">
+            <span><strong>Reduce motion</strong><small>Limit smooth scrolling and interface movement.</small></span>
+          </label>
+        </div>
+
+        <div class="settings-footer">
+          <p id="settings-save-status" class="save-status" aria-live="polite">These choices are saved only in this browser.</p>
+          <button id="settings-reset-button" class="button button-quiet" type="button">Reset appearance</button>
+        </div>
+      </div></section>
