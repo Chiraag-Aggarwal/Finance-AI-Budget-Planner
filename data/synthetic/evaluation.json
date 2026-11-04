@@ -1,0 +1,36 @@
+{
+  "source": "synthetic-only",
+  "real_world_validation": false,
+  "seed": 20261104,
+  "category": {
+    "rows": 78,
+    "suggestions": 57,
+    "correct": 51,
+    "coverage": 0.7308,
+    "accepted_accuracy": 0.8947
+  },
+  "forecast": {
+    "rows": 1712,
+    "mae_inr": 3042.47,
+    "carry_forward_mae_inr": 5862.51,
+    "daily_rate_mae_inr": 3343.99
+  },
+  "validation": {
+    "rows": 860,
+    "mae_inr": 2945.29,
+    "carry_forward_mae_inr": 5210.68,
+    "daily_rate_mae_inr": 3112.52
+  },
+  "selected_blend": 0.5,
+  "selected_ridge": 0.01,
+  "sha256": {
+    "spending_scenarios.csv": "10b4d93f0371c203cb46b0fd77e489978e8179b40ec1e450c69f65a74315482e",
+    "transaction_notes.csv": "936d476fa84c4effb48aea62f60ec5c8e22b896823a30f267afdb4935d3124de"
+  },
+  "limitations": [
+    "Scores cover generated scenarios only, not real users.",
+    "Phrase families and simulated household scenarios are split as groups.",
+    "Spending rows assume all simulated purchases were recorded.",
+    "No saving-action outcomes, India price data, or HCES labels are used."
+  ]
+}

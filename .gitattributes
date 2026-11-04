@@ -1,0 +1,3 @@
+data/synthetic/*.csv text eol=lf
+data/synthetic/evaluation.json text eol=lf
+app/js/starter_models.mjs text eol=lf

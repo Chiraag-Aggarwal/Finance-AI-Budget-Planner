@@ -1,0 +1,547 @@
+source,group,split,type,category,note,variant
+synthetic,Food and groceries-0,train,expense,Food and groceries,weekly groceries rice vegetables,0
+synthetic,Food and groceries-0,train,expense,Food and groceries,UPI weekly groceries rice vegetables,1
+synthetic,Food and groceries-0,train,expense,Food and groceries,weekly groceries rice vegetables payment,2
+synthetic,Food and groceries-1,train,expense,Food and groceries,milk bread eggs grocery shop,0
+synthetic,Food and groceries-1,train,expense,Food and groceries,UPI milk bread eggs grocery shop,1
+synthetic,Food and groceries-1,train,expense,Food and groceries,milk bread eggs grocery shop payment,2
+synthetic,Food and groceries-2,train,expense,Food and groceries,fruit and vegetables market,0
+synthetic,Food and groceries-2,train,expense,Food and groceries,UPI fruit and vegetables market,1
+synthetic,Food and groceries-2,train,expense,Food and groceries,fruit and vegetables market payment,2
+synthetic,Food and groceries-3,train,expense,Food and groceries,atta dal rice staples,0
+synthetic,Food and groceries-3,train,expense,Food and groceries,UPI atta dal rice staples,1
+synthetic,Food and groceries-3,train,expense,Food and groceries,atta dal rice staples payment,2
+synthetic,Food and groceries-4,train,expense,Food and groceries,supermarket groceries,0
+synthetic,Food and groceries-4,train,expense,Food and groceries,UPI supermarket groceries,1
+synthetic,Food and groceries-4,train,expense,Food and groceries,supermarket groceries payment,2
+synthetic,Food and groceries-5,train,expense,Food and groceries,ration kirana grocery,0
+synthetic,Food and groceries-5,train,expense,Food and groceries,UPI ration kirana grocery,1
+synthetic,Food and groceries-5,train,expense,Food and groceries,ration kirana grocery payment,2
+synthetic,Food and groceries-6,train,expense,Food and groceries,doodh sabzi rashan,0
+synthetic,Food and groceries-6,train,expense,Food and groceries,UPI doodh sabzi rashan,1
+synthetic,Food and groceries-6,train,expense,Food and groceries,doodh sabzi rashan payment,2
+synthetic,Food and groceries-7,train,expense,Food and groceries,दूध सब्जी राशन,0
+synthetic,Food and groceries-7,train,expense,Food and groceries,UPI दूध सब्जी राशन,1
+synthetic,Food and groceries-7,train,expense,Food and groceries,दूध सब्जी राशन payment,2
+synthetic,Food and groceries-8,train,expense,Food and groceries,फल और किराना,0
+synthetic,Food and groceries-8,train,expense,Food and groceries,UPI फल और किराना,1
+synthetic,Food and groceries-8,train,expense,Food and groceries,फल और किराना payment,2
+synthetic,Food and groceries-9,train,expense,Food and groceries,चावल दाल आटा,0
+synthetic,Food and groceries-9,train,expense,Food and groceries,UPI चावल दाल आटा,1
+synthetic,Food and groceries-9,train,expense,Food and groceries,चावल दाल आटा payment,2
+synthetic,Food and groceries-10,validation,expense,Food and groceries,vegetables for dinner groceries,0
+synthetic,Food and groceries-10,validation,expense,Food and groceries,UPI vegetables for dinner groceries,1
+synthetic,Food and groceries-10,validation,expense,Food and groceries,vegetables for dinner groceries payment,2
+synthetic,Food and groceries-11,validation,expense,Food and groceries,kirana rice milk,0
+synthetic,Food and groceries-11,validation,expense,Food and groceries,UPI kirana rice milk,1
+synthetic,Food and groceries-11,validation,expense,Food and groceries,kirana rice milk payment,2
+synthetic,Food and groceries-12,test,expense,Food and groceries,fresh fruit grocery basket,0
+synthetic,Food and groceries-12,test,expense,Food and groceries,UPI fresh fruit grocery basket,1
+synthetic,Food and groceries-12,test,expense,Food and groceries,fresh fruit grocery basket payment,2
+synthetic,Food and groceries-13,test,expense,Food and groceries,दूध और किराना सामान,0
+synthetic,Food and groceries-13,test,expense,Food and groceries,UPI दूध और किराना सामान,1
+synthetic,Food and groceries-13,test,expense,Food and groceries,दूध और किराना सामान payment,2
+synthetic,Housing and rent-0,train,expense,Housing and rent,monthly house rent,0
+synthetic,Housing and rent-0,train,expense,Housing and rent,UPI monthly house rent,1
+synthetic,Housing and rent-0,train,expense,Housing and rent,monthly house rent payment,2
+synthetic,Housing and rent-1,train,expense,Housing and rent,apartment rent payment,0
+synthetic,Housing and rent-1,train,expense,Housing and rent,UPI apartment rent payment,1
+synthetic,Housing and rent-1,train,expense,Housing and rent,apartment rent payment payment,2
+synthetic,Housing and rent-2,train,expense,Housing and rent,landlord rent transfer,0
+synthetic,Housing and rent-2,train,expense,Housing and rent,UPI landlord rent transfer,1
+synthetic,Housing and rent-2,train,expense,Housing and rent,landlord rent transfer payment,2
+synthetic,Housing and rent-3,train,expense,Housing and rent,flat maintenance housing,0
+synthetic,Housing and rent-3,train,expense,Housing and rent,UPI flat maintenance housing,1
+synthetic,Housing and rent-3,train,expense,Housing and rent,flat maintenance housing payment,2
+synthetic,Housing and rent-4,train,expense,Housing and rent,hostel room rent,0
+synthetic,Housing and rent-4,train,expense,Housing and rent,UPI hostel room rent,1
+synthetic,Housing and rent-4,train,expense,Housing and rent,hostel room rent payment,2
+synthetic,Housing and rent-5,train,expense,Housing and rent,ghar ka kiraya,0
+synthetic,Housing and rent-5,train,expense,Housing and rent,UPI ghar ka kiraya,1
+synthetic,Housing and rent-5,train,expense,Housing and rent,ghar ka kiraya payment,2
+synthetic,Housing and rent-6,train,expense,Housing and rent,room deposit rent,0
+synthetic,Housing and rent-6,train,expense,Housing and rent,UPI room deposit rent,1
+synthetic,Housing and rent-6,train,expense,Housing and rent,room deposit rent payment,2
+synthetic,Housing and rent-7,train,expense,Housing and rent,घर का किराया,0
+synthetic,Housing and rent-7,train,expense,Housing and rent,UPI घर का किराया,1
+synthetic,Housing and rent-7,train,expense,Housing and rent,घर का किराया payment,2
+synthetic,Housing and rent-8,train,expense,Housing and rent,मकान किराया,0
+synthetic,Housing and rent-8,train,expense,Housing and rent,UPI मकान किराया,1
+synthetic,Housing and rent-8,train,expense,Housing and rent,मकान किराया payment,2
+synthetic,Housing and rent-9,train,expense,Housing and rent,housing society maintenance,0
+synthetic,Housing and rent-9,train,expense,Housing and rent,UPI housing society maintenance,1
+synthetic,Housing and rent-9,train,expense,Housing and rent,housing society maintenance payment,2
+synthetic,Housing and rent-10,validation,expense,Housing and rent,landlord monthly rent,0
+synthetic,Housing and rent-10,validation,expense,Housing and rent,UPI landlord monthly rent,1
+synthetic,Housing and rent-10,validation,expense,Housing and rent,landlord monthly rent payment,2
+synthetic,Housing and rent-11,validation,expense,Housing and rent,flat rent dues,0
+synthetic,Housing and rent-11,validation,expense,Housing and rent,UPI flat rent dues,1
+synthetic,Housing and rent-11,validation,expense,Housing and rent,flat rent dues payment,2
+synthetic,Housing and rent-12,test,expense,Housing and rent,hostel rental payment,0
+synthetic,Housing and rent-12,test,expense,Housing and rent,UPI hostel rental payment,1
+synthetic,Housing and rent-12,test,expense,Housing and rent,hostel rental payment payment,2
+synthetic,Housing and rent-13,test,expense,Housing and rent,मकान का किराया भुगतान,0
+synthetic,Housing and rent-13,test,expense,Housing and rent,UPI मकान का किराया भुगतान,1
+synthetic,Housing and rent-13,test,expense,Housing and rent,मकान का किराया भुगतान payment,2
+synthetic,Utilities-0,train,expense,Utilities,electricity bill,0
+synthetic,Utilities-0,train,expense,Utilities,UPI electricity bill,1
+synthetic,Utilities-0,train,expense,Utilities,electricity bill payment,2
+synthetic,Utilities-1,train,expense,Utilities,water bill,0
+synthetic,Utilities-1,train,expense,Utilities,UPI water bill,1
+synthetic,Utilities-1,train,expense,Utilities,water bill payment,2
+synthetic,Utilities-2,train,expense,Utilities,internet broadband bill,0
+synthetic,Utilities-2,train,expense,Utilities,UPI internet broadband bill,1
+synthetic,Utilities-2,train,expense,Utilities,internet broadband bill payment,2
+synthetic,Utilities-3,train,expense,Utilities,mobile recharge phone,0
+synthetic,Utilities-3,train,expense,Utilities,UPI mobile recharge phone,1
+synthetic,Utilities-3,train,expense,Utilities,mobile recharge phone payment,2
+synthetic,Utilities-4,train,expense,Utilities,cooking gas cylinder,0
+synthetic,Utilities-4,train,expense,Utilities,UPI cooking gas cylinder,1
+synthetic,Utilities-4,train,expense,Utilities,cooking gas cylinder payment,2
+synthetic,Utilities-5,train,expense,Utilities,bijli ka bill,0
+synthetic,Utilities-5,train,expense,Utilities,UPI bijli ka bill,1
+synthetic,Utilities-5,train,expense,Utilities,bijli ka bill payment,2
+synthetic,Utilities-6,train,expense,Utilities,wifi broadband recharge,0
+synthetic,Utilities-6,train,expense,Utilities,UPI wifi broadband recharge,1
+synthetic,Utilities-6,train,expense,Utilities,wifi broadband recharge payment,2
+synthetic,Utilities-7,train,expense,Utilities,बिजली बिल,0
+synthetic,Utilities-7,train,expense,Utilities,UPI बिजली बिल,1
+synthetic,Utilities-7,train,expense,Utilities,बिजली बिल payment,2
+synthetic,Utilities-8,train,expense,Utilities,पानी का बिल,0
+synthetic,Utilities-8,train,expense,Utilities,UPI पानी का बिल,1
+synthetic,Utilities-8,train,expense,Utilities,पानी का बिल payment,2
+synthetic,Utilities-9,train,expense,Utilities,मोबाइल रिचार्ज,0
+synthetic,Utilities-9,train,expense,Utilities,UPI मोबाइल रिचार्ज,1
+synthetic,Utilities-9,train,expense,Utilities,मोबाइल रिचार्ज payment,2
+synthetic,Utilities-10,validation,expense,Utilities,paid electricity dues,0
+synthetic,Utilities-10,validation,expense,Utilities,UPI paid electricity dues,1
+synthetic,Utilities-10,validation,expense,Utilities,paid electricity dues payment,2
+synthetic,Utilities-11,validation,expense,Utilities,monthly broadband internet,0
+synthetic,Utilities-11,validation,expense,Utilities,UPI monthly broadband internet,1
+synthetic,Utilities-11,validation,expense,Utilities,monthly broadband internet payment,2
+synthetic,Utilities-12,test,expense,Utilities,water charges bill,0
+synthetic,Utilities-12,test,expense,Utilities,UPI water charges bill,1
+synthetic,Utilities-12,test,expense,Utilities,water charges bill payment,2
+synthetic,Utilities-13,test,expense,Utilities,बिजली का भुगतान,0
+synthetic,Utilities-13,test,expense,Utilities,UPI बिजली का भुगतान,1
+synthetic,Utilities-13,test,expense,Utilities,बिजली का भुगतान payment,2
+synthetic,Transport-0,train,expense,Transport,petrol fuel bike,0
+synthetic,Transport-0,train,expense,Transport,UPI petrol fuel bike,1
+synthetic,Transport-0,train,expense,Transport,petrol fuel bike payment,2
+synthetic,Transport-1,train,expense,Transport,diesel car fuel,0
+synthetic,Transport-1,train,expense,Transport,UPI diesel car fuel,1
+synthetic,Transport-1,train,expense,Transport,diesel car fuel payment,2
+synthetic,Transport-2,train,expense,Transport,metro card recharge,0
+synthetic,Transport-2,train,expense,Transport,UPI metro card recharge,1
+synthetic,Transport-2,train,expense,Transport,metro card recharge payment,2
+synthetic,Transport-3,train,expense,Transport,bus fare commute,0
+synthetic,Transport-3,train,expense,Transport,UPI bus fare commute,1
+synthetic,Transport-3,train,expense,Transport,bus fare commute payment,2
+synthetic,Transport-4,train,expense,Transport,taxi ride office,0
+synthetic,Transport-4,train,expense,Transport,UPI taxi ride office,1
+synthetic,Transport-4,train,expense,Transport,taxi ride office payment,2
+synthetic,Transport-5,train,expense,Transport,train ticket travel,0
+synthetic,Transport-5,train,expense,Transport,UPI train ticket travel,1
+synthetic,Transport-5,train,expense,Transport,train ticket travel payment,2
+synthetic,Transport-6,train,expense,Transport,auto rickshaw fare,0
+synthetic,Transport-6,train,expense,Transport,UPI auto rickshaw fare,1
+synthetic,Transport-6,train,expense,Transport,auto rickshaw fare payment,2
+synthetic,Transport-7,train,expense,Transport,cab ride,0
+synthetic,Transport-7,train,expense,Transport,UPI cab ride,1
+synthetic,Transport-7,train,expense,Transport,cab ride payment,2
+synthetic,Transport-8,train,expense,Transport,पेट्रोल बाइक,0
+synthetic,Transport-8,train,expense,Transport,UPI पेट्रोल बाइक,1
+synthetic,Transport-8,train,expense,Transport,पेट्रोल बाइक payment,2
+synthetic,Transport-9,train,expense,Transport,बस टिकट,0
+synthetic,Transport-9,train,expense,Transport,UPI बस टिकट,1
+synthetic,Transport-9,train,expense,Transport,बस टिकट payment,2
+synthetic,Transport-10,validation,expense,Transport,metro fare commute,0
+synthetic,Transport-10,validation,expense,Transport,UPI metro fare commute,1
+synthetic,Transport-10,validation,expense,Transport,metro fare commute payment,2
+synthetic,Transport-11,validation,expense,Transport,petrol pump payment,0
+synthetic,Transport-11,validation,expense,Transport,UPI petrol pump payment,1
+synthetic,Transport-11,validation,expense,Transport,petrol pump payment payment,2
+synthetic,Transport-12,test,expense,Transport,taxi fare home,0
+synthetic,Transport-12,test,expense,Transport,UPI taxi fare home,1
+synthetic,Transport-12,test,expense,Transport,taxi fare home payment,2
+synthetic,Transport-13,test,expense,Transport,बस का किराया,0
+synthetic,Transport-13,test,expense,Transport,UPI बस का किराया,1
+synthetic,Transport-13,test,expense,Transport,बस का किराया payment,2
+synthetic,Health-0,train,expense,Health,doctor consultation,0
+synthetic,Health-0,train,expense,Health,UPI doctor consultation,1
+synthetic,Health-0,train,expense,Health,doctor consultation payment,2
+synthetic,Health-1,train,expense,Health,pharmacy medicine,0
+synthetic,Health-1,train,expense,Health,UPI pharmacy medicine,1
+synthetic,Health-1,train,expense,Health,pharmacy medicine payment,2
+synthetic,Health-2,train,expense,Health,hospital treatment bill,0
+synthetic,Health-2,train,expense,Health,UPI hospital treatment bill,1
+synthetic,Health-2,train,expense,Health,hospital treatment bill payment,2
+synthetic,Health-3,train,expense,Health,dentist appointment,0
+synthetic,Health-3,train,expense,Health,UPI dentist appointment,1
+synthetic,Health-3,train,expense,Health,dentist appointment payment,2
+synthetic,Health-4,train,expense,Health,medical blood test,0
+synthetic,Health-4,train,expense,Health,UPI medical blood test,1
+synthetic,Health-4,train,expense,Health,medical blood test payment,2
+synthetic,Health-5,train,expense,Health,dawai medical shop,0
+synthetic,Health-5,train,expense,Health,UPI dawai medical shop,1
+synthetic,Health-5,train,expense,Health,dawai medical shop payment,2
+synthetic,Health-6,train,expense,Health,दवाई दुकान,0
+synthetic,Health-6,train,expense,Health,UPI दवाई दुकान,1
+synthetic,Health-6,train,expense,Health,दवाई दुकान payment,2
+synthetic,Health-7,train,expense,Health,डॉक्टर फीस,0
+synthetic,Health-7,train,expense,Health,UPI डॉक्टर फीस,1
+synthetic,Health-7,train,expense,Health,डॉक्टर फीस payment,2
+synthetic,Health-8,train,expense,Health,अस्पताल इलाज,0
+synthetic,Health-8,train,expense,Health,UPI अस्पताल इलाज,1
+synthetic,Health-8,train,expense,Health,अस्पताल इलाज payment,2
+synthetic,Health-9,train,expense,Health,health checkup clinic,0
+synthetic,Health-9,train,expense,Health,UPI health checkup clinic,1
+synthetic,Health-9,train,expense,Health,health checkup clinic payment,2
+synthetic,Health-10,validation,expense,Health,doctor visit clinic,0
+synthetic,Health-10,validation,expense,Health,UPI doctor visit clinic,1
+synthetic,Health-10,validation,expense,Health,doctor visit clinic payment,2
+synthetic,Health-11,validation,expense,Health,medicine pharmacy purchase,0
+synthetic,Health-11,validation,expense,Health,UPI medicine pharmacy purchase,1
+synthetic,Health-11,validation,expense,Health,medicine pharmacy purchase payment,2
+synthetic,Health-12,test,expense,Health,medical test lab,0
+synthetic,Health-12,test,expense,Health,UPI medical test lab,1
+synthetic,Health-12,test,expense,Health,medical test lab payment,2
+synthetic,Health-13,test,expense,Health,दवाई का बिल,0
+synthetic,Health-13,test,expense,Health,UPI दवाई का बिल,1
+synthetic,Health-13,test,expense,Health,दवाई का बिल payment,2
+synthetic,Education-0,train,expense,Education,school tuition fees,0
+synthetic,Education-0,train,expense,Education,UPI school tuition fees,1
+synthetic,Education-0,train,expense,Education,school tuition fees payment,2
+synthetic,Education-1,train,expense,Education,college semester fees,0
+synthetic,Education-1,train,expense,Education,UPI college semester fees,1
+synthetic,Education-1,train,expense,Education,college semester fees payment,2
+synthetic,Education-2,train,expense,Education,textbooks school books,0
+synthetic,Education-2,train,expense,Education,UPI textbooks school books,1
+synthetic,Education-2,train,expense,Education,textbooks school books payment,2
+synthetic,Education-3,train,expense,Education,online learning course,0
+synthetic,Education-3,train,expense,Education,UPI online learning course,1
+synthetic,Education-3,train,expense,Education,online learning course payment,2
+synthetic,Education-4,train,expense,Education,coaching classes fees,0
+synthetic,Education-4,train,expense,Education,UPI coaching classes fees,1
+synthetic,Education-4,train,expense,Education,coaching classes fees payment,2
+synthetic,Education-5,train,expense,Education,exam registration education,0
+synthetic,Education-5,train,expense,Education,UPI exam registration education,1
+synthetic,Education-5,train,expense,Education,exam registration education payment,2
+synthetic,Education-6,train,expense,Education,school uniform books,0
+synthetic,Education-6,train,expense,Education,UPI school uniform books,1
+synthetic,Education-6,train,expense,Education,school uniform books payment,2
+synthetic,Education-7,train,expense,Education,स्कूल फीस,0
+synthetic,Education-7,train,expense,Education,UPI स्कूल फीस,1
+synthetic,Education-7,train,expense,Education,स्कूल फीस payment,2
+synthetic,Education-8,train,expense,Education,पढ़ाई किताबें,0
+synthetic,Education-8,train,expense,Education,UPI पढ़ाई किताबें,1
+synthetic,Education-8,train,expense,Education,पढ़ाई किताबें payment,2
+synthetic,Education-9,train,expense,Education,कॉलेज फीस,0
+synthetic,Education-9,train,expense,Education,UPI कॉलेज फीस,1
+synthetic,Education-9,train,expense,Education,कॉलेज फीस payment,2
+synthetic,Education-10,validation,expense,Education,college tuition payment,0
+synthetic,Education-10,validation,expense,Education,UPI college tuition payment,1
+synthetic,Education-10,validation,expense,Education,college tuition payment payment,2
+synthetic,Education-11,validation,expense,Education,school books purchase,0
+synthetic,Education-11,validation,expense,Education,UPI school books purchase,1
+synthetic,Education-11,validation,expense,Education,school books purchase payment,2
+synthetic,Education-12,test,expense,Education,coaching tuition class,0
+synthetic,Education-12,test,expense,Education,UPI coaching tuition class,1
+synthetic,Education-12,test,expense,Education,coaching tuition class payment,2
+synthetic,Education-13,test,expense,Education,स्कूल की फीस,0
+synthetic,Education-13,test,expense,Education,UPI स्कूल की फीस,1
+synthetic,Education-13,test,expense,Education,स्कूल की फीस payment,2
+synthetic,Loan EMI-0,train,expense,Loan EMI,car loan emi,0
+synthetic,Loan EMI-0,train,expense,Loan EMI,UPI car loan emi,1
+synthetic,Loan EMI-0,train,expense,Loan EMI,car loan emi payment,2
+synthetic,Loan EMI-1,train,expense,Loan EMI,home loan installment,0
+synthetic,Loan EMI-1,train,expense,Loan EMI,UPI home loan installment,1
+synthetic,Loan EMI-1,train,expense,Loan EMI,home loan installment payment,2
+synthetic,Loan EMI-2,train,expense,Loan EMI,bike finance emi,0
+synthetic,Loan EMI-2,train,expense,Loan EMI,UPI bike finance emi,1
+synthetic,Loan EMI-2,train,expense,Loan EMI,bike finance emi payment,2
+synthetic,Loan EMI-3,train,expense,Loan EMI,personal loan repayment,0
+synthetic,Loan EMI-3,train,expense,Loan EMI,UPI personal loan repayment,1
+synthetic,Loan EMI-3,train,expense,Loan EMI,personal loan repayment payment,2
+synthetic,Loan EMI-4,train,expense,Loan EMI,education loan installment,0
+synthetic,Loan EMI-4,train,expense,Loan EMI,UPI education loan installment,1
+synthetic,Loan EMI-4,train,expense,Loan EMI,education loan installment payment,2
+synthetic,Loan EMI-5,train,expense,Loan EMI,bank loan emi payment,0
+synthetic,Loan EMI-5,train,expense,Loan EMI,UPI bank loan emi payment,1
+synthetic,Loan EMI-5,train,expense,Loan EMI,bank loan emi payment payment,2
+synthetic,Loan EMI-6,train,expense,Loan EMI,ऋण किस्त,0
+synthetic,Loan EMI-6,train,expense,Loan EMI,UPI ऋण किस्त,1
+synthetic,Loan EMI-6,train,expense,Loan EMI,ऋण किस्त payment,2
+synthetic,Loan EMI-7,train,expense,Loan EMI,लोन ईएमआई,0
+synthetic,Loan EMI-7,train,expense,Loan EMI,UPI लोन ईएमआई,1
+synthetic,Loan EMI-7,train,expense,Loan EMI,लोन ईएमआई payment,2
+synthetic,Loan EMI-8,train,expense,Loan EMI,loan monthly instalment,0
+synthetic,Loan EMI-8,train,expense,Loan EMI,UPI loan monthly instalment,1
+synthetic,Loan EMI-8,train,expense,Loan EMI,loan monthly instalment payment,2
+synthetic,Loan EMI-9,train,expense,Loan EMI,कर्ज की किस्त,0
+synthetic,Loan EMI-9,train,expense,Loan EMI,UPI कर्ज की किस्त,1
+synthetic,Loan EMI-9,train,expense,Loan EMI,कर्ज की किस्त payment,2
+synthetic,Loan EMI-10,validation,expense,Loan EMI,vehicle loan installment,0
+synthetic,Loan EMI-10,validation,expense,Loan EMI,UPI vehicle loan installment,1
+synthetic,Loan EMI-10,validation,expense,Loan EMI,vehicle loan installment payment,2
+synthetic,Loan EMI-11,validation,expense,Loan EMI,home loan repayment,0
+synthetic,Loan EMI-11,validation,expense,Loan EMI,UPI home loan repayment,1
+synthetic,Loan EMI-11,validation,expense,Loan EMI,home loan repayment payment,2
+synthetic,Loan EMI-12,test,expense,Loan EMI,bank emi debit,0
+synthetic,Loan EMI-12,test,expense,Loan EMI,UPI bank emi debit,1
+synthetic,Loan EMI-12,test,expense,Loan EMI,bank emi debit payment,2
+synthetic,Loan EMI-13,test,expense,Loan EMI,लोन की किस्त,0
+synthetic,Loan EMI-13,test,expense,Loan EMI,UPI लोन की किस्त,1
+synthetic,Loan EMI-13,test,expense,Loan EMI,लोन की किस्त payment,2
+synthetic,Family support-0,train,expense,Family support,money sent to parents,0
+synthetic,Family support-0,train,expense,Family support,UPI money sent to parents,1
+synthetic,Family support-0,train,expense,Family support,money sent to parents payment,2
+synthetic,Family support-1,train,expense,Family support,parents monthly support,0
+synthetic,Family support-1,train,expense,Family support,UPI parents monthly support,1
+synthetic,Family support-1,train,expense,Family support,parents monthly support payment,2
+synthetic,Family support-2,train,expense,Family support,family support transfer,0
+synthetic,Family support-2,train,expense,Family support,UPI family support transfer,1
+synthetic,Family support-2,train,expense,Family support,family support transfer payment,2
+synthetic,Family support-3,train,expense,Family support,mother living expenses support,0
+synthetic,Family support-3,train,expense,Family support,UPI mother living expenses support,1
+synthetic,Family support-3,train,expense,Family support,mother living expenses support payment,2
+synthetic,Family support-4,train,expense,Family support,father allowance,0
+synthetic,Family support-4,train,expense,Family support,UPI father allowance,1
+synthetic,Family support-4,train,expense,Family support,father allowance payment,2
+synthetic,Family support-5,train,expense,Family support,support for relatives,0
+synthetic,Family support-5,train,expense,Family support,UPI support for relatives,1
+synthetic,Family support-5,train,expense,Family support,support for relatives payment,2
+synthetic,Family support-6,train,expense,Family support,ghar paise bheje parents,0
+synthetic,Family support-6,train,expense,Family support,UPI ghar paise bheje parents,1
+synthetic,Family support-6,train,expense,Family support,ghar paise bheje parents payment,2
+synthetic,Family support-7,train,expense,Family support,माता पिता को पैसे,0
+synthetic,Family support-7,train,expense,Family support,UPI माता पिता को पैसे,1
+synthetic,Family support-7,train,expense,Family support,माता पिता को पैसे payment,2
+synthetic,Family support-8,train,expense,Family support,परिवार सहायता,0
+synthetic,Family support-8,train,expense,Family support,UPI परिवार सहायता,1
+synthetic,Family support-8,train,expense,Family support,परिवार सहायता payment,2
+synthetic,Family support-9,train,expense,Family support,माँ को पैसे,0
+synthetic,Family support-9,train,expense,Family support,UPI माँ को पैसे,1
+synthetic,Family support-9,train,expense,Family support,माँ को पैसे payment,2
+synthetic,Family support-10,validation,expense,Family support,monthly parents allowance,0
+synthetic,Family support-10,validation,expense,Family support,UPI monthly parents allowance,1
+synthetic,Family support-10,validation,expense,Family support,monthly parents allowance payment,2
+synthetic,Family support-11,validation,expense,Family support,family financial support,0
+synthetic,Family support-11,validation,expense,Family support,UPI family financial support,1
+synthetic,Family support-11,validation,expense,Family support,family financial support payment,2
+synthetic,Family support-12,test,expense,Family support,sent allowance to father,0
+synthetic,Family support-12,test,expense,Family support,UPI sent allowance to father,1
+synthetic,Family support-12,test,expense,Family support,sent allowance to father payment,2
+synthetic,Family support-13,test,expense,Family support,परिवार को पैसे,0
+synthetic,Family support-13,test,expense,Family support,UPI परिवार को पैसे,1
+synthetic,Family support-13,test,expense,Family support,परिवार को पैसे payment,2
+synthetic,Personal-0,train,expense,Personal,cinema movie tickets,0
+synthetic,Personal-0,train,expense,Personal,UPI cinema movie tickets,1
+synthetic,Personal-0,train,expense,Personal,cinema movie tickets payment,2
+synthetic,Personal-1,train,expense,Personal,restaurant dinner outing,0
+synthetic,Personal-1,train,expense,Personal,UPI restaurant dinner outing,1
+synthetic,Personal-1,train,expense,Personal,restaurant dinner outing payment,2
+synthetic,Personal-2,train,expense,Personal,clothes shopping,0
+synthetic,Personal-2,train,expense,Personal,UPI clothes shopping,1
+synthetic,Personal-2,train,expense,Personal,clothes shopping payment,2
+synthetic,Personal-3,train,expense,Personal,salon haircut,0
+synthetic,Personal-3,train,expense,Personal,UPI salon haircut,1
+synthetic,Personal-3,train,expense,Personal,salon haircut payment,2
+synthetic,Personal-4,train,expense,Personal,gym membership,0
+synthetic,Personal-4,train,expense,Personal,UPI gym membership,1
+synthetic,Personal-4,train,expense,Personal,gym membership payment,2
+synthetic,Personal-5,train,expense,Personal,streaming subscription,0
+synthetic,Personal-5,train,expense,Personal,UPI streaming subscription,1
+synthetic,Personal-5,train,expense,Personal,streaming subscription payment,2
+synthetic,Personal-6,train,expense,Personal,coffee cafe,0
+synthetic,Personal-6,train,expense,Personal,UPI coffee cafe,1
+synthetic,Personal-6,train,expense,Personal,coffee cafe payment,2
+synthetic,Personal-7,train,expense,Personal,कपड़े खरीदारी,0
+synthetic,Personal-7,train,expense,Personal,UPI कपड़े खरीदारी,1
+synthetic,Personal-7,train,expense,Personal,कपड़े खरीदारी payment,2
+synthetic,Personal-8,train,expense,Personal,सिनेमा टिकट,0
+synthetic,Personal-8,train,expense,Personal,UPI सिनेमा टिकट,1
+synthetic,Personal-8,train,expense,Personal,सिनेमा टिकट payment,2
+synthetic,Personal-9,train,expense,Personal,रेस्टोरेंट खाना,0
+synthetic,Personal-9,train,expense,Personal,UPI रेस्टोरेंट खाना,1
+synthetic,Personal-9,train,expense,Personal,रेस्टोरेंट खाना payment,2
+synthetic,Personal-10,validation,expense,Personal,movie evening cinema,0
+synthetic,Personal-10,validation,expense,Personal,UPI movie evening cinema,1
+synthetic,Personal-10,validation,expense,Personal,movie evening cinema payment,2
+synthetic,Personal-11,validation,expense,Personal,salon hair appointment,0
+synthetic,Personal-11,validation,expense,Personal,UPI salon hair appointment,1
+synthetic,Personal-11,validation,expense,Personal,salon hair appointment payment,2
+synthetic,Personal-12,test,expense,Personal,restaurant meal,0
+synthetic,Personal-12,test,expense,Personal,UPI restaurant meal,1
+synthetic,Personal-12,test,expense,Personal,restaurant meal payment,2
+synthetic,Personal-13,test,expense,Personal,कपड़ों की खरीदारी,0
+synthetic,Personal-13,test,expense,Personal,UPI कपड़ों की खरीदारी,1
+synthetic,Personal-13,test,expense,Personal,कपड़ों की खरीदारी payment,2
+synthetic,Other-0,train,expense,Other,courier parcel,0
+synthetic,Other-0,train,expense,Other,UPI courier parcel,1
+synthetic,Other-0,train,expense,Other,courier parcel payment,2
+synthetic,Other-1,train,expense,Other,postage stamps,0
+synthetic,Other-1,train,expense,Other,UPI postage stamps,1
+synthetic,Other-1,train,expense,Other,postage stamps payment,2
+synthetic,Other-2,train,expense,Other,charity donation,0
+synthetic,Other-2,train,expense,Other,UPI charity donation,1
+synthetic,Other-2,train,expense,Other,charity donation payment,2
+synthetic,Other-3,train,expense,Other,pet food supplies,0
+synthetic,Other-3,train,expense,Other,UPI pet food supplies,1
+synthetic,Other-3,train,expense,Other,pet food supplies payment,2
+synthetic,Other-4,train,expense,Other,computer repair,0
+synthetic,Other-4,train,expense,Other,UPI computer repair,1
+synthetic,Other-4,train,expense,Other,computer repair payment,2
+synthetic,Other-5,train,expense,Other,phone repair,0
+synthetic,Other-5,train,expense,Other,UPI phone repair,1
+synthetic,Other-5,train,expense,Other,phone repair payment,2
+synthetic,Other-6,train,expense,Other,laptop accessories,0
+synthetic,Other-6,train,expense,Other,UPI laptop accessories,1
+synthetic,Other-6,train,expense,Other,laptop accessories payment,2
+synthetic,Other-7,train,expense,Other,कूरियर पार्सल,0
+synthetic,Other-7,train,expense,Other,UPI कूरियर पार्सल,1
+synthetic,Other-7,train,expense,Other,कूरियर पार्सल payment,2
+synthetic,Other-8,train,expense,Other,दान संस्था,0
+synthetic,Other-8,train,expense,Other,UPI दान संस्था,1
+synthetic,Other-8,train,expense,Other,दान संस्था payment,2
+synthetic,Other-9,train,expense,Other,मोबाइल मरम्मत,0
+synthetic,Other-9,train,expense,Other,UPI मोबाइल मरम्मत,1
+synthetic,Other-9,train,expense,Other,मोबाइल मरम्मत payment,2
+synthetic,Other-10,validation,expense,Other,courier delivery parcel,0
+synthetic,Other-10,validation,expense,Other,UPI courier delivery parcel,1
+synthetic,Other-10,validation,expense,Other,courier delivery parcel payment,2
+synthetic,Other-11,validation,expense,Other,donation to charity,0
+synthetic,Other-11,validation,expense,Other,UPI donation to charity,1
+synthetic,Other-11,validation,expense,Other,donation to charity payment,2
+synthetic,Other-12,test,expense,Other,repair laptop,0
+synthetic,Other-12,test,expense,Other,UPI repair laptop,1
+synthetic,Other-12,test,expense,Other,repair laptop payment,2
+synthetic,Other-13,test,expense,Other,फोन की मरम्मत,0
+synthetic,Other-13,test,expense,Other,UPI फोन की मरम्मत,1
+synthetic,Other-13,test,expense,Other,फोन की मरम्मत payment,2
+synthetic,Salary-0,train,income,Salary,monthly salary credited,0
+synthetic,Salary-0,train,income,Salary,UPI monthly salary credited,1
+synthetic,Salary-0,train,income,Salary,monthly salary credited payment,2
+synthetic,Salary-1,train,income,Salary,employer payroll,0
+synthetic,Salary-1,train,income,Salary,UPI employer payroll,1
+synthetic,Salary-1,train,income,Salary,employer payroll payment,2
+synthetic,Salary-2,train,income,Salary,office salary income,0
+synthetic,Salary-2,train,income,Salary,UPI office salary income,1
+synthetic,Salary-2,train,income,Salary,office salary income payment,2
+synthetic,Salary-3,train,income,Salary,company wages,0
+synthetic,Salary-3,train,income,Salary,UPI company wages,1
+synthetic,Salary-3,train,income,Salary,company wages payment,2
+synthetic,Salary-4,train,income,Salary,salary arrears,0
+synthetic,Salary-4,train,income,Salary,UPI salary arrears,1
+synthetic,Salary-4,train,income,Salary,salary arrears payment,2
+synthetic,Salary-5,train,income,Salary,payroll bonus,0
+synthetic,Salary-5,train,income,Salary,UPI payroll bonus,1
+synthetic,Salary-5,train,income,Salary,payroll bonus payment,2
+synthetic,Salary-6,train,income,Salary,naukri salary,0
+synthetic,Salary-6,train,income,Salary,UPI naukri salary,1
+synthetic,Salary-6,train,income,Salary,naukri salary payment,2
+synthetic,Salary-7,train,income,Salary,वेतन मिला,0
+synthetic,Salary-7,train,income,Salary,UPI वेतन मिला,1
+synthetic,Salary-7,train,income,Salary,वेतन मिला payment,2
+synthetic,Salary-8,train,income,Salary,सैलरी जमा,0
+synthetic,Salary-8,train,income,Salary,UPI सैलरी जमा,1
+synthetic,Salary-8,train,income,Salary,सैलरी जमा payment,2
+synthetic,Salary-9,train,income,Salary,वेतन बोनस,0
+synthetic,Salary-9,train,income,Salary,UPI वेतन बोनस,1
+synthetic,Salary-9,train,income,Salary,वेतन बोनस payment,2
+synthetic,Salary-10,validation,income,Salary,salary from employer,0
+synthetic,Salary-10,validation,income,Salary,UPI salary from employer,1
+synthetic,Salary-10,validation,income,Salary,salary from employer payment,2
+synthetic,Salary-11,validation,income,Salary,monthly wages received,0
+synthetic,Salary-11,validation,income,Salary,UPI monthly wages received,1
+synthetic,Salary-11,validation,income,Salary,monthly wages received payment,2
+synthetic,Salary-12,test,income,Salary,payroll income,0
+synthetic,Salary-12,test,income,Salary,UPI payroll income,1
+synthetic,Salary-12,test,income,Salary,payroll income payment,2
+synthetic,Salary-13,test,income,Salary,सैलरी का भुगतान,0
+synthetic,Salary-13,test,income,Salary,UPI सैलरी का भुगतान,1
+synthetic,Salary-13,test,income,Salary,सैलरी का भुगतान payment,2
+synthetic,Business income-0,train,income,Business income,client invoice paid,0
+synthetic,Business income-0,train,income,Business income,UPI client invoice paid,1
+synthetic,Business income-0,train,income,Business income,client invoice paid payment,2
+synthetic,Business income-1,train,income,Business income,shop sales income,0
+synthetic,Business income-1,train,income,Business income,UPI shop sales income,1
+synthetic,Business income-1,train,income,Business income,shop sales income payment,2
+synthetic,Business income-2,train,income,Business income,freelance project payment,0
+synthetic,Business income-2,train,income,Business income,UPI freelance project payment,1
+synthetic,Business income-2,train,income,Business income,freelance project payment payment,2
+synthetic,Business income-3,train,income,Business income,business customer receipt,0
+synthetic,Business income-3,train,income,Business income,UPI business customer receipt,1
+synthetic,Business income-3,train,income,Business income,business customer receipt payment,2
+synthetic,Business income-4,train,income,Business income,consulting fees received,0
+synthetic,Business income-4,train,income,Business income,UPI consulting fees received,1
+synthetic,Business income-4,train,income,Business income,consulting fees received payment,2
+synthetic,Business income-5,train,income,Business income,sales revenue,0
+synthetic,Business income-5,train,income,Business income,UPI sales revenue,1
+synthetic,Business income-5,train,income,Business income,sales revenue payment,2
+synthetic,Business income-6,train,income,Business income,dukan ki kamai,0
+synthetic,Business income-6,train,income,Business income,UPI dukan ki kamai,1
+synthetic,Business income-6,train,income,Business income,dukan ki kamai payment,2
+synthetic,Business income-7,train,income,Business income,दुकान की कमाई,0
+synthetic,Business income-7,train,income,Business income,UPI दुकान की कमाई,1
+synthetic,Business income-7,train,income,Business income,दुकान की कमाई payment,2
+synthetic,Business income-8,train,income,Business income,ग्राहक भुगतान,0
+synthetic,Business income-8,train,income,Business income,UPI ग्राहक भुगतान,1
+synthetic,Business income-8,train,income,Business income,ग्राहक भुगतान payment,2
+synthetic,Business income-9,train,income,Business income,व्यापार आय,0
+synthetic,Business income-9,train,income,Business income,UPI व्यापार आय,1
+synthetic,Business income-9,train,income,Business income,व्यापार आय payment,2
+synthetic,Business income-10,validation,income,Business income,client project invoice,0
+synthetic,Business income-10,validation,income,Business income,UPI client project invoice,1
+synthetic,Business income-10,validation,income,Business income,client project invoice payment,2
+synthetic,Business income-11,validation,income,Business income,shop revenue sales,0
+synthetic,Business income-11,validation,income,Business income,UPI shop revenue sales,1
+synthetic,Business income-11,validation,income,Business income,shop revenue sales payment,2
+synthetic,Business income-12,test,income,Business income,freelance client payment,0
+synthetic,Business income-12,test,income,Business income,UPI freelance client payment,1
+synthetic,Business income-12,test,income,Business income,freelance client payment payment,2
+synthetic,Business income-13,test,income,Business income,दुकान बिक्री आय,0
+synthetic,Business income-13,test,income,Business income,UPI दुकान बिक्री आय,1
+synthetic,Business income-13,test,income,Business income,दुकान बिक्री आय payment,2
+synthetic,Other income-0,train,income,Other income,bank interest credited,0
+synthetic,Other income-0,train,income,Other income,UPI bank interest credited,1
+synthetic,Other income-0,train,income,Other income,bank interest credited payment,2
+synthetic,Other income-1,train,income,Other income,dividend received,0
+synthetic,Other income-1,train,income,Other income,UPI dividend received,1
+synthetic,Other income-1,train,income,Other income,dividend received payment,2
+synthetic,Other income-2,train,income,Other income,gift money received,0
+synthetic,Other income-2,train,income,Other income,UPI gift money received,1
+synthetic,Other income-2,train,income,Other income,gift money received payment,2
+synthetic,Other income-3,train,income,Other income,expense refund received,0
+synthetic,Other income-3,train,income,Other income,UPI expense refund received,1
+synthetic,Other income-3,train,income,Other income,expense refund received payment,2
+synthetic,Other income-4,train,income,Other income,cashback credited,0
+synthetic,Other income-4,train,income,Other income,UPI cashback credited,1
+synthetic,Other income-4,train,income,Other income,cashback credited payment,2
+synthetic,Other income-5,train,income,Other income,scholarship received,0
+synthetic,Other income-5,train,income,Other income,UPI scholarship received,1
+synthetic,Other income-5,train,income,Other income,scholarship received payment,2
+synthetic,Other income-6,train,income,Other income,pension payment income,0
+synthetic,Other income-6,train,income,Other income,UPI pension payment income,1
+synthetic,Other income-6,train,income,Other income,pension payment income payment,2
+synthetic,Other income-7,train,income,Other income,ब्याज मिला,0
+synthetic,Other income-7,train,income,Other income,UPI ब्याज मिला,1
+synthetic,Other income-7,train,income,Other income,ब्याज मिला payment,2
+synthetic,Other income-8,train,income,Other income,उपहार मिला,0
+synthetic,Other income-8,train,income,Other income,UPI उपहार मिला,1
+synthetic,Other income-8,train,income,Other income,उपहार मिला payment,2
+synthetic,Other income-9,train,income,Other income,पेंशन जमा,0
+synthetic,Other income-9,train,income,Other income,UPI पेंशन जमा,1
+synthetic,Other income-9,train,income,Other income,पेंशन जमा payment,2
+synthetic,Other income-10,validation,income,Other income,bank interest income,0
+synthetic,Other income-10,validation,income,Other income,UPI bank interest income,1
+synthetic,Other income-10,validation,income,Other income,bank interest income payment,2
+synthetic,Other income-11,validation,income,Other income,gift cash received,0
+synthetic,Other income-11,validation,income,Other income,UPI gift cash received,1
+synthetic,Other income-11,validation,income,Other income,gift cash received payment,2
+synthetic,Other income-12,test,income,Other income,refund credited,0
+synthetic,Other income-12,test,income,Other income,UPI refund credited,1
+synthetic,Other income-12,test,income,Other income,refund credited payment,2
+synthetic,Other income-13,test,income,Other income,पेंशन भुगतान,0
+synthetic,Other income-13,test,income,Other income,UPI पेंशन भुगतान,1
+synthetic,Other income-13,test,income,Other income,पेंशन भुगतान payment,2

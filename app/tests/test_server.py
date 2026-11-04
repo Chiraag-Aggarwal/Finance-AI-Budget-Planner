@@ -68,9 +68,11 @@ class AccountServerTests(unittest.TestCase):
         self.server_thread.join(timeout=2)
         self.temp_folder.cleanup()
 
-    def request(self, path, method="GET", fields=None, origin=None):
+    def request(self, path, method="GET", fields=None, origin=None, owner=None):
         data = None if fields is None else json.dumps(fields).encode("utf-8")
         headers = {"Origin": origin or self.base_url}
+        if owner is not None:
+            headers["X-Finance-Owner"] = str(owner)
         if data is not None:
             headers["Content-Type"] = "application/json"
         request = urllib.request.Request(
@@ -282,6 +284,31 @@ class AccountServerTests(unittest.TestCase):
         self.assertNotEqual(other_data, expected)
         self.assertEqual(store.get_finance_data("account-1"), expected)
         self.assertEqual(store.get_finance_data("account-2"), other_data)
+
+    def test_stale_tab_cannot_read_write_export_or_change_a_different_account(self):
+        self.signup_and_verify(email="first-owner@example.com")
+        first_id = self.request("/api/me")[1]["user"]["id"]
+        self.request("/api/finance-data", "PATCH", {"plannerProfile": {"emergencyFundMonths": 0}}, owner=first_id)
+        self.request("/api/logout", "POST", {})
+        self.signup_and_verify(email="second-owner@example.com")
+        second_id = self.request("/api/me")[1]["user"]["id"]
+        for path, method, fields in [
+            ("/api/finance-data", "GET", None),
+            ("/api/finance-data", "PATCH", {"transactions": []}),
+            ("/api/profile", "PUT", {"name": "Wrong account", "region": "Delhi"}),
+            ("/api/account/export", "GET", None),
+            ("/api/account/delete", "POST", {"confirmation": "DELETE", "password": "long-enough-example-123"}),
+        ]:
+            with self.subTest(path=path, method=method):
+                self.assertEqual(self.request(path, method, fields, owner=first_id)[0], 401)
+        self.assertEqual(self.request("/api/finance-data", owner=second_id), (200, {"data": {}}))
+        self.assertEqual(get_finance_data(self.database_file, first_id)["plannerProfile"]["emergencyFundMonths"], 0)
+
+    def test_emergency_months_server_validation(self):
+        for value in [0, 1, 12, 24, 120, None]:
+            self.assertIsNone(validate_finance_data_patch({"plannerProfile": {"emergencyFundMonths": value}})[1])
+        for value in [-1, .5, 121, "12", True, float("inf")]:
+            self.assertIsNotNone(validate_finance_data_patch({"plannerProfile": {"emergencyFundMonths": value}})[1])
 
     def test_finance_data_api_saves_per_signed_in_user(self):
         self.assertEqual(self.request("/api/finance-data")[0], 401)

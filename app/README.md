@@ -11,9 +11,9 @@ A beginner-friendly Indian household budgeting and goal-planning app. The browse
 - Plan monthly cash flow and an emergency fund with or without a specific purchase goal. In no-goal mode, see a flexible monthly savings amount and simple 6, 12, 24, and 36-month contribution examples.
 - Plan goals such as a car, bike or scooter, laptop, house or flat, plot, farm land, renovation, business equipment, education, medical costs, wedding, travel, phone, appliances, or another purchase.
 - Compare several example EMI periods using the rate from the user’s lender quote. A preferred period is checked against monthly surplus after existing costs and EMIs; if it is not affordable, the planner shows the shortest example period that fits, when one does. The app does not infer a lender rate from income or savings; enter the rate quoted by the lender.
-- Track income and expenses manually. Budget entries, planner drafts, and profile changes save automatically to the signed-in account. With MongoDB configured, they are available across devices. Earlier browser-only plan and transaction saves are imported the first time that account is opened.
-- See a next-month cash-spending forecast by category after marking at least three recent consecutive months complete. A small per-category linear trend model is fitted only to that signed-in user's recorded expenses; the forecast is a starting budget estimate, not a promise or required spending rule. It compares the total with saved take-home income when available. HCES survey rows and synthetic demo data are not used for this feature.
-- Get draft monthly savings suggestions as soon as income and expense entries are added; marking the month complete refines the estimate. Missing income and expenses are not assumed to be zero. Existing EMI and sensitive expense categories are protected by default.
+- Track income and expenses manually. Entries, planner drafts and profile changes save to the signed-in account. Old browser-only financial copies are no longer silently imported; server data is authoritative.
+- See provisional next-month spending estimates immediately from recent expenses or explicit Planner totals. Repeated purchases can use a synthetic-trained starter blended with a daily-rate baseline; available account history refines it. No three-month wait or manual completion checkbox is required.
+- Get draft savings suggestions from entered income and expenses. Missing categories remain unknown. Months close automatically by calendar date; this does not verify that every expense was recorded. Current EMI and protected categories remain unchanged.
 
 ## Project files
 
@@ -113,13 +113,13 @@ Run this before opening the public site. The migration keeps existing numeric ac
 
 ## Privacy and deployment
 
-Account profile fields (name, email, and region), a salted password hash, email-verification status, and account creation time are stored in the configured database. The signed-in account’s planner inputs, budget entries, and completed-month confirmations are saved separately under that account ID. Appearance settings and language are stored in the browser, not in the account database. Sign-out clears the active server session. Sign-up allows one Finance AI account per normalized email address; trying the same address with different letter casing is still treated as the same account. The app cannot tell whether one person owns multiple different email addresses.
+Account profile fields (name, email, and region), a salted password hash, email-verification status, and account creation time are stored in the configured database. The signed-in account’s planner inputs, budget entries, and calendar-closed month metadata (legacy field name completedMonths) are saved separately under that account ID. Appearance settings and language are stored in the browser, not in the account database. Sign-out clears the active server session. Sign-up allows one Finance AI account per normalized email address; trying the same address with different letter casing is still treated as the same account. The app cannot tell whether one person owns multiple different email addresses.
 
 ### What the database stores
 
-MongoDB stores account profiles in `users`, hashed session tokens and expiry times in `sessions`, planner inputs, budget transactions, completed-month confirmations, and any account settings saved through the API in `finance_data`, password-reset token hashes in `password_resets`, and verification token hashes and resend-limit data in `email_verifications`. The planner and budget records are selected by the signed-in account ID.
+MongoDB stores account profiles in `users`, hashed session tokens and expiry times in `sessions`, planner inputs, budget transactions, calendar-closed month metadata (legacy field name completedMonths), and any account settings saved through the API in `finance_data`, password-reset token hashes in `password_resets`, and verification token hashes and resend-limit data in `email_verifications`. The planner and budget records are selected by the signed-in account ID.
 
-Local SQLite uses the matching `users`, `sessions`, and `user_finance_data` tables plus `password_reset_tokens` and `email_verification_tokens`. The `user_finance_data` payload holds planner inputs, budget transactions, completed-month confirmations, and any submitted account settings. Foreign-key cascades connect those records to the account row. In both storage paths, raw passwords and raw one-time email links are not stored. The current appearance and language controls save preferences locally in each browser.
+Local SQLite uses the matching `users`, `sessions`, and `user_finance_data` tables plus `password_reset_tokens` and `email_verification_tokens`. The `user_finance_data` payload holds planner inputs, budget transactions, calendar-closed month metadata (legacy field name completedMonths), and any submitted account settings. Foreign-key cascades connect those records to the account row. In both storage paths, raw passwords and raw one-time email links are not stored. The current appearance and language controls save preferences locally in each browser.
 
 ### Export and delete account data
 
@@ -153,23 +153,56 @@ The Blueprint also prompts for MONGODB_URI. Use the rotated database-user creden
 
 For production secrets, Render's private Environment settings must contain MONGODB_URI, FINANCE_AI_BREVO_API_KEY, and FINANCE_AI_BREVO_SENDER. Never commit these values or put them in render.yaml. The app also requires FINANCE_AI_ENV=production, FINANCE_AI_COOKIE_SECURE=1, FINANCE_AI_EMAIL_PROVIDER=brevo, and MONGODB_DATABASE=finance_ai; the Blueprint sets these non-secret values. Production startup stops with a clear message if the required database, secure-cookie, HTTPS URL, or email configuration is missing.
 
-The savings coach combines a per-user spending forecast with transparent rules; it is not a generative AI service. After the user marks a month complete and it matches the latest month in at least three consecutive completed months, the coach uses the same linear trend regression to estimate next-month category spending. The optional reduction examples are calculated with modest fixed caps (10% for Personal and Other; 5% for Transport, Utilities, and Food and groceries), with EMI protected. These percentages are rules, not values learned from user outcomes. Income is held at the amount recorded in the selected complete month. Before enough history is available, the coach shows examples from the selected month's recorded spending and says they are not model predictions. The forecast uses only the signed-in user's data; it does not pool users or use HCES survey consumption as cash spending. It does not connect to banks or live local price listings. Rent, Health, Education, Family support, and Loan EMI remain protected unless the user explicitly adjusts a permitted category.
+The savings coach can use an immediate spending estimate for the current month, and recorded amounts for historical comparisons. Optional reductions use visible fixed caps (10% for Personal/Other and 5% for Transport, Utilities and Food/groceries). These are examples to review, not learned savings outcomes. Income stays at the user's entered amount. HCES is not used as cash spending. The app does not connect to banks or live local-price feeds. See [the model guide](../ml/README.md) for the synthetic starter, personal trends, abstention and validation limits.
 
 The loan comparison uses the annual rate entered from a lender quote and a standard fixed-rate reducing-balance EMI formula. Example periods vary by purchase type (for example, a bike uses 1/2/3/4/5 years, a car 3/5/7 years, and a house or flat 10/15/20/25/30 years). These are calculator examples, not lender offers or claims about eligibility. The user can select a preferred period or compare all examples. A selected period is checked against the user’s monthly comfort cap, calculated from positive surplus after current costs and EMIs; if the chosen period does not fit, the app shows an affordable alternative when one exists. Savings assigned to the goal and any asset or family amount the user explicitly opts to use reduce the remaining down payment and estimated loan principal. For property, the user enters only the amount they can actually access, not its full estimated value; the app does not verify ownership or access. The app does not infer or promise a lender rate from income or savings; use the lender’s quote. Income, savings, and existing EMIs inform the affordability calculation, not the quoted rate. Estimates exclude fees, insurance, taxes, floating-rate changes, and lender eligibility checks. Before deciding, compare the lender’s Annual Percentage Rate (APR) and Key Facts Statement (KFS), which disclose the cost of credit and loan facts: [RBI Key Facts Statement guidance](https://systemhealth.rbi.org.in/Scripts/BS_ViewMasDirections.aspx_id=12256%282%29.html).
 
-## Session checks when changing pages
+## Smooth navigation and session checks
 
-Every page starts with a neutral session check. The sign-in form and private
-workspace stay hidden while /api/me validates the existing session cookie.
-A valid session opens the selected page; only HTTP 401 opens sign-in.
-Connection errors, database/server errors, and a 15-second request timeout show
-a **Try again** button without clearing the session or displaying login.
-These messages support English and Hindi. Password-reset and email-verification
-links still open their own account flow.
+Dashboard, Monthly budget, Planner, Insights, Profile, and Settings keep their
+separate URLs. Menu clicks replace only the page content inside the signed-in
+layout. The app preloads public page templates and modules after sign-in and
+reuses the current account's in-memory saved-data cache. It does not repeat
+the session lookup or download the same saved figures on each menu click.
 
-This fixes the login flash during page navigation; it does not remove Render
-Free's cold-start delay or bypass server-side authentication. No Render settings,
-database changes, or new environment variables are required.
+The current page stays visible until the next page and queued saves are ready.
+An unavailable page offers Retry without losing the current view. Back/Forward,
+bookmarks, keyboard focus, English/Hindi, themes, and reduced motion are supported.
+Page modules export mountPage and dispose their listeners and autosave handlers
+when leaving; this prevents duplicate submissions after repeated visits.
+
+First visits and full refreshes still verify the session with /api/me. Every
+private API request still requires the server-side session. HTTP 401 returns to
+sign-in and clears the active page and account data cache. Delayed responses from
+an earlier account are rejected. Templates contain no user data; only these public
+templates, not personal page snapshots, are prefetched. Network failures never
+bypass authentication.
+
+A first uncached page, pending save, or Render cold start can still take time.
+No hosting setting can guarantee zero network latency. This change removes
+unnecessary full-document reloads and repeated session checks during menu use.
+No Render, MongoDB, email, or environment changes are required.
+
+## Browser navigation checks
+
+The optional browser suite uses Playwright and synthetic responses for all account
+and finance API calls. It must run against the isolated preview below, never the
+live app. Neither the preview nor the suite reads .env or uses MongoDB/email.
+
+From the app directory, install the test-only browser dependency if needed:
+
+    npm install --no-save --package-lock=false playwright
+    npx playwright install chromium
+
+Start the isolated preview in one terminal:
+
+    python -B tests/browser_server.py
+
+It prints a localhost URL with an available port. In a second terminal, run
+node tests/navigation.browser.mjs followed by that printed URL. The suite covers
+desktop/mobile page changes, repeated visits, pending and failed saves,
+Back/Forward, keyboard focus, language/theme controls, refresh, expired sessions
+and switching accounts. Close the preview with Ctrl+C after the checks.
 
 ## Checks
 
@@ -181,3 +214,49 @@ node --test tests/*.test.mjs
 ```
 
 The Python API tests use temporary SQLite data and mocked email delivery; MongoDB ownership tests use isolated fake collections. They do not require the private `.env` file and do not verify a live Atlas connection or deliver real email. JavaScript tests use Node's built-in test runner. Region regression tests verify that changing the saved location changes only its displayed context, not budget, savings, or goal calculations.
+
+## Login isolation and simple emergency targets
+
+A successful new login always replaces the current route with Dashboard.
+Logout removes the active route generation and clears rendered private content,
+account caches and page helpers. Back/Forward entries from older logins are ignored.
+Browsers do not allow an app to erase the entire browser history; route-generation
+checks prevent that history from restoring a previous login's page state.
+
+Tabs notify each other of account changes using a non-secret browser event. Private
+finance, profile, export and deletion requests include the expected owner ID.
+The server uses the session cookie as authority and rejects a mismatched expected
+owner, preventing an old tab from writing its notes into a newly signed-in account.
+No owner ID supplied by a browser grants access to that owner's records.
+
+Emergency-fund months offer every whole number from 0 to 12, plus a custom input
+from 0 to 120. Zero skips the target; existing emergency savings remain separate.
+The 120-month maximum is a typo guard, not a financial recommendation.
+The calculation remains essentials plus existing EMI, multiplied by selected months.
+The helper explains that the money is for essentials/EMIs when income stops or an
+unexpected expense arrives. [Emergency-fund explanation source](https://www.consumerfinance.gov/an-essential-guide-to-building-an-emergency-fund/).
+
+## Starter training and automatic month closure
+
+Run from the project root:
+
+    python ml/train_starter_models.py
+
+See [training methods](../ml/README.md), [synthetic datasets](../data/synthetic/README.md),
+and [measured synthetic evaluation](../data/synthetic/evaluation.json).
+Every training row is explicitly fictional. The app ships only public model weights,
+never shared personal history. Synthetic examples are not added to account budgets.
+
+Calendar closure is recomputed on loading entries, adding/removing an entry,
+returning to a visible page and local midnight while the tracker is open.
+If the app is closed, the next visit performs the update. A server background job
+is unnecessary because closure is derived from dates. Legacy completedMonths values
+are safely recomputed; transactions and account profiles are not removed.
+A closed month still may contain missing expenses, so the app does not treat it as
+verified complete reporting or turn missing categories into zero.
+
+The automated suite covers zero/custom emergency targets, legacy month metadata,
+owner mismatch on API requests, delayed old-account responses, two-tab sign-out,
+private note isolation, immediate forecasts, unknown notes, and synthetic split
+integrity. Database and email tests use disposable/mocked services; passing them
+does not claim current production Atlas or email availability.

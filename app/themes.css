@@ -42,6 +42,12 @@ body { background:var(--paper); }
 .session-screen h1 { font-size:clamp(1.5rem,4vw,2rem);line-height:1.25; }
 .session-screen p { color:var(--muted);line-height:1.6; }
 .session-screen .button { margin-top:12px; }
+.page-transition-status { position:fixed;z-index:100;bottom:20px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);padding:12px 18px;border:1px solid var(--line);border-radius:16px;background:var(--white);color:var(--ink);box-shadow:var(--shadow); }
+.page-transition-status .button { margin-left:8px; }
+.page-view { animation:page-arrive 120ms ease-out; }
+@keyframes page-arrive { from { opacity:.85; } to { opacity:1; } }
+:root[data-reduce-motion=true] .page-view { animation:none; }
+@media (prefers-reduced-motion:reduce) { .page-view { animation:none; } }
 a,button,input,select,textarea { -webkit-tap-highlight-color:transparent; }
 a,button { touch-action:manipulation; }
 button { cursor:pointer; }

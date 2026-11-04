@@ -1,6 +1,11 @@
 # Finance AI data sources and training decision
 
-**Reviewed 31 October 2026.** No external dataset is currently used to train or personalize the live app. User-entered budget records stay associated with that user's account and power their own category helper and spending forecast.
+**External-source review: 31 October 2026. Starter-model update: 4 November 2026.**
+No external real-world dataset was adopted. The current code includes [explicitly
+synthetic starter examples](synthetic/README.md), with separate [model notes](../ml/README.md).
+Private budget records stay associated with their account and are never pooled.
+The source review below is historical evidence, not a claim that synthetic data
+resolves representativeness or validates real savings outcomes.
 
 ## Why no public dataset was added
 
@@ -18,12 +23,12 @@ The [Zenodo digital-payment transaction sample](https://zenodo.org/records/17092
 
 ## What the app learns now
 
-- **Category helper:** compares a user's new transaction note with that same user's saved, manually categorized notes. The user confirms any suggestion.
-- **Spending forecast:** after three consecutive complete months, estimates next month's category totals from up to six recent months in the same account. Missing months are not treated as zero.
+- **Category helper:** uses that user's labelled history and a synthetic-trained note classifier. Suggestions identify the source; unknown or uncertain notes can receive no suggestion. The user reviews the category.
+- **Spending forecast:** starts with current entries or explicit Planner totals, without a three-month wait. Repeated-purchase estimates can use a synthetic-trained starter blended with a daily-rate baseline and private personal trends. Missing months/categories remain unknown.
 - **Savings ideas:** available from the current month's entries right away. The suggested reductions use visible, fixed caps. There are no real outcome labels to train a model to claim that a particular cut will work for a household.
 
 The app never pools user records into a cross-account model. The separate HCES food-consumption experiment was removed because it was not used by the app and could be mistaken for a cash-spending model. The original user-provided HCES CSV, if present in the project folder, is preserved and ignored by Git; it is not loaded by the website.
 
 ## What a credible future training dataset needs
 
-For cash-spending forecasts, collect consented, anonymized monthly transactions with consistent categories and verified month completeness. Evaluate on later months and households not used to fit the model. For savings-action recommendations, also record what the user chose to change and the measured outcome over time, including cases where they could not or did not make the change. Report errors and coverage only after a suitable evaluation. Never fabricate rows, outcomes, or performance numbers.
+For cash-spending forecasts, collect consented, anonymized monthly transactions with consistent categories and verified month completeness. Evaluate on later months and households not used to fit the model. For savings-action recommendations, also record what the user chose to change and the measured outcome over time, including cases where they could not or did not make the change. Report errors and coverage only after a suitable evaluation. Never label generated rows as real observations, or invent outcomes or performance numbers.

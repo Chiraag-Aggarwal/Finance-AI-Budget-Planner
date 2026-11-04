@@ -416,3 +416,15 @@ test("keeps the emergency fund within total savings even without a goal", () => 
   assert.equal(result.isValid, false);
   assert.ok(result.errors.some((error) => error.includes("Emergency-fund savings")));
 });
+
+test("emergency target accepts zero, all 0-12 presets, and sensible custom months", () => {
+  for (const months of [...Array(13).keys(),18,24,120]) {
+    const profile=makeProfile({emergencyFundMonths:months});
+    assert.equal(validateProfile(profile).isValid,true);
+    assert.equal(calculatePlan(profile).emergencyFund.target,45000*months);
+  }
+  for (const months of [-1,0.5,121,Infinity,NaN]) {
+    assert.equal(validateProfile(makeProfile({emergencyFundMonths:months})).isValid,false);
+  }
+  assert.equal(calculatePlan(makeProfile({emergencyFundMonths:0})).emergencyFund.gap,0);
+});

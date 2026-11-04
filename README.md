@@ -12,7 +12,7 @@ A beginner-friendly personal finance app for Indian households. It helps users u
 - Compares example EMI periods when the user supplies an annual interest rate from a lender quote. Existing EMIs and household expenses reduce the available monthly amount.
 - Provides an English/Hindi interface, a private ML category helper, and a personal spending forecast.
 
-The budget form's optional category helper learns from that account's saved descriptions and user-selected categories. A separate next-month spending forecast fits a simple linear trend to at least three consecutive completed months from the same account. Savings examples can use the current month's entries immediately; they are transparent fixed-rule examples, not learned savings outcomes. Accounts are never pooled.
+The optional note helper uses a synthetic-trained Naive Bayes starter plus that account's own labelled notes. Next-month spending estimates are available immediately: simple carry-forward or Planner amounts for sparse inputs, a trained starter/daily-rate blend for repeated purchases, and personal trends when history exists. Synthetic examples are never copied into a user's transactions. Savings reductions remain transparent rules; accounts are never pooled.
 
 The planner uses transparent arithmetic for budget and goal guidance. It does not predict goal success, approve loans, or infer a lender's interest rate from income. HCES survey consumption is not used as cash spending, income, savings, debt, or goal labels.
 
@@ -63,8 +63,16 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 ## Data and ML limits
 
-There is no suitable open, representative India dataset of personal cash transactions with verified savings-action outcomes. The app starts savings examples from the user's own entries. Its personal spending forecast appears after three consecutive completed months; no external or synthetic records are mixed into a user's calculations. See [the data source review](data/README.md) and [ML notes](ml/README.md).
+The source review did not establish a suitable open Indian dataset with verified savings-action outcomes. This version includes [explicitly synthetic starter datasets](data/synthetic/README.md), a [reproducible Python trainer](ml/train_starter_models.py), and [measured synthetic evaluation](data/synthetic/evaluation.json). These support initial suggestions, not claims of real-world accuracy. No three-month wait is imposed. See [the source review](data/README.md) and [model limitations](ml/README.md).
 
 ## Privacy and limitations
 
 Do not commit account databases, passwords, session data, personal finance records, API keys, or raw data that you are not licensed to redistribute. The app has no bank connection or live local-price feed. Loan estimates use a user-supplied lender quote and a fixed-rate reducing-balance formula; fees, insurance, taxes, lender eligibility, and future rate changes are outside the estimate.
+
+## Latest behavior
+
+- New logins always open Dashboard; older login routes, page state and private note helpers are invalidated.
+- Emergency targets offer 0–12 months and a custom 0–120 value; zero skips the target.
+- Calendar months close automatically. Ending a month does not prove that every expense was entered.
+- Note categories and provisional spending estimates work from initial inputs, with source labels and uncertainty.
+- Training datasets are fictional, reproducible and included in data/synthetic. No credentials or real account records are included.

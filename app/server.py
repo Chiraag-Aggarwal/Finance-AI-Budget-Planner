@@ -809,6 +809,12 @@ def validate_finance_data_patch(payload: dict) -> tuple[dict, str | None]:
                 )
             ):
                 return {}, "The saved planner details are invalid."
+            months = value.get("emergencyFundMonths") if isinstance(value, dict) else None
+            if months is not None and (
+                isinstance(months, bool) or not isinstance(months, (int, float))
+                or not math.isfinite(months) or months != int(months) or not 0 <= months <= 120
+            ):
+                return {}, "Emergency-fund months must be a whole number from 0 to 120."
         elif field == "transactions":
             if not isinstance(value, list) or len(value) > 5_000:
                 return {}, "The income and expense list is invalid or too large."
@@ -1163,6 +1169,8 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
                 if not user:
                     self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in.")
                     return
+                if not self.finance_owner_matches(user):
+                    return
                 export = export_account_data(self.database_file, user["id"])
             except Exception as error:
                 if is_database_error(error):
@@ -1188,6 +1196,8 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
                 raise
             if not user:
                 self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in.")
+                return
+            if not self.finance_owner_matches(user):
                 return
             try:
                 data = get_finance_data(self.database_file, user["id"])
@@ -1275,6 +1285,8 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         if payload is None:
             return
 
+        if not self.finance_owner_matches(user):
+            return
         name, region, error = clean_profile_fields(payload.get("name"), payload.get("region"))
         if error:
             self.send_error_json(HTTPStatus.BAD_REQUEST, error)
@@ -1287,6 +1299,14 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
                 return
             raise
         self.send_json(HTTPStatus.OK, {"user": updated})
+
+    def finance_owner_matches(self, user):
+        """Session is authoritative; the header detects an old tab after account switching."""
+        expected = self.headers.get("X-Finance-Owner")
+        if expected is not None and expected != str(user["id"]):
+            self.send_error_json(HTTPStatus.UNAUTHORIZED, "Your account changed. Please sign in again.")
+            return False
+        return True
 
     def do_PATCH(self):
         if urlsplit(self.path).path != "/api/finance-data":
@@ -1307,6 +1327,8 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             return
         payload = self.read_json_body()
         if payload is None:
+            return
+        if not self.finance_owner_matches(user):
             return
         changes, error = validate_finance_data_patch(payload)
         if error:
@@ -1438,6 +1460,8 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
         user = self.current_user()
         if not user:
             self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in again.")
+            return
+        if not self.finance_owner_matches(user):
             return
         if payload.get("confirmation") != "DELETE":
             self.send_error_json(HTTPStatus.BAD_REQUEST, "Type DELETE exactly to confirm permanent removal.")

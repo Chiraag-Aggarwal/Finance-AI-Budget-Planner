@@ -62,9 +62,9 @@ test("uses complete monthly totals to show before and after amounts", () => {
 });
 
 
-test("does not invent itemized recommendations before the user confirms the month is complete", () => {
+test("does not invent itemized reductions when category amounts are missing", () => {
   const profile = makeProfile();
-  const result = buildBudgetAdjustment(profile, calculatePlan(profile), makeSummary({ isComplete: false }));
+  const result = buildBudgetAdjustment(profile, calculatePlan(profile), makeSummary({ isComplete: false, categoryTotals: [] }));
 
   assert.equal(result.status, "needs-complete-month");
   assert.deepEqual(result.cuts, []);
@@ -177,10 +177,10 @@ test("offers a modest general savings plan without requiring a purchase goal", (
 });
 
 
-test("uses the personal trend forecast as the basis for next-month savings suggestions", () => {
+test("uses an available forecast without manual completion for the current month", () => {
   const result = buildSavingsBudget(makeSavingsSummary({
-    selectedMonth: "2026-09",
-    isComplete: true,
+    selectedMonth: new Date().toLocaleDateString("en-CA").slice(0,7),
+    isComplete: false,
   }), 0, {
     nextMonthForecast: {
       status: "ready",
@@ -209,7 +209,7 @@ test("uses the personal trend forecast as the basis for next-month savings sugge
 });
 
 
-test("uses recorded amounts when the trend model lacks a complete matching history", () => {
+test("uses recorded amounts for historical-month comparisons", () => {
   const forecast = {
     status: "ready",
     targetMonth: "2026-10",

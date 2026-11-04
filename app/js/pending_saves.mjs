@@ -4,6 +4,7 @@ import { waitForFinanceSaves } from "./finance_data.mjs";
 const saveHandlers = new Set();
 export function registerPageSave(handler) {
   saveHandlers.add(handler);
+  return () => saveHandlers.delete(handler);
 }
 
 export async function flushPageSaves() {

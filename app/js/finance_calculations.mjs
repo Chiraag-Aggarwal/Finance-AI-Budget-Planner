@@ -182,8 +182,8 @@ export function validateProfile(profile) {
   } else if (profile.dependents > profile.householdSize) {
     errors.push("Dependents cannot be more than the household size.");
   }
-  if (!Number.isInteger(profile.emergencyFundMonths) || profile.emergencyFundMonths < 1) {
-    errors.push("Choose at least 1 month for the emergency-fund target.");
+  if (!Number.isInteger(profile.emergencyFundMonths) || profile.emergencyFundMonths < 0 || profile.emergencyFundMonths > 120) {
+    errors.push("Emergency-fund months must be a whole number from 0 to 120.");
   }
 
   if (includeGoal) {

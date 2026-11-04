@@ -88,7 +88,7 @@ async function sendAccountRequest(path, method, fields, signal) {
 }
 
 
-function showSignedIn(user) {
+function showSignedIn(user, freshLogin = false) {
   const firstSignIn = !signedInUser || signedInUser.id !== user.id;
   signedInUser = user;
   sessionScreen.hidden = true;
@@ -114,7 +114,7 @@ function showSignedIn(user) {
   }
 
   if (firstSignIn) {
-    window.dispatchEvent(new CustomEvent("finance-user-ready", { detail: user }));
+    window.dispatchEvent(new CustomEvent("finance-user-ready", { detail: { ...user, freshLogin } }));
   }
   window.dispatchEvent(new CustomEvent("finance-user-profile", { detail: user }));
 }
@@ -129,6 +129,16 @@ function showSignedOut() {
   appNavigation.hidden = true;
   siteFooter.hidden = true;
   profileLink.hidden = true;
+  signOutButton.hidden = true;
+  signedInName.textContent = "";
+  profileAvatar.textContent = "";
+  loginForm.reset();
+  signupForm.reset();
+  resetRequestForm.reset();
+  verificationRequestForm.reset();
+  resetForm.reset();
+  if (saveErrorAlert) saveErrorAlert.hidden = true;
+  window.clearTimeout(saveErrorTimer);
   if (wasSignedIn) {
     window.dispatchEvent(new CustomEvent("finance-user-logout"));
   }
@@ -209,7 +219,8 @@ loginForm.addEventListener("submit", async (event) => {
   try {
     const result = await sendAccountRequest("/api/login", "POST", fields);
     loginForm.reset();
-    showSignedIn(result.user);
+    showSignedIn(result.user, true);
+    announceAccountChange();
   } catch (error) {
     setAuthError(error.message);
   }
@@ -301,6 +312,7 @@ signOutButton.addEventListener("click", async () => {
     return;
   }
   showSignedOut();
+  announceAccountChange();
   setAccountView("login");
 });
 
@@ -353,6 +365,12 @@ async function restoreSession() {
 }
 
 sessionRetry.addEventListener("click", restoreSession);
+window.addEventListener("finance-session-expired", () => {
+  if (!signedInUser) return;
+  showSignedOut();
+  setAccountView("login");
+  setAuthMessage("Your session has expired. Please sign in again.");
+});
 
 
 const emailVerificationToken = new URLSearchParams(window.location.hash.slice(1)).get("verify_email");
@@ -375,3 +393,27 @@ if (emailVerificationToken) {
 } else {
   restoreSession();
 }
+
+// Cookies are shared between tabs. Invalidate cached notes after an account change.
+function announceAccountChange() {
+  try { window.localStorage.setItem("finance-ai-account-change", String(Date.now()) + Math.random()); }
+  catch { /* Server ownership checks still protect requests when storage is blocked. */ }
+}
+window.addEventListener("storage", event => {
+  if (event.key !== "finance-ai-account-change") return;
+  showSignedOut();
+  setAccountView("login");
+  setAuthMessage("Your account changed in another tab. Please sign in again.");
+});
+// Hide private content before a browser history snapshot is taken.
+window.addEventListener("pagehide", () => {
+  appShell.hidden = true;
+  appNavigation.hidden = true;
+  siteFooter.hidden = true;
+  profileLink.hidden = true;
+});
+window.addEventListener("pageshow", event => {
+  if (!event.persisted) return;
+  showSignedOut();
+  restoreSession();
+});

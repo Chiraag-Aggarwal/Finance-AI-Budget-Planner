@@ -1,5 +1,37 @@
 // The small built-in dictionary keeps the language switch private and offline.
 const HINDI_TEXT = {
+  "Custom number of months": "अपनी पसंद के महीने",
+  "Custom emergency-fund months": "आपातकालीन बचत के लिए अपने महीने",
+  "Money kept aside for essentials and EMIs if your income stops or an unexpected bill arrives. Choose how many months to cover. Choosing 0 skips this target.": "आय रुकने या अचानक खर्च आने पर जरूरी खर्च और ईएमआई के लिए अलग रखे पैसे। चुनें कि कितने महीनों के खर्च रखने हैं। 0 चुनने पर यह लक्ष्य नहीं रखा जाएगा।",
+  "Enter a whole number from 0 to 120. The target is this many months of essentials and current EMIs.": "0 से 120 तक पूरी संख्या लिखें। लक्ष्य इतने महीनों के जरूरी खर्च और मौजूदा ईएमआई जितना होगा।",
+  "Emergency-fund months must be a whole number from 0 to 120.": "आपातकालीन बचत के महीने 0 से 120 तक पूरी संख्या होने चाहिए।",
+  "Your account changed in another tab. Please sign in again.": "दूसरे टैब में खाता बदल गया है। कृपया फिर से साइन इन करें।",
+  "Your account changed. Please sign in again.": "आपका खाता बदल गया है। कृपया फिर से साइन इन करें।",
+  "Type a short note to see a possible category. Check it before using it.": "संभावित श्रेणी देखने के लिए छोटा नोट लिखें। इस्तेमाल करने से पहले जाँच लें।",
+  "Based on your own saved notes. Review before selecting.": "आपके अपने सहेजे हुए नोट पर आधारित। चुनने से पहले जाँचें।",
+  "Suggested by a model trained on fictional example notes. Review before selecting.": "काल्पनिक उदाहरणों पर प्रशिक्षित मॉडल का सुझाव। चुनने से पहले जाँचें।",
+  "Add a recent expense or monthly expenses in Planner to see a starting estimate now.": "अभी शुरुआती अनुमान देखने के लिए हाल का खर्च या प्लानर में मासिक खर्च जोड़ें।",
+  "Provisional estimate: a model trained on fictional spending scenarios helps scale repeated purchases. It is not validated on real households.": "शुरुआती अनुमान: काल्पनिक खर्च के उदाहरणों पर प्रशिक्षित मॉडल बार-बार होने वाले खर्च का अनुमान लगाता है। असली परिवारों पर इसकी सटीकता की जाँच नहीं हुई है।",
+  "Starting estimate from your recorded amounts or planner totals. More entries help refine it; unrecorded expenses remain unknown.": "आपके दर्ज खर्च या प्लानर की राशि से शुरुआती अनुमान। नई प्रविष्टियों से अनुमान सुधरता है; जो खर्च दर्ज नहीं हैं वे अज्ञात हैं।",
+  "Synthetic starter estimate": "काल्पनिक प्रशिक्षण से शुरुआती अनुमान",
+  "Your history + synthetic starter": "आपके पुराने खर्च और शुरुआती मॉडल",
+  "Your recorded spending trend": "आपके दर्ज खर्च का रुझान",
+  "Recorded amount carried forward": "दर्ज राशि को आगे रखा गया",
+  "Your monthly planner amount": "प्लानर में आपकी मासिक राशि",
+  "Essential expenses (plan)": "जरूरी खर्च (प्लानर)",
+  "Flexible expenses (plan)": "बदले जा सकने वाले खर्च (प्लानर)",
+  "Based on entries so far. A month ending does not mean all expenses were entered. Add missing bills before relying on the estimate.": "अब तक दर्ज खर्च पर आधारित। महीना खत्म होने का मतलब यह नहीं कि सारे खर्च दर्ज हैं। अनुमान पर निर्भर होने से पहले बाकी बिल जोड़ें।",
+  "A starting estimate from your entries, available without waiting three months.": "आपकी प्रविष्टियों से शुरुआती अनुमान, तीन महीने इंतजार किए बिना।",
+  "No recent expense amounts are available. Missing spending is not treated as zero.": "हाल के खर्च की राशि उपलब्ध नहीं है। अज्ञात खर्च को शून्य नहीं माना जाता।",
+  "These are provisional spending estimates, not guaranteed savings. Income is held at the amount you entered.": "ये शुरुआती खर्च के अनुमान हैं, बचत की गारंटी नहीं। आय वही रखी गई है जो आपने दर्ज की है।",
+  "Forecasts use your entries and, for repeated purchases, a synthetic starter model. Suggested reductions are optional examples, not learned savings outcomes.": "अनुमान आपकी प्रविष्टियों और बार-बार होने वाले खर्च के लिए शुरुआती मॉडल से बनते हैं। खर्च घटाने के सुझाव वैकल्पिक उदाहरण हैं, असली बचत के नतीजों से सीखे हुए नहीं।",
+  "Savings ideas use your entries immediately. Add missing expenses before deciding how much you can save.": "बचत के सुझाव आपकी प्रविष्टियों का तुरंत उपयोग करते हैं। कितना बचा सकते हैं तय करने से पहले बाकी खर्च जोड़ें।",
+  "I’ve noted that limit. The table updates when you add more entries; missing expenses remain unknown.": "यह सीमा रख ली गई है। नई प्रविष्टियाँ जोड़ने पर तालिका बदलती है; बाकी खर्च अभी अज्ञात हैं।",
+  "Tell me a category and whether its spending can change. Preferences stay on this page and reset when you leave or sign out.": "बताएँ कि किस श्रेणी का खर्च बदल सकता है। ये पसंद इसी पेज पर रहती हैं और पेज छोड़ने या साइन आउट करने पर हट जाती हैं।",
+  "Savings examples and starting forecasts use your current entries immediately. Forecasts are provisional; synthetic starter training is not evidence of real-world accuracy.": "बचत के उदाहरण और शुरुआती अनुमान आपकी मौजूदा प्रविष्टियों से तुरंत बनते हैं। ये अनुमान अस्थायी हैं; काल्पनिक प्रशिक्षण असली जीवन की सटीकता का प्रमाण नहीं है।",
+  "Opening page…": "पेज खुल रहा है…",
+  "Could not open that page. Your current page is still here. Try again.": "वह पेज नहीं खुल सका। आपका मौजूदा पेज यहीं है। फिर कोशिश करें।",
+  "Your session has expired. Please sign in again.": "आपका सत्र समाप्त हो गया है। कृपया फिर से साइन इन करें।",
   "Opening your workspace": "आपका कार्यक्षेत्र खुल रहा है",
   "Checking your sign-in…": "आपके साइन-इन की जाँच हो रही है…",
   "We couldn't check your sign-in. Check your connection and try again.": "आपके साइन-इन की जाँच नहीं हो सकी। अपना इंटरनेट कनेक्शन जाँचें और फिर कोशिश करें।",
@@ -1168,6 +1200,7 @@ function setLanguage(requestedLanguage) {
 
 window.financeTranslate = (text) => localizedValue(String(text ?? ""), language);
 window.financeLanguage = () => language;
+window.translateFinancePage = translateSubtree;
 window.setFinanceLanguage = setLanguage;
 
 document.querySelector("#language-toggle").addEventListener("click", () => {

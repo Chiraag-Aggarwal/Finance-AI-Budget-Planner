@@ -12,10 +12,7 @@
           </label>
         </div>
 
-        <label class="save-choice month-complete-choice">
-          <input id="budget-complete-month" type="checkbox">
-          <span>I have finished entering this month. Marking it complete makes the estimate more representative.</span>
-        </label>
+
 
         <div class="tracker-summary-grid" aria-live="polite">
           <article class="tracker-summary-card">
@@ -63,8 +60,8 @@
               </label>
               <label class="field field-full">
                 <span>Short note <span class="optional-mark">Optional</span></span>
-                <input id="transaction-note" name="note" type="text" maxlength="80" placeholder="For example, weekly groceries">
-                <small>A category suggestion may appear below when a note matches your saved history.</small>
+                <input id="transaction-note" name="note" autocomplete="off" type="text" maxlength="80" placeholder="For example, weekly groceries">
+                <small>Type a short note to see a possible category. Check it before using it.</small>
               </label>
               <div id="transaction-category-suggestion" class="field-full transaction-ml-helper" role="status" aria-live="polite" hidden>
                 <button class="button button-quiet transaction-ml-suggestion-button" id="use-transaction-category-suggestion" type="button" aria-label="Use suggested category">
@@ -72,6 +69,7 @@
                   <strong id="transaction-category-suggestion-name"></strong>
                   <span class="transaction-ml-action">Select</span>
                 </button>
+                <small id="transaction-category-source"></small>
               </div>
               <div class="tracker-actions">
                 <button class="button button-primary" type="submit">Add entry <span aria-hidden="true">+</span></button>

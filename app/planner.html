@@ -63,13 +63,28 @@
                 </label>
                 <label class="field">
                   <span>Emergency-fund target <span class="required-mark" aria-hidden="true">*</span></span>
-                  <select name="emergencyFundMonths" required>
+                  <select id="emergency-months-choice" aria-describedby="emergency-months-help">
+                    <option value="0">0 months</option>
+                    <option value="1">1 month</option>
+                    <option value="2">2 months</option>
                     <option value="3">3 months</option>
+                    <option value="4">4 months</option>
+                    <option value="5">5 months</option>
                     <option value="6" selected>6 months</option>
+                    <option value="7">7 months</option>
+                    <option value="8">8 months</option>
                     <option value="9">9 months</option>
+                    <option value="10">10 months</option>
+                    <option value="11">11 months</option>
                     <option value="12">12 months</option>
+                    <option value="custom">Custom number of months</option>
                   </select>
-                  <small>This is your chosen planning period, not a universal rule.</small>
+                  <small id="emergency-months-help">Money kept aside for essentials and EMIs if your income stops or an unexpected bill arrives. Choose how many months to cover. Choosing 0 skips this target.</small>
+                </label>
+                <label class="field" id="emergency-custom-field" hidden>
+                  <span>Custom emergency-fund months</span>
+                  <input name="emergencyFundMonths" type="number" min="0" max="120" step="1" value="6" inputmode="numeric" required>
+                  <small>Enter a whole number from 0 to 120. The target is this many months of essentials and current EMIs.</small>
                 </label>
                 <label class="field">
                   <span>Share of monthly balance to set aside <span class="required-mark" aria-hidden="true">*</span></span>
@@ -220,7 +235,7 @@
               <li>If loan comparison is on, EMI uses the annual rate you entered and a standard reducing-balance formula. A custom EMI limit is capped at your positive monthly balance; otherwise, the limit uses the share you selected.</li>
               <li>With a loan, estimated completion time is the later of your target date or the time needed to save your planned contribution, plus the selected repayment term. Estimates assume costs and monthly saving stay the same; they exclude investment returns, price changes, fees, rate changes, and lender approval.</li>
             </ul>
-            <p>Savings examples can use this month's entries immediately. The personal spending forecast needs at least three consecutive complete months and uses only your account history.</p>
+            <p>Savings examples and starting forecasts use your current entries immediately. Forecasts are provisional; synthetic starter training is not evidence of real-world accuracy.</p>
           </details>
           <div class="results-grid">
             <article class="result-card">

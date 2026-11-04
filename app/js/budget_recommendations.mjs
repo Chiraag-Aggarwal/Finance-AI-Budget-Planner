@@ -36,8 +36,8 @@ export function buildBudgetAdjustment(profile, baselinePlan, budgetSummary, cons
     return emptyResult("zero-comfort-share", "Your goal comfort setting is 0%, so reducing expenses will not add money to this goal. Change the comfortable saving share if you want to model that trade-off.");
   }
 
-  if (!budgetSummary?.isComplete) {
-    return emptyResult("needs-complete-month", "To suggest a specific item such as groceries or transport, add all expenses to the monthly tracker and tick “I have entered all expenses for this month.” No itemized cuts are assumed yet.");
+  if (!budgetSummary?.categoryTotals?.length) {
+    return emptyResult("needs-complete-month", "Add expenses to the monthly tracker to explore optional changes. Missing categories stay unknown.");
   }
 
   const categoryTotals = Array.isArray(budgetSummary.categoryTotals)
@@ -177,13 +177,12 @@ export function buildSavingsBudget(budgetSummary, monthlySavingsTarget = 0, cons
 
   const forecast = constraints.nextMonthForecast;
   const historyMonths = Array.isArray(forecast?.historyMonths) ? forecast.historyMonths : [];
-  const modelUsed = isComplete
-    && forecast?.status === "ready"
+  const now = new Date();
+  const currentMonth = String(now.getFullYear()) + "-" + String(now.getMonth()+1).padStart(2,"0");
+  const modelUsed = forecast?.status === "ready"
     && Array.isArray(forecast.categories)
-    && Number.isFinite(forecast.total)
-    && forecast.total >= 0
-    && historyMonths.length >= 3
-    && (!budgetSummary?.selectedMonth || historyMonths.at(-1) === budgetSummary.selectedMonth);
+    && Number.isFinite(forecast.total) && forecast.total > 0
+    && (!budgetSummary?.selectedMonth || budgetSummary.selectedMonth === currentMonth);
   const forecastTotals = modelUsed
     ? forecast.categories.filter((item) => typeof item?.category === "string" && Number.isFinite(item.amount) && item.amount > 0)
     : [];
@@ -272,7 +271,7 @@ export function buildSavingsBudget(budgetSummary, monthlySavingsTarget = 0, cons
   }
 
   if (!isComplete) {
-    message = `Draft based on entries so far: ${message} Add remaining entries and mark the month complete for a fuller estimate. Missing categories are not treated as zero.`;
+    message = `Draft based on entries so far: ${message} Add remaining entries for a fuller estimate. Missing categories are not treated as zero.`;
   }
 
   return {
