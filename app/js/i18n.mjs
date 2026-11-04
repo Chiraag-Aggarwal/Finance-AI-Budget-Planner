@@ -1,5 +1,11 @@
 // The small built-in dictionary keeps the language switch private and offline.
 const HINDI_TEXT = {
+  "Opening your workspace": "आपका कार्यक्षेत्र खुल रहा है",
+  "Checking your sign-in…": "आपके साइन-इन की जाँच हो रही है…",
+  "We couldn't check your sign-in. Check your connection and try again.": "आपके साइन-इन की जाँच नहीं हो सकी। अपना इंटरनेट कनेक्शन जाँचें और फिर कोशिश करें।",
+  "Could not connect to the account server. Check your connection and try again.": "खाते के सर्वर से संपर्क नहीं हो सका। अपना इंटरनेट कनेक्शन जाँचें और फिर कोशिश करें।",
+  "Try again": "फिर कोशिश करें",
+  "Enable JavaScript to sign in and use Finance AI.": "साइन इन करने और Finance AI का उपयोग करने के लिए JavaScript चालू करें।",
   "Dashboard": "डैशबोर्ड",
   "Insights": "सुझाव",
   "Savings & insights": "बचत और सुझाव",

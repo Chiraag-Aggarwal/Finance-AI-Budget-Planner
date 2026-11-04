@@ -36,6 +36,12 @@
 :root[data-design][data-theme=dark][data-accent=coral] { --green:#ffc6a8; --action:#ffc6a8; }
 body { background:var(--paper); }
 [hidden] { display:none !important; }
+
+/* A neutral session check avoids flashing the sign-in form between pages. */
+.session-screen { max-width:560px;margin:0 auto;padding:clamp(56px,12vh,140px) 24px;text-align:center;color:var(--ink); }
+.session-screen h1 { font-size:clamp(1.5rem,4vw,2rem);line-height:1.25; }
+.session-screen p { color:var(--muted);line-height:1.6; }
+.session-screen .button { margin-top:12px; }
 a,button,input,select,textarea { -webkit-tap-highlight-color:transparent; }
 a,button { touch-action:manipulation; }
 button { cursor:pointer; }

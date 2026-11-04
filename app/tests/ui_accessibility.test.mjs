@@ -167,4 +167,17 @@ test("language switch returns translated text to English, including later text c
   assert.equal(headline.textContent, "थोड़ी आर्थिक राहत बनाएँ");
   window.setFinanceLanguage("en");
   assert.equal(headline.textContent, "Build a little breathing room");
+
+  for (const message of [
+    "Opening your workspace",
+    "Checking your sign-in…",
+    "We couldn't check your sign-in. Check your connection and try again.",
+    "Try again",
+  ]) {
+    headline.textContent = message;
+    window.setFinanceLanguage("hi");
+    assert.notEqual(headline.textContent, message);
+    window.setFinanceLanguage("en");
+    assert.equal(headline.textContent, message);
+  }
 });

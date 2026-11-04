@@ -1,6 +1,10 @@
 import { flushPageSaves } from "./pending_saves.mjs";
 
 const authScreen = document.querySelector("#auth-screen");
+const sessionScreen = document.querySelector("#session-screen");
+const sessionStatus = document.querySelector("#session-status");
+const sessionError = document.querySelector("#session-error");
+const sessionRetry = document.querySelector("#session-retry");
 const appShell = document.querySelector("#app-shell");
 const appNavigation = document.querySelector("#app-navigation");
 const siteFooter = document.querySelector("#site-footer");
@@ -55,24 +59,25 @@ function clearAuthError() {
 }
 
 
-async function sendAccountRequest(path, method, fields) {
+async function sendAccountRequest(path, method, fields, signal) {
   let response;
   try {
     response = await fetch(path, {
       method,
       credentials: "same-origin",
+      signal,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(fields),
     });
   } catch {
-    throw new Error("Could not connect to the account server. Start the app with python server.py.");
+    throw new Error("Could not connect to the account server. Check your connection and try again.");
   }
 
   let result = {};
   try {
     result = await response.json();
   } catch {
-    throw new Error("Could not connect to the account server. Start the app with python server.py.");
+    throw new Error("Could not connect to the account server. Check your connection and try again.");
   }
   if (!response.ok) {
     const error = new Error(result.error || "The account request could not be completed.");
@@ -86,6 +91,7 @@ async function sendAccountRequest(path, method, fields) {
 function showSignedIn(user) {
   const firstSignIn = !signedInUser || signedInUser.id !== user.id;
   signedInUser = user;
+  sessionScreen.hidden = true;
   authScreen.hidden = true;
   appShell.hidden = false;
   appNavigation.hidden = false;
@@ -117,6 +123,7 @@ function showSignedIn(user) {
 function showSignedOut() {
   const wasSignedIn = Boolean(signedInUser);
   signedInUser = null;
+  sessionScreen.hidden = true;
   authScreen.hidden = false;
   appShell.hidden = true;
   appNavigation.hidden = true;
@@ -298,30 +305,60 @@ signOutButton.addEventListener("click", async () => {
 });
 
 
-// Restore a valid server-side session when the page opens again.
-async function restoreSession() {
-  // Let the planner and budget modules register their account-ready listeners first.
-  if (document.readyState !== "complete") {
-    await new Promise((resolve) => {
-      document.addEventListener("DOMContentLoaded", resolve, { once: true });
-    });
-  }
+// Wait once for page modules to register their account-ready listeners.
+// Reusing this promise also lets Retry work after DOMContentLoaded has fired.
+const pageReady = document.readyState === "complete"
+  ? Promise.resolve()
+  : new Promise((resolve) => {
+    document.addEventListener("DOMContentLoaded", resolve, { once: true });
+  });
+let restoringSession = false;
 
+async function restoreSession() {
+  if (restoringSession) return;
+  restoringSession = true;
+  sessionScreen.hidden = false;
+  authScreen.hidden = true;
+  appShell.hidden = true;
+  sessionStatus.hidden = false;
+  sessionError.hidden = true;
+  sessionRetry.hidden = true;
+  sessionRetry.disabled = true;
+
+  // A dropped connection should offer Retry instead of leaving a permanent loader.
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 15000);
   try {
-    const result = await sendAccountRequest("/api/me", "GET");
+    const result = await sendAccountRequest("/api/me", "GET", undefined, controller.signal);
+    if (!result.user || result.user.id == null || typeof result.user.name !== "string") {
+      throw new Error("Invalid account response.");
+    }
+    await pageReady;
     showSignedIn(result.user);
   } catch (error) {
-    showSignedOut();
-    if (error.status !== 401) {
-      setAuthError(error.message);
+    if (error.status === 401) {
+      // Only an absent or expired session should open the login form.
+      showSignedOut();
+    } else {
+      sessionStatus.hidden = true;
+      sessionError.textContent = "We couldn't check your sign-in. Check your connection and try again.";
+      sessionError.hidden = false;
+      sessionRetry.hidden = false;
     }
+  } finally {
+    window.clearTimeout(timeout);
+    sessionRetry.disabled = false;
+    restoringSession = false;
   }
 }
+
+sessionRetry.addEventListener("click", restoreSession);
 
 
 const emailVerificationToken = new URLSearchParams(window.location.hash.slice(1)).get("verify_email");
 const resetToken = new URLSearchParams(window.location.hash.slice(1)).get("reset_token");
 if (emailVerificationToken) {
+  showSignedOut();
   // Remove the one-time token from the address bar before sending it to the server.
   window.history.replaceState({}, "", window.location.pathname);
   setAccountView("login");
@@ -330,6 +367,7 @@ if (emailVerificationToken) {
     .then((result) => setAuthMessage(result.message))
     .catch((error) => setAuthError(error.message));
 } else if (resetToken) {
+  showSignedOut();
   resetForm.elements.token.value = resetToken;
   // Remove the one-time token from the address bar as soon as it is read.
   window.history.replaceState({}, "", window.location.pathname);

@@ -32,6 +32,11 @@ class MultipageTests(unittest.TestCase):
                 self.assertIn("<!doctype html>", html.lower())
                 self.assertIn('data-design="bloom"', html)
                 self.assertIn('data-theme="light"', html)
+                # No login flash or private content before JavaScript checks the cookie.
+                self.assertRegex(html, r'<section id="auth-screen"[^>]*\bhidden>')
+                self.assertRegex(html, r'<div id="app-shell"[^>]*\bhidden>')
+                self.assertIn('id="session-screen"', html)
+                self.assertIn('id="session-retry"', html)
                 self.assertEqual(len(parsed.ids), len(set(parsed.ids)))
                 for required in ["login-form", "signup-form", "password-reset-form", "email-verification-request-form", "app-shell", "main-menu", feature]:
                     self.assertIn(required, parsed.ids)

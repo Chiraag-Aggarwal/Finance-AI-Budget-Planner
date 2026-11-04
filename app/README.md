@@ -157,13 +157,27 @@ The savings coach combines a per-user spending forecast with transparent rules; 
 
 The loan comparison uses the annual rate entered from a lender quote and a standard fixed-rate reducing-balance EMI formula. Example periods vary by purchase type (for example, a bike uses 1/2/3/4/5 years, a car 3/5/7 years, and a house or flat 10/15/20/25/30 years). These are calculator examples, not lender offers or claims about eligibility. The user can select a preferred period or compare all examples. A selected period is checked against the user’s monthly comfort cap, calculated from positive surplus after current costs and EMIs; if the chosen period does not fit, the app shows an affordable alternative when one exists. Savings assigned to the goal and any asset or family amount the user explicitly opts to use reduce the remaining down payment and estimated loan principal. For property, the user enters only the amount they can actually access, not its full estimated value; the app does not verify ownership or access. The app does not infer or promise a lender rate from income or savings; use the lender’s quote. Income, savings, and existing EMIs inform the affordability calculation, not the quoted rate. Estimates exclude fees, insurance, taxes, floating-rate changes, and lender eligibility checks. Before deciding, compare the lender’s Annual Percentage Rate (APR) and Key Facts Statement (KFS), which disclose the cost of credit and loan facts: [RBI Key Facts Statement guidance](https://systemhealth.rbi.org.in/Scripts/BS_ViewMasDirections.aspx_id=12256%282%29.html).
 
+## Session checks when changing pages
+
+Every page starts with a neutral session check. The sign-in form and private
+workspace stay hidden while /api/me validates the existing session cookie.
+A valid session opens the selected page; only HTTP 401 opens sign-in.
+Connection errors, database/server errors, and a 15-second request timeout show
+a **Try again** button without clearing the session or displaying login.
+These messages support English and Hindi. Password-reset and email-verification
+links still open their own account flow.
+
+This fixes the login flash during page navigation; it does not remove Render
+Free's cold-start delay or bypass server-side authentication. No Render settings,
+database changes, or new environment variables are required.
+
 ## Checks
 
 From the `app` folder, run the Python account, email, and storage tests plus all JavaScript tests:
 
 ```powershell
 python -m unittest discover -s tests -p "test_*.py" -v
-node --test tests/ui_accessibility.test.mjs tests/transaction_classifier.test.mjs tests/finance_calculations.test.mjs tests/budget_tracker.test.mjs tests/budget_recommendations.test.mjs tests/budget_forecast.test.mjs
+node --test tests/*.test.mjs
 ```
 
 The Python API tests use temporary SQLite data and mocked email delivery; MongoDB ownership tests use isolated fake collections. They do not require the private `.env` file and do not verify a live Atlas connection or deliver real email. JavaScript tests use Node's built-in test runner. Region regression tests verify that changing the saved location changes only its displayed context, not budget, savings, or goal calculations.
