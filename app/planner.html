@@ -2,39 +2,81 @@
 <section class="planner-section" id="planner" aria-labelledby="planner-title">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Step 1 · Your household</p>
-            <h1 id="planner-title">Add the details for your plan</h1>
-            <p class="section-intro">Use your usual monthly amounts in rupees. Enter take-home income after tax, and enter 0 only if a category does not apply. A specific goal is optional.</p>
-            <p class="input-limit-note">To catch typing mistakes, monthly amounts are limited to ₹1 crore and savings or goal amounts to ₹100 crore. Goal timelines can be up to 30 years.</p>
+            <p class="eyebrow">Your goals, your pace</p>
+            <h1 id="planner-title">What would you like to plan?</h1>
+            <p class="section-intro">Choose a goal, add your monthly amounts, then save a plan you can return to.</p>
           </div>
-          <span class="required-note"><span aria-hidden="true">*</span> Required</span>
+          <span class="required-note" id="planner-required-note" hidden><span aria-hidden="true">*</span> Required</span>
         </div>
 
+        <div id="planner-home">
+          <div class="goal-launch">
+            <span class="goal-launch-art" aria-hidden="true">✦</span>
+            <p>One plan for every possibility.</p>
+            <button id="add-new-goal" class="button button-primary" type="button">+ Add new goal</button>
+            <button id="continue-draft" class="button button-quiet" type="button" hidden>Continue draft</button>
+          </div>
+          <section class="goal-library" aria-labelledby="goal-library-title">
+            <div class="feature-heading"><div><p class="eyebrow">Your next chapters</p><h2 id="goal-library-title">Your saved goals</h2></div></div>
+            <p id="goal-home-status" role="status" aria-live="polite"></p>
+            <p id="saved-goals-empty">Your saved plans will appear here.</p>
+            <div id="saved-goals"></div>
+            <p class="small-print">Plans are separate scenarios. Share your income and savings between goals before funding several at once.</p>
+          </section>
+        </div>
+        <section id="goal-chooser" class="goal-chooser" aria-labelledby="goal-chooser-title" hidden>
+          <button type="button" class="button button-quiet" data-back-goals>← Back to goals</button>
+          <h2 id="goal-chooser-title" tabindex="-1">What are you planning for?</h2>
+          <p>Choose what matters to you. We will ask for the right details.</p>
+          <div id="goal-choice-grid" class="goal-choice-grid"></div>
+        </section>
+        <div id="planner-editor" hidden>
+          <div class="planner-editor-toolbar"><button type="button" class="button button-quiet" data-back-goals>← Back to goals</button></div>
         <div class="form-layout">
           <form id="finance-form" novalidate>
+            <div class="goal-start-card">
+              <span class="feature-sticker" aria-hidden="true">✦</span>
+              <div><p class="eyebrow">Your plan</p><h2 id="chosen-goal-name" tabindex="-1">Future savings</h2><select name="goalType" id="goal-type-choice" hidden><option value="saving" selected>Future savings · no specific purchase</option>
+                    <option value="car">Buy a car</option>
+                    <option value="bike">Buy a bike or scooter</option>
+                    <option value="laptop">Buy a laptop or computer</option>
+                    <option value="home">Buy a house or flat</option>
+                    <option value="plot">Buy a plot or land</option>
+                    <option value="farm">Buy a farm or agricultural land</option>
+                    <option value="renovation">Renovate or repair a home</option>
+                    <option value="business">Start a business or buy equipment</option>
+                    <option value="education">Education or training</option>
+                    <option value="medical">Medical costs</option>
+                    <option value="wedding">Wedding</option>
+                    <option value="travel">Travel</option>
+                    <option value="phone">Buy a phone</option>
+                    <option value="appliance">Buy a household appliance</option>
+                    <option value="moving">Moving home</option><option value="baby">Welcoming a baby</option><option value="celebration">Family celebration</option><option value="other">Another goal</option>
+                  </select>
+              <p data-goal-copy="goalHint">A plan for the money you want to set aside.</p></div>
+              <button id="change-goal" type="button" class="button button-quiet">Change goal</button>
+            </div>
             <fieldset class="form-card">
               <legend><span class="step-number">1</span> Monthly income and spending</legend>
               <div class="form-grid">
-                <label class="field">
-                  <span>Take-home income <span class="required-mark" aria-hidden="true">*</span></span>
-                  <input name="monthlyTakeHomeIncome" type="number" min="1" max="10000000" step="0.01" inputmode="decimal" placeholder="For example, 60000" required>
-                  <small>Enter the amount that reaches you after tax and payroll deductions. Use a typical month if your income changes.</small>
-                </label>
-                <label class="field">
-                  <span>Essential expenses <span class="required-mark" aria-hidden="true">*</span></span>
-                  <input name="monthlyEssentialExpenses" type="number" min="0" max="10000000" step="0.01" inputmode="decimal" placeholder="For example, 25000" required>
-                  <small>Add the household’s essential costs for one typical month, such as rent, groceries, utilities, and medicine.</small>
-                </label>
-                <label class="field">
-                  <span>Discretionary expenses <span class="required-mark" aria-hidden="true">*</span></span>
-                  <input name="monthlyDiscretionaryExpenses" type="number" min="0" max="10000000" step="0.01" inputmode="decimal" placeholder="For example, 5000" required>
-                  <small>Add non-essential household spending in a typical month, such as eating out, hobbies, and shopping.</small>
-                </label>
-                <label class="field">
-                  <span>Current loan / EMI payments <span class="required-mark" aria-hidden="true">*</span></span>
-                  <input name="monthlyDebtPayment" type="number" min="0" max="10000000" step="0.01" inputmode="decimal" placeholder="For example, 8000" required>
-                  <small>Add what you pay each month on existing loans and EMIs, not the total loan balance.</small>
-                </label>
+                <div class="field"><label for="monthlyTakeHomeIncome">Take-home income <span class="required-mark" aria-hidden="true">*</span></label><div class="amount-input-wrap"><input id="monthlyTakeHomeIncome" name="monthlyTakeHomeIncome" type="number" min="1" max="10000000" step="0.01" inputmode="decimal" placeholder="For example, 60000" required></div>
+                  <small>Money you receive each month after tax.</small></div>
+                <div class="field"><label for="monthlyEssentialExpenses">Total essential expenses <span class="required-mark" aria-hidden="true">*</span></label><div class="amount-input-wrap"><input id="monthlyEssentialExpenses" name="monthlyEssentialExpenses" type="number" min="0" max="10000000" step="0.01" inputmode="decimal" placeholder="For example, 25000" required></div>
+                  <small>Must-pay costs such as rent, food and bills. Keep EMIs in their own box.</small><div class="expense-builder" data-expense-editor="essentialItems">
+      <div class="expense-rows"></div>
+      <div class="expense-actions"><button type="button" data-add-expense class="button button-quiet">+ Add expense</button>
+        <button type="button" data-manual-total class="button button-quiet" hidden>Total only</button></div>
+      <p class="expense-error" role="status" aria-live="polite"></p>
+    </div></div>
+                <div class="field"><label for="monthlyDiscretionaryExpenses">Total personal expenses <span class="required-mark" aria-hidden="true">*</span></label><div class="amount-input-wrap"><input id="monthlyDiscretionaryExpenses" name="monthlyDiscretionaryExpenses" type="number" min="0" max="10000000" step="0.01" inputmode="decimal" placeholder="For example, 5000" required></div>
+                  <small>Things you can choose to spend less on, like shopping or eating out.</small><div class="expense-builder" data-expense-editor="personalItems">
+      <div class="expense-rows"></div>
+      <div class="expense-actions"><button type="button" data-add-expense class="button button-quiet">+ Add expense</button>
+        <button type="button" data-manual-total class="button button-quiet" hidden>Total only</button></div>
+      <p class="expense-error" role="status" aria-live="polite"></p>
+    </div></div>
+                <div class="field"><label for="monthlyDebtPayment">Current loan / EMI payments <span class="required-mark" aria-hidden="true">*</span></label><div class="amount-input-wrap"><input id="monthlyDebtPayment" name="monthlyDebtPayment" type="number" min="0" max="10000000" step="0.01" inputmode="decimal" placeholder="For example, 8000" required></div>
+                  <small>Your monthly loan payments, not the total amount borrowed.</small></div>
               </div>
             </fieldset>
 
@@ -47,7 +89,7 @@
                   <small>Everyone whose expenses are included in this plan.</small>
                 </label>
                 <label class="field">
-                  <span>Dependents <span class="required-mark" aria-hidden="true">*</span></span>
+                  <span>People you support <span class="required-mark" aria-hidden="true">*</span></span>
                   <input name="dependents" type="number" min="0" max="50" step="1" inputmode="numeric" required>
                   <small>People who rely on this household financially.</small>
                 </label>
@@ -87,7 +129,7 @@
                   <small>Enter a whole number from 0 to 120. The target is this many months of essentials and current EMIs.</small>
                 </label>
                 <label class="field">
-                  <span>Share of monthly balance to set aside <span class="required-mark" aria-hidden="true">*</span></span>
+                  <span>How much of your spare money will you save? <span class="required-mark" aria-hidden="true">*</span></span>
                   <div class="input-suffix">
                     <input name="goalComfortPercent" type="number" min="0" max="100" step="1" inputmode="numeric" value="30" required>
                     <span>%</span>
@@ -97,38 +139,14 @@
               </div>
             </fieldset>
 
-            <fieldset class="form-card">
-              <legend><span class="step-number">3</span> Optional goal</legend>
+            <fieldset class="form-card" id="specific-goal-details">
+              <legend><span class="step-number">3</span> Your goal details</legend>
               <div class="form-grid">
-                <label class="save-choice goal-choice field-full">
-                  <input name="includeGoal" type="checkbox">
-                  <span>I have a specific goal to plan for<small>Leave this off if you only want a general savings plan. You can add a goal later.</small></span>
-                </label>
+                <input name="includeGoal" type="checkbox" hidden>
                 <label class="field" data-goal-input hidden>
                   <span>City, district, or region <span class="required-mark" aria-hidden="true">*</span></span>
                   <input name="region" type="text" minlength="2" maxlength="100" autocomplete="address-level2" placeholder="For example, Pune, Maharashtra" required>
                   <small>This is location context only. The app does not fetch live prices, so enter a current local quote below.</small>
-                </label>
-                <label class="field" data-goal-input hidden>
-                  <span>Goal type <span class="required-mark" aria-hidden="true">*</span></span>
-                  <select name="goalType" required>
-                    <option value="car">Buy a car</option>
-                    <option value="bike">Buy a bike or scooter</option>
-                    <option value="laptop">Buy a laptop or computer</option>
-                    <option value="home">Buy a house or flat</option>
-                    <option value="plot">Buy a plot or land</option>
-                    <option value="farm">Buy a farm or agricultural land</option>
-                    <option value="renovation">Renovate or repair a home</option>
-                    <option value="business">Start a business or buy equipment</option>
-                    <option value="education">Education or training</option>
-                    <option value="medical">Medical costs</option>
-                    <option value="wedding">Wedding</option>
-                    <option value="travel">Travel</option>
-                    <option value="phone">Buy a phone</option>
-                    <option value="appliance">Buy a household appliance</option>
-                    <option value="other">Another goal</option>
-                  </select>
-                  <small data-goal-copy="goalHint">Include registration, insurance, and other amounts you expect to pay.</small>
                 </label>
                 <label class="field" data-custom-goal hidden>
                   <span>What are you saving for? <span class="required-mark" aria-hidden="true">*</span></span>
@@ -184,20 +202,17 @@
             </fieldset>
             <div class="form-actions">
               <button class="button button-primary" type="submit">Calculate my plan <span aria-hidden="true">→</span></button>
-              <button class="button button-quiet" id="clear-saved" type="button">Clear saved details</button>
+              <button class="button button-quiet" id="clear-saved" type="button">Clear draft</button>
             </div>
             <p id="save-status" class="save-status" aria-live="polite"></p>
           </form>
 
           <aside class="privacy-card" aria-labelledby="privacy-title">
-            <span class="privacy-icon" aria-hidden="true">✓</span>
-            <h3 id="privacy-title">How your data is stored</h3>
-            <p>When you sign in, your name, email, region, verification status, salted password hash, planner information, and budget entries are stored in the configured database. Optional settings submitted to the account-data API are stored there too. Sign-in sessions and password-reset and verification tokens are stored as hashes.</p>
-            <ul>
-              <li>Your saved records are accessed through your signed-in account</li>
-              <li>Export or permanently delete your account from Profile</li>
-            </ul>
-            <p class="small-print">Language and display preferences are stored in this browser. Finance AI does not connect to a bank. This is a product summary, not a legal privacy policy; professional review is required before public release.</p>
+            <span class="privacy-icon" aria-hidden="true">✦</span><h3 id="privacy-title">A little help as you plan</h3>
+            <p>Use your usual monthly costs. Click an amount box to see suggestions from your budget.</p>
+            <p>Emergency savings are part of your total savings. Keep them separate from money for your goal.</p>
+            <details><summary>Your data and privacy</summary><p>Your profile, budgets and saved goals belong to your signed-in account. Export or delete them from Profile. Uploaded originals are not stored.</p>
+            <p class="small-print">This is a product summary, not a legal privacy policy. Professional review is required.</p></details>
           </aside>
         </div>
 
@@ -205,8 +220,9 @@
           <h3>Please check these details</h3>
           <ul id="form-error-list"></ul>
         </div>
+        </div>
       </section>
-<section class="results-section" id="results" aria-labelledby="results-title">
+<section class="results-section" id="results" aria-labelledby="results-title" hidden>
         <div class="section-heading">
           <div>
             <p class="eyebrow">Step 2 · Your plan</p>
@@ -221,14 +237,14 @@
         </div>
 
         <div id="plan-results" hidden>
-          <aside class="reading-guide" aria-label="How to read your plan">
-            <strong>How to read this plan</strong>
-            <p>Balance is your take-home income after the expenses and current EMIs listed above. Your emergency fund is money kept for unexpected costs. When a suitable loan is available, the completion estimate adds the time before purchase to the loan repayment period. The planner calculates a comfortable EMI limit from your monthly balance and selected savings share.</p>
-          </aside>
+          <details class="reading-guide"><summary>Read your results</summary>
+
+            <p>Balance is the money left after your listed costs. Keep emergency money for unexpected needs. If you compare a loan, the full completion time includes repaying it.</p>
+          </details>
           <details class="calculation-details">
             <summary>How the calculations work</summary>
             <ul>
-              <li>Monthly balance = take-home income − essential expenses − flexible expenses − current loan/EMI payments. A negative balance is shown as a shortfall.</li>
+              <li>Monthly balance = take-home income − essential expenses − personal expenses − current loan/EMI payments. A negative balance is shown as a shortfall.</li>
               <li>Suggested monthly saving = positive balance × the share you selected. The rest is not counted as committed savings.</li>
               <li>Emergency-fund target = (essential monthly expenses + current loan/EMI payments) × the number of months you selected. Your current fund is subtracted to show the remaining gap.</li>
               <li>For a purchase goal, existing goal savings and only the assets or family support you choose to use count toward the planned contribution.</li>
@@ -241,12 +257,12 @@
             <article class="result-card">
               <div class="result-card-heading">
                 <span class="result-icon" aria-hidden="true">↕</span>
-                <h3>Monthly cash flow</h3>
+                <h3>Money left each month</h3>
               </div>
               <dl class="result-list">
                 <div><dt>Take-home income</dt><dd id="result-income"></dd></div>
                 <div><dt>Essential expenses</dt><dd id="result-essentials"></dd></div>
-                <div><dt>Discretionary expenses</dt><dd id="result-discretionary"></dd></div>
+                <div><dt>Personal / non-essential expenses</dt><dd id="result-discretionary"></dd></div>
                 <div><dt>Current loan / EMI payments</dt><dd id="result-debt-payment"></dd></div>
                 <div class="result-total"><dt>Balance after listed costs</dt><dd id="result-balance"></dd></div>
               </dl>
@@ -381,5 +397,13 @@
             <ul id="plan-notes" class="insight-list"></ul>
             <p class="disclaimer">This is a planning calculator, not personal financial advice or a promise about future costs or returns.</p>
           </article>
+          <section class="goal-save-card" aria-labelledby="goal-save-title">
+            <span class="feature-sticker" aria-hidden="true">♡</span>
+            <div><h3 id="goal-save-title">Keep this plan</h3>
+              <label class="field" for="goal-plan-name"><span>Plan name</span><input id="goal-plan-name" maxlength="80" placeholder="For example, My first car"></label>
+              <p class="small-print">Give it a name so you can open or edit it later.</p>
+              <button id="save-goal-plan" class="button button-primary" type="button">Save goal plan</button>
+              <p id="goal-library-message" role="status" aria-live="polite"></p></div>
+          </section>
         </div>
       </section>

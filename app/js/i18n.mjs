@@ -1,5 +1,7 @@
+import { WORKSPACE_HINDI } from "./workspace_copy.mjs";
 // The small built-in dictionary keeps the language switch private and offline.
 const HINDI_TEXT = {
+  ...WORKSPACE_HINDI,
   "Custom number of months": "अपनी पसंद के महीने",
   "Custom emergency-fund months": "आपातकालीन बचत के लिए अपने महीने",
   "Money kept aside for essentials and EMIs if your income stops or an unexpected bill arrives. Choose how many months to cover. Choosing 0 skips this target.": "आय रुकने या अचानक खर्च आने पर जरूरी खर्च और ईएमआई के लिए अलग रखे पैसे। चुनें कि कितने महीनों के खर्च रखने हैं। 0 चुनने पर यह लक्ष्य नहीं रखा जाएगा।",

@@ -3,8 +3,8 @@
         <div class="section-heading tracker-heading">
           <div>
             <p class="eyebrow">Monthly budget</p>
-            <h1 id="tracker-title">Keep track of money coming in and going out</h1>
-            <p class="section-intro">Add entries yourself. This tracker does not connect to a bank.</p>
+            <h1 id="tracker-title">Your money, month by month</h1>
+            <p class="section-intro">Add an entry or import a statement. Your budget stays in one place.</p>
           </div>
           <label class="month-picker">
             <span>View month</span>
@@ -29,6 +29,25 @@
           </article>
         </div>
 
+        <details class="document-import feature-card">
+          <summary><span class="feature-sticker" aria-hidden="true">↥</span><span><strong>Bring your entries in</strong><small>Import a spreadsheet or statement</small></span><span class="import-plus" aria-hidden="true">+</span></summary>
+          <div class="import-controls">
+            <label class="field"><span>Your document</span><input id="budget-document" type="file" accept=".csv,.xlsx,.docx,.pdf"><small>CSV, Excel, Word tables or readable PDF · up to 4 MB</small></label>
+            <label class="field"><span>Dates in your document</span><select id="import-date-order"><option value="day-first">Day / month / year (India)</option><option value="month-first">Month / day / year</option></select></label>
+            <button type="button" id="read-budget-document" class="button button-primary">Read document</button>
+          </div>
+          <p class="small-print">Review before adding. Originals are not stored. Photos and scanned passbooks need a readable table export.</p>
+          <details class="import-format"><summary>What should my document contain?</summary><p>A table with Date, Description and Debit/Credit, or Date, Type and Amount. Amounts must be in rupees. Keep transfers between your own accounts out of income and expenses.</p></details>
+          <p id="import-message" role="status" aria-live="polite"></p>
+          <section id="import-preview" tabindex="-1" hidden aria-label="Review imported entries">
+            <h3>Review your entries</h3><p>Correct any details below. Possible duplicates are left unselected.</p>
+            <p id="import-skipped" class="small-print"></p>
+            <div class="table-scroll"><table class="import-table"><thead><tr><th>Use</th><th>Date</th><th>Type</th><th>Category</th><th>Amount (₹)</th><th>Note</th><th>Check</th></tr></thead><tbody id="import-rows"></tbody></table></div>
+            <div class="compact-actions import-pagination"><button type="button" id="import-previous" class="button button-quiet">Previous</button><span id="import-page"></span><button type="button" id="import-next" class="button button-quiet">Next</button></div>
+            <div class="compact-actions"><button type="button" id="save-import" class="button button-primary">Add selected entries</button><button type="button" id="cancel-import" class="button button-quiet">Cancel import</button></div>
+
+      </section>
+        </details>
         <div class="tracker-layout">
           <article class="tracker-panel">
             <div class="panel-heading">
@@ -123,5 +142,11 @@
         </article>
 
 
+<section class="budget-download feature-card" aria-labelledby="budget-download-title">
+          <span class="feature-sticker" aria-hidden="true">▦</span>
+          <div><p class="eyebrow">Yours to keep</p><h2 id="budget-download-title">Take your budget with you</h2><p>A tidy Excel workbook with dated entries, categories and monthly totals.</p>
+            <div class="compact-actions"><label class="field"><span>Include</span><select id="download-budget-range"><option value="all">All months</option><option value="month">Selected month</option></select></label><button id="download-budget" class="button button-primary" type="button">Download Excel</button></div>
+            <p id="download-budget-message" role="alert"></p></div>
+        </section>
       </section>
 <div class="page-next"><a href="/insights.html">Find ways to save each month <span aria-hidden="true">↗</span></a></div>

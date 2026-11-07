@@ -59,7 +59,7 @@ export function mountPage(root, user) {
       const amountOver = formatRupees(Math.abs(plan.currentBalance));
       return plan.totalCut > 0
         ? `Recorded spending is ${amountOver} above income. Suggested changes could reduce the gap by ${formatRupees(plan.totalCut)} per month.`
-        : `Recorded spending is ${amountOver} above income. Add flexible expenses to see possible changes.`;
+        : `Recorded spending is ${amountOver} above income. Add personal expenses to see possible changes.`;
     }
 
     if (plan.status === "starter-suggestions") {

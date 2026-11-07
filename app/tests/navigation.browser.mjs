@@ -121,10 +121,14 @@ try {
     checks++;
 
     await nav("/planner.html");
+    assert.equal(await page.locator("#planner-editor").isVisible(),false);
+    await page.locator("#add-new-goal").click();
+    await page.locator('[data-goal-choice="saving"]').click();
     await page.locator('[name="monthlyTakeHomeIncome"]').fill("90000");
     await nav("/budget.html"); // Must flush the 250 ms planner draft timer.
     assert.equal(t.getData().plannerProfile.monthlyTakeHomeIncome,90000);
     await nav("/planner.html");
+    await page.locator("#continue-draft").click();
     assert.equal(await page.locator('[name="monthlyTakeHomeIncome"]').inputValue(),"90000");
     checks++;
 
@@ -132,11 +136,13 @@ try {
     await nav("/budget.html");
     assert.equal(t.getData().plannerProfile.emergencyFundMonths,0);
     await nav("/planner.html");
+    await page.locator("#continue-draft").click();
     assert.equal(await page.locator("#emergency-months-choice").inputValue(),"0");
     await page.locator("#emergency-months-choice").selectOption("custom");
     await page.locator('[name="emergencyFundMonths"]').fill("18");
     await nav("/budget.html");
     await nav("/planner.html");
+    await page.locator("#continue-draft").click();
     assert.equal(await page.locator("#emergency-months-choice").inputValue(),"custom");
     assert.equal(await page.locator('[name="emergencyFundMonths"]').inputValue(),"18");
     await page.locator('[name="emergencyFundMonths"]').fill("121");

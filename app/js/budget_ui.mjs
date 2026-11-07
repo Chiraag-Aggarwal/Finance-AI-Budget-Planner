@@ -1,3 +1,4 @@
+import { mountBudgetDocuments } from "./budget_documents.mjs";
 import { summarizeMonth, TRANSACTION_CATEGORIES, validateTransaction } from "./budget_tracker.mjs";
 import { createCategoryHelper } from "./category_starter.mjs";
 import { forecastNextMonthSpending, closedBudgetMonths } from "./budget_forecast.mjs";
@@ -362,6 +363,7 @@ export function mountPage(root, user) {
   // Add one income or expense record.
   form?.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (!dataLoaded) { showTransactionErrors(["Wait for your saved entries to load, then try again."]); return; }
 
     const entry = {
       id: makeEntryId(),
@@ -463,6 +465,22 @@ export function mountPage(root, user) {
     saveTransactions();
   });
 
+
+  mountBudgetDocuments(root, scope, user.id, {
+    ready: () => dataLoaded && currentUserId !== null,
+    entries: () => transactions,
+    flush: () => failedTransactions ? saveTransactions(true) : Promise.resolve(),
+    async add(entries) {
+      if (!dataLoaded || !currentUserId) throw new Error("Wait for your saved entries to load, then try again.");
+      const known = new Set(transactions.map(entry => entry.id));
+      const next = [...transactions, ...entries.filter(entry => !known.has(entry.id))];
+      if (next.length > 5000) throw new Error("Your budget can hold up to 5,000 entries. Export older entries before removing them.");
+      transactions = next;
+      monthInput.value = entries.at(-1).date.slice(0,7);
+      updateTracker();
+      await saveTransactions(true);
+    },
+  });
 
   // Start with today's date and month, then load account entries after sign-in.
   if (dateInput) dateInput.value = getToday();

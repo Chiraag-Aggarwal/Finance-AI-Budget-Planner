@@ -154,6 +154,7 @@ async function openPage(url, { initial = false, popState = null } = {}) {
         history.pushState({ financePage:true, session:routeSession?.token, index:++historyIndex }, "", url.href);
       }
       closeMenu();
+      window.dispatchEvent(new CustomEvent("finance-page-open", {detail: {path, hash: url.hash}}));
       moveFocus(url, popState?.scroll);
       status.hidden = true;
       return;
@@ -191,6 +192,7 @@ async function openPage(url, { initial = false, popState = null } = {}) {
     document.title = template.title;
     updateActiveLinks();
     closeMenu();
+    window.dispatchEvent(new CustomEvent("finance-page-open", {detail: {path, hash: url.hash}}));
     window.dispatchEvent(new CustomEvent("finance-page-ready", { detail: {path} }));
     // Translate newly attached content synchronously, before it can flash English.
     window.translateFinancePage?.(view);

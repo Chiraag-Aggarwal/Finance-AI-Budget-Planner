@@ -1,3 +1,4 @@
+import { createPlannerTools } from "./planner_tools.mjs";
 import { calculatePlan, validateProfile } from "./finance_calculations.mjs";
 import { loadFinanceData, saveFinanceDataField } from "./finance_data.mjs";
 import { createPageScope } from "./page_scope.mjs";
@@ -23,6 +24,7 @@ export function mountPage(root, user) {
   const loanFields = root.querySelectorAll("[data-loan-input]");
   const goalTypeSelect = form.elements.namedItem("goalType");
 
+  let plannerTools = null;
   let currentUserId = null;
   let activeProfile = null;
   let activePlan = null;
@@ -37,6 +39,7 @@ export function mountPage(root, user) {
   });
 
   const GOAL_DETAILS = Object.freeze({
+    saving: {category:"event", priceLabel:"Goal amount", goalHint:"Build savings for your future, without choosing a purchase.", contributionLabel:"Amount from savings", timelineLabel:"Months until needed"},
     car: {
       category: "purchase",
       priceLabel: "What is the car's estimated on-road cost?",
@@ -147,6 +150,9 @@ export function mountPage(root, user) {
       contributionLabel: "Amount to pay upfront",
       timelineLabel: "How many months until you plan to buy the appliance?",
     },
+    moving: {category:"event", priceLabel:"How much will your move cost?", goalHint:"Include transport, packing and deposits you will pay.", contributionLabel:"Amount to have ready for the move", timelineLabel:"How many months until you move?"},
+    baby: {category:"event", priceLabel:"How much do you want ready for the new baby?", goalHint:"Plan for one-time costs here. Add ongoing childcare to monthly essentials.", contributionLabel:"Amount to set aside before the baby arrives", timelineLabel:"How many months until you need this money?"},
+    celebration: {category:"event", priceLabel:"What will your household spend on the celebration?", goalHint:"Include only your share of the event costs.", contributionLabel:"Amount to cover from savings", timelineLabel:"How many months until the celebration?"},
     other: {
       category: "event",
       priceLabel: "What is the estimated cost of this goal?",
@@ -257,6 +263,7 @@ export function mountPage(root, user) {
 
   function updateGoalFields() {
     const enabled = goalToggle.checked;
+    root.querySelector("#specific-goal-details").hidden = !enabled;
     goalFields.forEach((field) => {
       field.hidden = !enabled;
       field.querySelectorAll("input, select").forEach((control) => {
@@ -281,8 +288,8 @@ export function mountPage(root, user) {
   goalToggle.addEventListener("change", updateGoalFields);
   useGoalAssetsToggle.addEventListener("change", updateGoalAssetFields);
   goalTypeSelect.addEventListener("change", () => {
-    updateGoalCopy();
-    updateCustomGoalField();
+    goalToggle.checked = goalTypeSelect.value !== "saving";
+    updateGoalFields();
   });
   loanToggle.addEventListener("change", updateLoanFields);
   updateGoalFields();
@@ -331,6 +338,8 @@ export function mountPage(root, user) {
     const useGoalAssets = includeGoal && useGoalAssetsToggle.checked;
 
     return {
+      ...(plannerTools?.readItems() || {}),
+      activeGoalId: plannerTools?.activeId || null,
       includeGoal,
       monthlyTakeHomeIncome: readNumber("monthlyTakeHomeIncome"),
       monthlyEssentialExpenses: readNumber("monthlyEssentialExpenses"),
@@ -853,8 +862,10 @@ export function mountPage(root, user) {
       }
     }
 
+    if (profile.includeGoal === false) goalTypeSelect.value = "saving";
     updateGoalFields();
     syncEmergencyChoice();
+    plannerTools?.restore(profile);
   }
 
 
@@ -910,9 +921,10 @@ export function mountPage(root, user) {
 
     const profile = readProfileFromForm();
     const validation = validateProfile(profile);
-    showValidationErrors(validation.errors);
+    const expenseErrors = plannerTools?.expenseErrors() || [];
+    showValidationErrors([...validation.errors, ...expenseErrors]);
 
-    if (!validation.isValid) {
+    if (!validation.isValid || expenseErrors.length) {
       return;
     }
 
@@ -938,6 +950,7 @@ export function mountPage(root, user) {
       });
 
     form.reset();
+    plannerTools?.restore({});
     syncEmergencyChoice();
     updateGoalFields();
     window.dispatchEvent(new CustomEvent("finance-planner-profile", { detail: null }));
@@ -956,6 +969,20 @@ export function mountPage(root, user) {
   });
 
 
+  plannerTools = createPlannerTools(root, scope, {
+    read: readProfileFromForm, fill: fillForm, changed: schedulePlannerAutoSave,
+    calculate: () => form.requestSubmit(),
+    newGoal: () => {
+      const household = readProfileFromForm();
+      fillForm({...household, activeGoalId:null, includeGoal:false, goalType:"saving",
+        goalLabel:"", goalPrice:null, plannedDownPayment:null, monthsUntilGoal:null,
+        goalSavings:null, useGoalAssets:false, goalAssetContribution:0, considerLoan:false, loanRatePercent:null});
+      activeProfile = activePlan = null;
+      results.hidden = true; emptyResults.hidden = false; showValidationErrors([]);
+      schedulePlannerAutoSave();
+    },
+  });
+
   // Load local finance details only after the account server confirms who signed in.
   scope.onReady( async (event) => {
     plannerDraftDirty = false;
@@ -963,6 +990,7 @@ export function mountPage(root, user) {
     lastSavedPlannerSignature = null;
     currentUserId = String(event.detail.id);
     root.querySelector('#finance-form [name="region"]').value = event.detail.region;
+    await plannerTools.load();
     await loadSavedProfile();
     if (!scope.active) return;
     root.querySelector('#finance-form [name="region"]').value = event.detail.region;
@@ -990,6 +1018,7 @@ export function mountPage(root, user) {
     activePlan = null;
     window.dispatchEvent(new CustomEvent("finance-planner-profile", { detail: null }));
     form.reset();
+    plannerTools?.restore({});
     syncEmergencyChoice();
     updateGoalFields();
     results.hidden = true;

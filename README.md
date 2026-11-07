@@ -4,10 +4,10 @@ A beginner-friendly personal finance app for Indian households. It helps users u
 
 ## What the app does
 
-- Tracks monthly income and spending entered by the user.
+- Tracks monthly income and spending, with reviewed CSV/Excel/Word-table/PDF imports and an organised Excel download.
 - Calculates remaining monthly balance and a user-selected emergency-fund target.
 - Builds a flexible savings plan even when the user has no purchase goal.
-- Plans one optional goal at a time, such as a car, bike, house, plot, education, medical costs, travel, or another purchase.
+- Saves multiple named goal plans, grouped by category, with goal-specific questions and editable expense breakdowns. Each plan is calculated independently.
 - Lets users explicitly include an accessible amount from assets or family support toward a goal; it does not treat total net worth or a property's full value as cash.
 - Compares example EMI periods when the user supplies an annual interest rate from a lender quote. Existing EMIs and household expenses reduce the available monthly amount.
 - Provides an English/Hindi interface, a private ML category helper, and a personal spending forecast.
@@ -34,6 +34,7 @@ Install Python 3.10 or newer. In PowerShell, run:
 
 ```powershell
 cd app
+python -m pip install -r requirements.txt
 python server.py
 ```
 
@@ -76,3 +77,5 @@ Do not commit account databases, passwords, session data, personal finance recor
 - Calendar months close automatically. Ending a month does not prove that every expense was entered.
 - Note categories and provisional spending estimates work from initial inputs, with source labels and uncertainty.
 - Training datasets are fictional, reproducible and included in data/synthetic. No credentials or real account records are included.
+
+See the budget documents and saved goals section in app/README.md for file formats, limits, privacy and the new end-to-end tests.

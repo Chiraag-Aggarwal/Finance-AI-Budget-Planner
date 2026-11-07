@@ -20,6 +20,9 @@ export const LOAN_TERMS_BY_GOAL = Object.freeze({
   travel: Object.freeze([3, 6, 12, 18, 24, 36]),
   phone: Object.freeze([6, 12, 18, 24, 36]),
   appliance: Object.freeze([6, 12, 18, 24, 36]),
+  moving: Object.freeze([6, 12, 24, 36]),
+  baby: Object.freeze([6, 12, 24, 36]),
+  celebration: Object.freeze([6, 12, 24, 36]),
   other: Object.freeze([12, 24, 36, 60]),
 });
 
@@ -90,14 +93,14 @@ export function validateProfile(profile) {
   const requiredNumbers = [
     ["monthlyTakeHomeIncome", "Monthly take-home income"],
     ["monthlyEssentialExpenses", "Monthly essential expenses"],
-    ["monthlyDiscretionaryExpenses", "Monthly discretionary expenses"],
+    ["monthlyDiscretionaryExpenses", "Monthly personal expenses"],
     ["monthlyDebtPayment", "Current loan and EMI payments"],
     ["householdSize", "Household size"],
     ["dependents", "Number of dependents"],
     ["totalSavings", "Total savings"],
     ["emergencyFund", "Emergency fund"],
     ["emergencyFundMonths", "Emergency-fund months"],
-    ["goalComfortPercent", "Comfortable share of monthly surplus"],
+    ["goalComfortPercent", "Share of spare money to save"],
   ];
 
   if (includeGoal) {
@@ -126,7 +129,7 @@ export function validateProfile(profile) {
 
   const amountsThatCannotBeNegative = [
     ["monthlyEssentialExpenses", "Monthly essential expenses"],
-    ["monthlyDiscretionaryExpenses", "Monthly discretionary expenses"],
+    ["monthlyDiscretionaryExpenses", "Monthly personal expenses"],
     ["monthlyDebtPayment", "Current loan and EMI payments"],
     ["totalSavings", "Total savings"],
     ["emergencyFund", "Emergency fund"],
@@ -148,7 +151,7 @@ export function validateProfile(profile) {
   const monthlyAmounts = [
     ["monthlyTakeHomeIncome", "Take-home income"],
     ["monthlyEssentialExpenses", "Essential expenses"],
-    ["monthlyDiscretionaryExpenses", "Discretionary expenses"],
+    ["monthlyDiscretionaryExpenses", "Personal / non-essential expenses"],
     ["monthlyDebtPayment", "Current loan and EMI payments"],
     ["maxComfortableNewEmi", "Comfortable new EMI limit"],
   ];
@@ -178,9 +181,9 @@ export function validateProfile(profile) {
     errors.push("Household size cannot exceed 50 people.");
   }
   if (!Number.isInteger(profile.dependents) || profile.dependents < 0) {
-    errors.push("Dependents must be a whole number and cannot be negative.");
+    errors.push("People you support must be a whole number and cannot be negative.");
   } else if (profile.dependents > profile.householdSize) {
-    errors.push("Dependents cannot be more than the household size.");
+    errors.push("People you support cannot be more than the household size.");
   }
   if (!Number.isInteger(profile.emergencyFundMonths) || profile.emergencyFundMonths < 0 || profile.emergencyFundMonths > 120) {
     errors.push("Emergency-fund months must be a whole number from 0 to 120.");

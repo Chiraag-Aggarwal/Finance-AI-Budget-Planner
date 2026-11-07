@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import json
 import math
@@ -21,7 +23,8 @@ from http import HTTPStatus
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import quote, unquote, urlsplit
+from urllib.parse import quote, unquote, urlsplit, parse_qs
+from finance_documents import preview_document, export_workbook, DocumentError
 
 
 APP_FOLDER = Path(__file__).resolve().parent
@@ -89,7 +92,7 @@ EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS = 60
 EMAIL_VERIFICATION_WINDOW_SECONDS = 60 * 60
 EMAIL_VERIFICATION_MAX_PER_HOUR = 5
 MAX_REQUEST_BYTES = 16_384
-MAX_FINANCE_DATA_BYTES = 1_000_000
+MAX_FINANCE_DATA_BYTES = 2_000_000
 COOKIE_SECURE = os.environ.get(
     "FINANCE_AI_COOKIE_SECURE",
     "1" if os.environ.get("FINANCE_AI_ENV", "development").lower() == "production" else "0",
@@ -774,7 +777,7 @@ def update_user_profile(database_file: Path | MongoStore, user_id: int, name: st
         return dict(row) if row else None
 
 
-FINANCE_DATA_FIELDS = {"plannerProfile", "transactions", "settings", "completedMonths"}
+FINANCE_DATA_FIELDS = {"plannerProfile", "transactions", "settings", "completedMonths", "goalPlans"}
 TRANSACTION_FIELDS = {"id", "type", "category", "date", "amount", "note"}
 PLANNER_PROFILE_FIELDS = {
     "includeGoal", "monthlyTakeHomeIncome", "monthlyEssentialExpenses",
@@ -783,7 +786,7 @@ PLANNER_PROFILE_FIELDS = {
     "useGoalAssets", "goalAssetContribution", "emergencyFundMonths",
     "goalComfortPercent", "region", "goalType", "goalLabel", "goalPrice",
     "plannedDownPayment", "monthsUntilGoal", "considerLoan", "loanRatePercent",
-    "preferredLoanTermMonths", "maxComfortableNewEmi",
+    "preferredLoanTermMonths", "maxComfortableNewEmi", "activeGoalId", "essentialItems", "personalItems",
 }
 
 
@@ -805,19 +808,68 @@ def validate_finance_data_patch(payload: dict) -> tuple[dict, str | None]:
                     or not isinstance(item, (str, int, float, bool, type(None)))
                     or isinstance(item, float) and not math.isfinite(item)
                     or isinstance(item, str) and len(item) > 500
-                    for key, item in value.items()
+                    for key, item in value.items() if key not in {"essentialItems", "personalItems"}
                 )
             ):
                 return {}, "The saved planner details are invalid."
+            for item_field, total_field in (
+                ("essentialItems", "monthlyEssentialExpenses"),
+                ("personalItems", "monthlyDiscretionaryExpenses"),
+            ):
+                items = value.get(item_field, []) if isinstance(value, dict) else []
+                if not isinstance(items, list) or len(items) > 30:
+                    return {}, "Use up to 30 expense items in each list."
+                for item in items:
+                    if (
+                        not isinstance(item, dict) or set(item) != {"name", "amount"}
+                        or not isinstance(item["name"], str) or not 1 <= len(item["name"].strip()) <= 80
+                        or isinstance(item["amount"], bool) or not isinstance(item["amount"], (int, float))
+                        or not math.isfinite(item["amount"]) or not 0 <= item["amount"] <= 10_000_000
+                    ):
+                        return {}, "Check the expense names and amounts."
+                if items and (
+                    not isinstance(value.get(total_field), (int, float))
+                    or abs(sum(item["amount"] for item in items) - value[total_field]) > 0.011
+                    or sum(item["amount"] for item in items) > 10_000_000
+                ):
+                    return {}, "The expense items must match their total."
             months = value.get("emergencyFundMonths") if isinstance(value, dict) else None
             if months is not None and (
                 isinstance(months, bool) or not isinstance(months, (int, float))
                 or not math.isfinite(months) or months != int(months) or not 0 <= months <= 120
             ):
                 return {}, "Emergency-fund months must be a whole number from 0 to 120."
+        elif field == "goalPlans":
+            if not isinstance(value, list) or len(value) > 100:
+                return {}, "Save up to 100 goal plans."
+            identifiers = set()
+            for goal in value:
+                if (
+                    not isinstance(goal, dict)
+                    or set(goal) != {"id", "name", "category", "profile", "createdAt", "updatedAt"}
+                    or not isinstance(goal["id"], str) or not re.fullmatch(r"[a-zA-Z0-9-]{1,100}", goal["id"])
+                    or goal["id"] in identifiers
+                    or not isinstance(goal["name"], str) or not 1 <= len(goal["name"].strip()) <= 80
+                    or not isinstance(goal["category"], str) or len(goal["category"]) > 40
+                    or not isinstance(goal["profile"], dict)
+                ):
+                    return {}, "A saved goal is invalid or repeated."
+                identifiers.add(goal["id"])
+                _, error = validate_finance_data_patch({"plannerProfile": goal["profile"]})
+                if error:
+                    return {}, error
+                expected = goal["profile"].get("goalType") if goal["profile"].get("includeGoal") else "saving"
+                if goal["category"] != expected:
+                    return {}, "The saved goal category does not match its plan."
+                for timestamp in ("createdAt", "updatedAt"):
+                    try:
+                        datetime.fromisoformat(goal[timestamp].replace("Z", "+00:00"))
+                    except (ValueError, TypeError, AttributeError):
+                        return {}, "The saved goal date is invalid."
         elif field == "transactions":
             if not isinstance(value, list) or len(value) > 5_000:
                 return {}, "The income and expense list is invalid or too large."
+            entry_ids = set()
             for entry in value:
                 if not isinstance(entry, dict) or set(entry) - TRANSACTION_FIELDS:
                     return {}, "An income or expense entry has unsupported fields."
@@ -839,6 +891,9 @@ def validate_finance_data_patch(payload: dict) -> tuple[dict, str | None]:
                     or len(entry.get("note", "")) > 80
                 ):
                     return {}, "An income or expense entry is invalid."
+                if entry["id"] in entry_ids:
+                    return {}, "An income or expense ID is repeated."
+                entry_ids.add(entry["id"])
                 try:
                     datetime.strptime(entry["date"], "%Y-%m-%d")
                 except ValueError:
@@ -1063,8 +1118,8 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             self.send_error_json(HTTPStatus.BAD_REQUEST, "The request size is invalid.")
             return None
         maximum_size = (
-            MAX_FINANCE_DATA_BYTES
-            if urlsplit(self.path).path == "/api/finance-data"
+            6_000_000 if urlsplit(self.path).path == "/api/budget/import-preview" else MAX_FINANCE_DATA_BYTES
+            if urlsplit(self.path).path in {"/api/finance-data", "/api/budget/import-preview"}
             else MAX_REQUEST_BYTES
         )
         if body_size <= 0 or body_size > maximum_size:
@@ -1163,6 +1218,34 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             user.pop("expires_at", None)
             self.send_json(HTTPStatus.OK, {"user": user})
             return
+        if path == "/api/budget/export":
+            try:
+                user = self.current_user()
+                if not user:
+                    self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in.")
+                    return
+                if not self.finance_owner_matches(user):
+                    return
+                month = parse_qs(urlsplit(self.path).query).get("month", [""])[0]
+                if month and not re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", month):
+                    self.send_error_json(HTTPStatus.BAD_REQUEST, "Choose a valid month.")
+                    return
+                data = get_finance_data(self.database_file, user["id"])
+                body = export_workbook(data.get("transactions", []), month)
+            except Exception as error:
+                if is_database_error(error):
+                    self.send_database_unavailable()
+                    return
+                raise
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            self.send_header("Content-Disposition", 'attachment; filename="finance-ai-budget.xlsx"')
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if path == "/api/account/export":
             try:
                 user = self.current_user()
@@ -1240,7 +1323,9 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             return
 
         try:
-            if path == "/api/signup":
+            if path == "/api/budget/import-preview":
+                self.handle_budget_import(payload)
+            elif path == "/api/signup":
                 self.handle_signup(payload)
             elif path == "/api/login":
                 self.handle_login(payload)
@@ -1263,6 +1348,32 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
                 self.send_database_unavailable()
                 return
             raise
+
+    def handle_budget_import(self, payload):
+        # The cookie determines ownership; a caller-supplied ID never selects an account.
+        user = self.current_user()
+        if not user:
+            self.send_error_json(HTTPStatus.UNAUTHORIZED, "Please sign in.")
+            return
+        if not self.finance_owner_matches(user):
+            return
+        if not account_request_allowed(self.client_address[0], "/api/budget/import-preview"):
+            self.send_error_json(HTTPStatus.TOO_MANY_REQUESTS, "Wait a little before importing again.")
+            return
+        try:
+            if (
+                set(payload) - {"filename", "content", "dateOrder"}
+                or not isinstance(payload.get("filename"), str) or len(payload["filename"]) > 200
+                or not isinstance(payload.get("content"), str)
+            ):
+                raise DocumentError("Choose a valid document.")
+            content = base64.b64decode(payload["content"], validate=True)
+            result = preview_document(payload["filename"], content, payload.get("dateOrder", "day-first"))
+        except (DocumentError, binascii.Error, ValueError) as error:
+            message = str(error) if isinstance(error, DocumentError) else "This upload could not be read."
+            self.send_error_json(HTTPStatus.BAD_REQUEST, message)
+            return
+        self.send_json(HTTPStatus.OK, result)
 
     def do_PUT(self):
         if urlsplit(self.path).path != "/api/profile":
@@ -1569,7 +1680,7 @@ class FinanceRequestHandler(BaseHTTPRequestHandler):
             return APP_FOLDER / "index.html"
         if path.lstrip("/") in APP_PAGES and path.count("/") == 1:
             return APP_FOLDER / path.lstrip("/")
-        if path in ("/styles.css", "/themes.css"):
+        if path in ("/styles.css", "/themes.css", "/workspace-tools.css"):
             return APP_FOLDER / path.lstrip("/")
         if path.startswith("/assets/") and Path(path).suffix.lower() == ".png":
             candidate = (APP_FOLDER / path.lstrip("/")).resolve()

@@ -55,6 +55,7 @@ No reviewed source is a suitable, complete regional household-cost estimate for 
 Install Python 3.10 or newer. For local-only use, open PowerShell in the `app` folder and run:
 
 ```powershell
+python -m pip install -r requirements.txt
 python server.py
 ```
 
@@ -260,3 +261,118 @@ owner mismatch on API requests, delayed old-account responses, two-tab sign-out,
 private note isolation, immediate forecasts, unknown notes, and synthetic split
 integrity. Database and email tests use disposable/mocked services; passing them
 does not claim current production Atlas or email availability.
+
+
+## Budget documents and saved goals
+
+### Import income and expenses
+Open **Monthly budget → Bring your entries in**. Choose a file and the date order,
+then select **Read document**. Check or edit the preview and select **Add selected
+entries**. The original document is processed in memory, not stored, logged, sent
+to an external AI service, or used for model training. Only selected transaction
+fields are saved to the signed-in account.
+
+Supported formats:
+- UTF-8 CSV and XLSX tables, including multiple sheets.
+- DOCX **tables** (not unstructured paragraphs or old DOC files).
+- Unlocked, text-based PDFs with a clearly aligned transaction table, up to 10 pages.
+  Bank layouts vary; extraction is best effort and requires review.
+- Photos, scanned PDFs/passbooks, encrypted documents and old XLS files are not
+  supported. Export a readable table first. No OCR accuracy is claimed.
+
+Expected headers are **Date, Description, Debit, Credit**, or **Date, Type, Amount**.
+The private note helper can suggest categories in the preview using the account's
+history or its synthetic starter. Suggestions are labelled and editable; unknown
+categories stay Other. No statement-understanding accuracy is claimed.
+Description is optional; common aliases such as Narration, Withdrawal and Deposit
+are recognised. Use INR amounts; there is no currency conversion. Choose day-first
+(the India default) or month-first dates. Balances are never treated as income.
+Rows with unknown dates, amounts or direction remain unselected for correction.
+Possible duplicates (date + direction + amount + note) are also unselected, but
+can be deliberately included. Transfers, refunds and loan disbursements need the
+user's review; the parser does not know their financial meaning.
+
+Limits: 4 MB per file; 2,000 candidate rows per import; 30 XLSX columns; 10 sheets;
+5,000 saved entries per account. Office archives have an expanded-size limit.
+Import previews are rate-limited. Documents with formulas are not calculated.
+A preview does not write to the account. Saving preserves the existing budget.
+
+### Download Excel
+The card at the **bottom of Monthly budget** downloads all months or the selected
+month. Excel opens the **Entries** sheet first, showing every selected transaction
+with its date, income/expense type, category, note/description and separate
+income/expense columns, plus a Summary sheet with recorded monthly totals. It
+includes filters, frozen headings and currency/date formatting. User-supplied text
+is stored as text, not as an Excel formula. Recorded balance is not a bank balance.
+
+### Plan and keep several goals
+Planner opens with a centred **Add new goal** button and left-aligned saved goals.
+Choose a goal card after pressing it, including **Future savings** for users with
+no purchase goal. Existing categories remain, with Moving home, Welcoming a baby
+and Family celebration added. Goal-specific cost, contribution and timing questions
+change with the selected category. Lender interest rates still come from the user,
+not the app.
+
+Calculate, name the plan and choose **Save goal plan** to return to the goal overview. The goal library groups
+plans by category. **Open** recalculates a saved snapshot; **Edit** loads that
+specific plan and **Save goal plan** updates it. **Add new goal** keeps household
+figures but clears goal-specific amounts and starts a separate plan. The working
+draft still autosaves; **Continue draft** reopens it. Up to 100 named plans can be kept. Clearing a draft does not
+remove saved goals. Each plan is an independent scenario, not a simultaneous
+allocation of shared income or savings.
+
+Expense rows are directly visible. **Other** becomes a text box in the same category
+slot. Complete row edits update the total automatically. **Total only** keeps that
+total and returns to manual entry. Incomplete rows must be finished or removed
+before calculating, saving a goal or navigating away.
+EMIs have their own box, so they are not added to essential totals again.
+
+Click or focus an amount box to open a floating card with up to three recorded
+months. Click an amount to use it. Escape or an outside click dismisses the card;
+Arrow Down moves keyboard focus to its first choice. There is no separate dropdown.
+The current month is labelled "so far"; past
+months are recorded totals, not proof that every bill has been entered. Unclassified
+Other expenses are excluded from essential/personal suggestions. Choosing a hint
+fills just that field; the user checks transfers and one-off income first. These
+are transparent summaries, not ML predictions.
+
+### Storage and code map
+- goalPlans is an account-owned array of id, name, category, profile, createdAt and
+  updatedAt; plannerProfile remains the draft. Existing accounts need no destructive
+  migration: missing goalPlans simply means an empty library.
+- essentialItems and personalItems hold expense names/amounts; their sums must match
+  the saved totals. activeGoalId identifies the draft's selected saved plan.
+- MongoDB and SQLite store these fields under the authenticated owner's ID. Export
+  and account deletion include them. Existing private requests retain their owner
+  header and same-origin checks.
+- finance_documents.py: bounded file parsing and workbook creation.
+- js/budget_documents.mjs: preview, corrections, duplicate hints and downloads.
+- js/planning_helpers.mjs: pure expense sums, monthly summaries and goal snapshots.
+- js/planner_tools.mjs: goal overview, category cards and saved-plan actions.
+- js/expense_editor.mjs: visible expense rows, custom categories and live totals.
+- js/amount_hints.mjs: field-triggered amount popovers and keyboard interaction.
+- workspace-tools.css: responsive styles using Bloom/Sunrise/Ocean theme variables.
+- js/workspace_copy.mjs: English/Hindi copy for the new tools.
+
+Install requirements before restarting Python:
+    python -m pip install -r requirements.txt
+
+### Test the new workflows
+Existing unit suites include test_budget_documents.py and planning_helpers.test.mjs.
+The document fixtures are fictional. They cover CSV/XLSX/DOCX/PDF, malformed data,
+explicit date order, blank debit/credit columns, unsupported scans, formula-safe
+exports, goal validation, account isolation and both storage code paths. MongoDB
+tests use isolated fake collections, not a live Atlas account.
+
+For real browser-to-Python checks (no mocks of the finance API), run
+    python tests/workspace_server.py
+then, in another terminal:
+    node tests/workspace.browser.mjs http://127.0.0.1:PORT
+Use the random URL printed by that server. Playwright and a browser are test-only
+dependencies. FINANCE_AI_PLAYWRIGHT_MODULE and FINANCE_AI_TEST_BROWSER can specify
+their installed paths. The server creates disposable SQLite accounts using
+fictional details, never loads .env, and sends no email. This is a test harness,
+not a change to the application's configured database. Stop it with Ctrl+C.
+
+Privacy wording is a factual product summary, not a claim of legal compliance.
+Professional review of the public privacy policy is still required.
