@@ -1,5 +1,21 @@
 // Wording for the budget import and saved-goal tools.
 export const WORKSPACE_HINDI = {
+  "Suggested amount": "सुझाई गई राशि",
+  "Recorded total": "दर्ज कुल",
+  "Replaces your expense items.": "आपके अलग-अलग खर्चों की जगह यह कुल राशि भरेगा।",
+  "Monthly income after tax.": "टैक्स कटने के बाद मासिक आय।",
+  "Rent, food and bills. Enter EMIs separately.": "किराया, राशन और बिल। ईएमआई अलग भरें।",
+  "Shopping, eating out and other optional costs.": "खरीदारी, बाहर खाना और अन्य गैर-जरूरी खर्च।",
+  "Monthly instalments, not the total loan.": "महीने की किस्तें, पूरा कर्ज नहीं।",
+  "Months of essentials and EMIs to keep for emergencies. Choose 0 to skip.": "आपातकाल के लिए कितने महीनों के जरूरी खर्च और ईएमआई रखें। छोड़ने के लिए 0 चुनें।",
+  "Enter 0 to 120 whole months.": "0 से 120 तक पूरे महीने भरें।",
+  "Your privacy": "आपकी गोपनीयता",
+  "Download your budget": "अपना बजट डाउनलोड करें",
+  "Import entries": "फ़ाइल से प्रविष्टियाँ जोड़ें",
+  "Based on recorded entries. Check for missing bills.": "दर्ज प्रविष्टियों पर आधारित। छूटे हुए बिल जाँच लें।",
+  "Location context only; no live price lookup.": "केवल स्थान की जानकारी; मौजूदा कीमतें नहीं खोजी जातीं।",
+  "About these estimates": "इन अनुमानों के बारे में",
+  "About this forecast": "इस पूर्वानुमान के बारे में",
   "Use your usual monthly costs. Click an amount box to see suggestions from your budget.": "अपने सामान्य मासिक खर्च भरें। अपने बजट के सुझाव देखने के लिए राशि वाले बॉक्स पर क्लिक करें।",
 
   "One plan for every possibility.": "हर सपने के लिए एक योजना।",

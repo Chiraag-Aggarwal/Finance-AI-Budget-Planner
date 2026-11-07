@@ -2,9 +2,9 @@
 <section class="budget-tracker-section" id="budget-tracker" aria-labelledby="tracker-title">
         <div class="section-heading tracker-heading">
           <div>
-            <p class="eyebrow">Monthly budget</p>
+
             <h1 id="tracker-title">Your money, month by month</h1>
-            <p class="section-intro">Add an entry or import a statement. Your budget stays in one place.</p>
+
           </div>
           <label class="month-picker">
             <span>View month</span>
@@ -30,7 +30,7 @@
         </div>
 
         <details class="document-import feature-card">
-          <summary><span class="feature-sticker" aria-hidden="true">↥</span><span><strong>Bring your entries in</strong><small>Import a spreadsheet or statement</small></span><span class="import-plus" aria-hidden="true">+</span></summary>
+          <summary><span class="feature-sticker" aria-hidden="true">↥</span><span><strong>Import entries</strong><small>Import a spreadsheet or statement</small></span><span class="import-plus" aria-hidden="true">+</span></summary>
           <div class="import-controls">
             <label class="field"><span>Your document</span><input id="budget-document" type="file" accept=".csv,.xlsx,.docx,.pdf"><small>CSV, Excel, Word tables or readable PDF · up to 4 MB</small></label>
             <label class="field"><span>Dates in your document</span><select id="import-date-order"><option value="day-first">Day / month / year (India)</option><option value="month-first">Month / day / year</option></select></label>
@@ -54,7 +54,7 @@
               <span class="step-number">+</span>
               <div>
                 <h3>Add an entry</h3>
-                <p>Use the date the income or expense happened. Entries save automatically to your account.</p>
+
               </div>
             </div>
             <form id="transaction-form" class="transaction-form" novalidate>
@@ -80,7 +80,7 @@
               <label class="field field-full">
                 <span>Short note <span class="optional-mark">Optional</span></span>
                 <input id="transaction-note" name="note" autocomplete="off" type="text" maxlength="80" placeholder="For example, weekly groceries">
-                <small>Type a short note to see a possible category. Check it before using it.</small>
+
               </label>
               <div id="transaction-category-suggestion" class="field-full transaction-ml-helper" role="status" aria-live="polite" hidden>
                 <button class="button button-quiet transaction-ml-suggestion-button" id="use-transaction-category-suggestion" type="button" aria-label="Use suggested category">
@@ -144,7 +144,7 @@
 
 <section class="budget-download feature-card" aria-labelledby="budget-download-title">
           <span class="feature-sticker" aria-hidden="true">▦</span>
-          <div><p class="eyebrow">Yours to keep</p><h2 id="budget-download-title">Take your budget with you</h2><p>A tidy Excel workbook with dated entries, categories and monthly totals.</p>
+          <div><h2 id="budget-download-title">Download your budget</h2>
             <div class="compact-actions"><label class="field"><span>Include</span><select id="download-budget-range"><option value="all">All months</option><option value="month">Selected month</option></select></label><button id="download-budget" class="button button-primary" type="button">Download Excel</button></div>
             <p id="download-budget-message" role="alert"></p></div>
         </section>

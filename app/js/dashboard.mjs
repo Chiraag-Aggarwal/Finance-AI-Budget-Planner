@@ -1,3 +1,6 @@
+// Dashboard uses the signed-in account's saved totals and the same planner calculations.
+// Empty accounts show prompts instead of invented example balances.
+
 import { calculatePlan, validateProfile } from "./finance_calculations.mjs";
 import { summarizeMonth, validateTransaction } from "./budget_tracker.mjs";
 import { loadFinanceData } from "./finance_data.mjs";

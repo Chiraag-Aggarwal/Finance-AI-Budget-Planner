@@ -1,13 +1,19 @@
+// Goal library, goal chooser and saved-plan editor. Financial formulas stay in finance_calculations.
+// hooks connects these controls to app.mjs: read/fill a profile, calculate, and schedule a draft save.
+
 import { loadFinanceData, saveFinanceDataField } from "./finance_data.mjs";
 import { GOAL_NAMES, upsertGoal } from "./planning_helpers.mjs";
 import { validateProfile } from "./finance_calculations.mjs";
 import { createExpenseEditors } from "./expense_editor.mjs";
 import { mountAmountHints } from "./amount_hints.mjs";
 
-const tr = text => window.financeTranslate?.(text) || text;
-const rupees = value => new Intl.NumberFormat("en-IN", {
-  style: "currency", currency: "INR", maximumFractionDigits: 0,
-}).format(value);
+const tr = (text) => window.financeTranslate?.(text) || text;
+const rupees = (value) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
 function node(tag, text, className) {
   const element = document.createElement(tag);
   if (text !== undefined) element.textContent = text;
@@ -28,6 +34,7 @@ export function createPlannerTools(root, scope, hooks) {
   const resume = root.querySelector("#continue-draft");
   const goalSelect = form.elements.namedItem("goalType");
   const expenseEditors = createExpenseEditors(root, scope, hooks.changed);
+  // plans is the saved library; activeId identifies the plan currently being edited.
   let plans = [];
   let activeId = null;
   let loaded = false;
@@ -46,30 +53,34 @@ export function createPlannerTools(root, scope, hooks) {
   }
 
   function chosenGoalName() {
-    root.querySelector("#chosen-goal-name").textContent =
-      tr(GOAL_NAMES[goalSelect.value] || "Another goal");
+    root.querySelector("#chosen-goal-name").textContent = tr(
+      GOAL_NAMES[goalSelect.value] || "Another goal",
+    );
   }
 
   function focusHome() {
     showView("home");
-    root.querySelector("#add-new-goal").focus({preventScroll: true});
-    home.scrollIntoView({behavior: "smooth", block: "start"});
+    root.querySelector("#add-new-goal").focus({ preventScroll: true });
+    home.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  // Group by goal category. Clone a saved snapshot before opening it for editing.
   function drawPlans() {
     list.replaceChildren();
     root.querySelector("#saved-goals-empty").hidden = plans.length > 0;
-    for (const category of [...new Set(plans.map(plan => plan.category))]) {
+    for (const category of [...new Set(plans.map((plan) => plan.category))]) {
       const group = node("section", undefined, "goal-group");
       group.append(node("h3", tr(GOAL_NAMES[category] || "Another goal")));
       const cards = node("div", undefined, "saved-goal-grid");
 
-      for (const plan of plans.filter(item => item.category === category)) {
+      for (const plan of plans.filter((item) => item.category === category)) {
         const card = node("article", undefined, "saved-goal-card");
         if (plan.id === activeId) card.classList.add("is-editing");
         const title = node("strong", plan.name);
-        const amount = node("p", plan.profile.includeGoal
-          ? rupees(plan.profile.goalPrice) : tr("Monthly savings plan"));
+        const amount = node(
+          "p",
+          plan.profile.includeGoal ? rupees(plan.profile.goalPrice) : tr("Monthly savings plan"),
+        );
         const open = node("button", tr("Open"), "button button-quiet");
         const edit = node("button", tr("Edit"), "button button-quiet");
         open.type = edit.type = "button";
@@ -80,7 +91,7 @@ export function createPlannerTools(root, scope, hooks) {
           if (saving) return false;
           activeId = plan.id;
           name.value = plan.name;
-          hooks.fill({...structuredClone(plan.profile), activeGoalId: plan.id});
+          hooks.fill({ ...structuredClone(plan.profile), activeGoalId: plan.id });
           showView("edit");
           hooks.changed();
           drawPlans();
@@ -88,12 +99,12 @@ export function createPlannerTools(root, scope, hooks) {
           return true;
         }
         open.addEventListener("click", () => {
-          if (activate()) resultSection.scrollIntoView({behavior: "smooth"});
+          if (activate()) resultSection.scrollIntoView({ behavior: "smooth" });
         });
         edit.addEventListener("click", () => {
           if (!activate()) return;
-          form.scrollIntoView({behavior: "smooth"});
-          root.querySelector("#chosen-goal-name").focus({preventScroll: true});
+          form.scrollIntoView({ behavior: "smooth" });
+          root.querySelector("#chosen-goal-name").focus({ preventScroll: true });
         });
         card.append(title, amount, open, edit);
         cards.append(card);
@@ -105,10 +116,25 @@ export function createPlannerTools(root, scope, hooks) {
 
   // Reuse the existing goal values; the user now chooses them as visual cards.
   const icons = {
-    saving: "✦", car: "🚗", bike: "🛵", laptop: "💻", home: "🏠", plot: "⌖",
-    farm: "🌱", renovation: "🛠", business: "💼", education: "🎓", medical: "♡",
-    wedding: "💍", travel: "✈", phone: "📱", appliance: "▣",
-    moving: "📦", baby: "🧸", celebration: "🎉", other: "+",
+    saving: "✦",
+    car: "🚗",
+    bike: "🛵",
+    laptop: "💻",
+    home: "🏠",
+    plot: "⌖",
+    farm: "🌱",
+    renovation: "🛠",
+    business: "💼",
+    education: "🎓",
+    medical: "♡",
+    wedding: "💍",
+    travel: "✈",
+    phone: "📱",
+    appliance: "▣",
+    moving: "📦",
+    baby: "🧸",
+    celebration: "🎉",
+    other: "+",
   };
   for (const option of goalSelect.options) {
     const button = node("button", undefined, "goal-choice-card");
@@ -126,12 +152,12 @@ export function createPlannerTools(root, scope, hooks) {
       }
       isNewGoal = false;
       goalSelect.value = option.value;
-      goalSelect.dispatchEvent(new Event("change", {bubbles: true}));
+      goalSelect.dispatchEvent(new Event("change", { bubbles: true }));
       chosenGoalName();
       resume.hidden = false;
       showView("edit");
-      root.querySelector("#chosen-goal-name").focus({preventScroll: true});
-      editor.scrollIntoView({behavior: "smooth", block: "start"});
+      root.querySelector("#chosen-goal-name").focus({ preventScroll: true });
+      editor.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     root.querySelector("#goal-choice-grid").append(button);
   }
@@ -140,15 +166,15 @@ export function createPlannerTools(root, scope, hooks) {
     if (saving || !loaded) return;
     isNewGoal = true;
     showView("choose");
-    root.querySelector("#goal-chooser-title").focus({preventScroll: true});
+    root.querySelector("#goal-chooser-title").focus({ preventScroll: true });
   });
   scope.listen(root.querySelector("#change-goal"), "click", () => {
     if (expenseEditors.errors().length) return;
     isNewGoal = false;
     showView("choose");
-    root.querySelector("#goal-chooser-title").focus({preventScroll: true});
+    root.querySelector("#goal-chooser-title").focus({ preventScroll: true });
   });
-  root.querySelectorAll("[data-back-goals]").forEach(button => {
+  root.querySelectorAll("[data-back-goals]").forEach((button) => {
     scope.listen(button, "click", () => {
       if (saving || expenseEditors.errors().length) return;
       focusHome();
@@ -158,9 +184,10 @@ export function createPlannerTools(root, scope, hooks) {
     if (!loaded) return;
     showView("edit");
     chosenGoalName();
-    root.querySelector("#chosen-goal-name").focus({preventScroll: true});
+    root.querySelector("#chosen-goal-name").focus({ preventScroll: true });
   });
 
+  // Validate first and update the visible library only after the server confirms the save.
   scope.listen(saveButton, "click", async () => {
     if (!loaded || saving) return;
     const profile = hooks.read();
@@ -203,26 +230,36 @@ export function createPlannerTools(root, scope, hooks) {
   });
 
   // Clicking Planner in the menu returns to the overview, even from this same route.
-  scope.listen(window, "finance-page-open", event => {
+  scope.listen(window, "finance-page-open", (event) => {
     if (event.detail.path !== "/planner.html") return;
     showView(event.detail.hash === "#results" ? "edit" : "home");
   });
 
   showView("home");
   return {
-    get activeId() { return activeId; },
-    readItems() { return expenseEditors.read(); },
-    expenseErrors() { return expenseEditors.errors(); },
+    get activeId() {
+      return activeId;
+    },
+    readItems() {
+      return expenseEditors.read();
+    },
+    expenseErrors() {
+      return expenseEditors.errors();
+    },
     restore(profile) {
       expenseEditors.restore(profile);
-      activeId = plans.some(plan => plan.id === profile.activeGoalId) ? profile.activeGoalId : null;
-      name.value = plans.find(plan => plan.id === activeId)?.name || "";
+      activeId = plans.some((plan) => plan.id === profile.activeGoalId)
+        ? profile.activeGoalId
+        : null;
+      name.value = plans.find((plan) => plan.id === activeId)?.name || "";
       resume.hidden = Object.keys(profile).length === 0;
-      root.querySelector("#goal-save-title").textContent =
-        tr(activeId ? "Update this saved plan" : "Keep this plan");
+      root.querySelector("#goal-save-title").textContent = tr(
+        activeId ? "Update this saved plan" : "Keep this plan",
+      );
       chosenGoalName();
       drawPlans();
     },
+    // Account data is loaded once for this mounted page, never shared with another user.
     async load() {
       loaded = false;
       const data = await loadFinanceData();
@@ -231,8 +268,12 @@ export function createPlannerTools(root, scope, hooks) {
       loaded = true;
       drawPlans();
       hints = mountAmountHints(root, scope, data.transactions || [], (field, amount) => {
-        const key = field === "monthlyEssentialExpenses" ? "essentialItems"
-          : field === "monthlyDiscretionaryExpenses" ? "personalItems" : null;
+        const key =
+          field === "monthlyEssentialExpenses"
+            ? "essentialItems"
+            : field === "monthlyDiscretionaryExpenses"
+              ? "personalItems"
+              : null;
         if (key) expenseEditors.clear(key);
         form.elements.namedItem(field).value = amount;
         hooks.changed();

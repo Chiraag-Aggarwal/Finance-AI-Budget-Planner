@@ -1,0 +1,60 @@
+FINANCE AI - LARGE FICTIONAL UPLOAD SAMPLES
+
+All details are invented. The four documents contain 510 distinct transactions
+in total. None has a Category column. All dates are August-October 2026 and use
+day/month/year. Every file uses a different set of dates, descriptions and amounts.
+
+HOW TO TEST
+Use a demo account. In Monthly budget, upload one file, keep day-first dates,
+read the preview, review the suggested categories, then add the selected rows.
+The preview shows 25 rows per page, so use Next to see the rest.
+After saving, select August, September or October 2026 to see that month's entries.
+
+The importer reads dates, amounts and income/expense type. The category helper
+then uses the description to suggest missing categories. If it is uncertain,
+Other or Other income is expected. You can change the category before saving.
+These files do not measure the model's real-world accuracy.
+
+EXPECTED TOTALS FOR EACH FILE ALONE
+These totals span all three months, not just the selected month.
+
+01_excel_120_no_categories.xlsx
+  Entries: 120
+  Income: INR 239,046.25
+  Expenses: INR 111,676.75
+  Recorded balance: INR 127,369.50
+
+02_bank_125_no_categories.csv
+  Entries: 125
+  Income: INR 203,327.25
+  Expenses: INR 89,129.00
+  Recorded balance: INR 114,198.25
+
+03_word_130_no_categories.docx
+  Entries: 130
+  Income: INR 145,171.25
+  Expenses: INR 75,770.50
+  Recorded balance: INR 69,400.75
+
+04_passbook_135_no_categories.pdf
+  Entries: 135
+  Income: INR 216,886.25
+  Expenses: INR 112,716.50
+  Recorded balance: INR 104,169.75
+
+CHECKS TO TRY
+- CSV/PDF: blank debit or credit cells must stay aligned.
+- PDF: running balances must not appear as income or extra transactions.
+- All formats: refresh and sign in again to check saved entries remain.
+- Upload the same document again: saved rows should be unselected duplicates.
+- Download Excel using All months to compare the full-file totals above.
+- Each file contains different records, so importing all four should give 510
+  entries in an otherwise empty account.
+
+PASSBOOK PHOTO
+05_fictional_passbook_photo.png is a generated fictional photograph with a
+TEST SAMPLE label. It is a separate 12-row illustration, not a copy of the
+135-row PDF. Its small text is not verified numerical ground truth.
+The current uploader does NOT support PNG/JPG photographs or scanned PDFs.
+It has no OCR. Use the readable PDF for imports now. Merely putting a photo
+inside a PDF does not make the transaction text readable.

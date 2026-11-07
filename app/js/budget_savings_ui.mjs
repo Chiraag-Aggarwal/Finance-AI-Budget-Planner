@@ -1,3 +1,6 @@
+// Insights page: render savings examples and apply this page's temporary chat constraints.
+// Budget totals arrive from budget_ui; this module does not alter saved transactions.
+
 import { buildSavingsBudget, interpretConstraintMessage } from "./budget_recommendations.mjs";
 import { createPageScope } from "./page_scope.mjs";
 
@@ -14,7 +17,6 @@ export function mountPage(root, user) {
   const draftNote = root.querySelector("#savings-draft-note");
   const regionNote = root.querySelector("#savings-region-note");
   const modelNote = root.querySelector("#savings-model-note");
-  const coachIntro = root.querySelector("#savings-coach-intro");
 
   const currency = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -82,11 +84,6 @@ export function mountPage(root, user) {
     });
 
     planMessage.textContent = savingsMessage(plan);
-    coachIntro.textContent = plan.modelUsed
-      ? (window.financeTranslate?.("Plan next month using your personal spending forecast.")
-        || "Plan next month using your personal spending forecast.")
-      : (window.financeTranslate?.("See practical changes based on the spending you recorded this month.")
-        || "See practical changes based on the spending you recorded this month.");
     modelNote.textContent = plan.modelUsed
       ? (window.financeTranslate?.("Forecasts use your entries and, for repeated purchases, a synthetic starter model. Suggested reductions are optional examples, not learned savings outcomes.")
         || "Forecasts use your entries and, for repeated purchases, a synthetic starter model. Suggested reductions are optional examples, not learned savings outcomes.")

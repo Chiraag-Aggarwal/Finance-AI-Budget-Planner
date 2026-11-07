@@ -24,6 +24,8 @@ The interface uses plain HTML, CSS, and JavaScript. Python assembles shared page
 
 ## Project layout
 
+Start with [the code guide](CODE_GUIDE.md) for a beginner-friendly file map, request flow, model boundaries and testing workflow.
+
 - `app/` — HTML/CSS/JavaScript interface and Python account server, with MongoDB for deployed accounts and finance data.
 - `ml/` — notes on the small personal ML helpers used in the app and their limits.
 - `data/` — dataset-source reviews and finance-model data requirements.
@@ -78,4 +80,4 @@ Do not commit account databases, passwords, session data, personal finance recor
 - Note categories and provisional spending estimates work from initial inputs, with source labels and uncertainty.
 - Training datasets are fictional, reproducible and included in data/synthetic. No credentials or real account records are included.
 
-See the budget documents and saved goals section in app/README.md for file formats, limits, privacy and the new end-to-end tests.
+See [the app guide](app/README.md) for document formats, limits, privacy and end-to-end tests. Fictional upload examples are in [sample_uploads](sample_uploads/START_HERE.txt) and [sample_uploads_no_category](sample_uploads_no_category/START_HERE.txt).

@@ -2,9 +2,9 @@
 <section class="planner-section" id="planner" aria-labelledby="planner-title">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Your goals, your pace</p>
+
             <h1 id="planner-title">What would you like to plan?</h1>
-            <p class="section-intro">Choose a goal, add your monthly amounts, then save a plan you can return to.</p>
+
           </div>
           <span class="required-note" id="planner-required-note" hidden><span aria-hidden="true">*</span> Required</span>
         </div>
@@ -12,12 +12,12 @@
         <div id="planner-home">
           <div class="goal-launch">
             <span class="goal-launch-art" aria-hidden="true">✦</span>
-            <p>One plan for every possibility.</p>
+
             <button id="add-new-goal" class="button button-primary" type="button">+ Add new goal</button>
             <button id="continue-draft" class="button button-quiet" type="button" hidden>Continue draft</button>
           </div>
           <section class="goal-library" aria-labelledby="goal-library-title">
-            <div class="feature-heading"><div><p class="eyebrow">Your next chapters</p><h2 id="goal-library-title">Your saved goals</h2></div></div>
+            <div class="feature-heading"><div><h2 id="goal-library-title">Your saved goals</h2></div></div>
             <p id="goal-home-status" role="status" aria-live="polite"></p>
             <p id="saved-goals-empty">Your saved plans will appear here.</p>
             <div id="saved-goals"></div>
@@ -27,7 +27,7 @@
         <section id="goal-chooser" class="goal-chooser" aria-labelledby="goal-chooser-title" hidden>
           <button type="button" class="button button-quiet" data-back-goals>← Back to goals</button>
           <h2 id="goal-chooser-title" tabindex="-1">What are you planning for?</h2>
-          <p>Choose what matters to you. We will ask for the right details.</p>
+
           <div id="goal-choice-grid" class="goal-choice-grid"></div>
         </section>
         <div id="planner-editor" hidden>
@@ -60,23 +60,23 @@
               <legend><span class="step-number">1</span> Monthly income and spending</legend>
               <div class="form-grid">
                 <div class="field"><label for="monthlyTakeHomeIncome">Take-home income <span class="required-mark" aria-hidden="true">*</span></label><div class="amount-input-wrap"><input id="monthlyTakeHomeIncome" name="monthlyTakeHomeIncome" type="number" min="1" max="10000000" step="0.01" inputmode="decimal" placeholder="For example, 60000" required></div>
-                  <small>Money you receive each month after tax.</small></div>
+                  <small>Monthly income after tax.</small></div>
                 <div class="field"><label for="monthlyEssentialExpenses">Total essential expenses <span class="required-mark" aria-hidden="true">*</span></label><div class="amount-input-wrap"><input id="monthlyEssentialExpenses" name="monthlyEssentialExpenses" type="number" min="0" max="10000000" step="0.01" inputmode="decimal" placeholder="For example, 25000" required></div>
-                  <small>Must-pay costs such as rent, food and bills. Keep EMIs in their own box.</small><div class="expense-builder" data-expense-editor="essentialItems">
+                  <small>Rent, food and bills. Enter EMIs separately.</small><div class="expense-builder" data-expense-editor="essentialItems">
       <div class="expense-rows"></div>
       <div class="expense-actions"><button type="button" data-add-expense class="button button-quiet">+ Add expense</button>
         <button type="button" data-manual-total class="button button-quiet" hidden>Total only</button></div>
       <p class="expense-error" role="status" aria-live="polite"></p>
     </div></div>
                 <div class="field"><label for="monthlyDiscretionaryExpenses">Total personal expenses <span class="required-mark" aria-hidden="true">*</span></label><div class="amount-input-wrap"><input id="monthlyDiscretionaryExpenses" name="monthlyDiscretionaryExpenses" type="number" min="0" max="10000000" step="0.01" inputmode="decimal" placeholder="For example, 5000" required></div>
-                  <small>Things you can choose to spend less on, like shopping or eating out.</small><div class="expense-builder" data-expense-editor="personalItems">
+                  <small>Shopping, eating out and other optional costs.</small><div class="expense-builder" data-expense-editor="personalItems">
       <div class="expense-rows"></div>
       <div class="expense-actions"><button type="button" data-add-expense class="button button-quiet">+ Add expense</button>
         <button type="button" data-manual-total class="button button-quiet" hidden>Total only</button></div>
       <p class="expense-error" role="status" aria-live="polite"></p>
     </div></div>
                 <div class="field"><label for="monthlyDebtPayment">Current loan / EMI payments <span class="required-mark" aria-hidden="true">*</span></label><div class="amount-input-wrap"><input id="monthlyDebtPayment" name="monthlyDebtPayment" type="number" min="0" max="10000000" step="0.01" inputmode="decimal" placeholder="For example, 8000" required></div>
-                  <small>Your monthly loan payments, not the total amount borrowed.</small></div>
+                  <small>Monthly instalments, not the total loan.</small></div>
               </div>
             </fieldset>
 
@@ -121,12 +121,12 @@
                     <option value="12">12 months</option>
                     <option value="custom">Custom number of months</option>
                   </select>
-                  <small id="emergency-months-help">Money kept aside for essentials and EMIs if your income stops or an unexpected bill arrives. Choose how many months to cover. Choosing 0 skips this target.</small>
+                  <small id="emergency-months-help">Months of essentials and EMIs to keep for emergencies. Choose 0 to skip.</small>
                 </label>
                 <label class="field" id="emergency-custom-field" hidden>
                   <span>Custom emergency-fund months</span>
                   <input name="emergencyFundMonths" type="number" min="0" max="120" step="1" value="6" inputmode="numeric" required>
-                  <small>Enter a whole number from 0 to 120. The target is this many months of essentials and current EMIs.</small>
+                  <small>Enter 0 to 120 whole months.</small>
                 </label>
                 <label class="field">
                   <span>How much of your spare money will you save? <span class="required-mark" aria-hidden="true">*</span></span>
@@ -151,7 +151,7 @@
                 <label class="field" data-custom-goal hidden>
                   <span>What are you saving for? <span class="required-mark" aria-hidden="true">*</span></span>
                   <input name="goalLabel" type="text" minlength="2" maxlength="80" autocomplete="off" required disabled>
-                  <small>Use a short name. It will appear in your plan title.</small>
+
                 </label>
                 <label class="field" data-goal-input hidden>
                   <span><span data-goal-copy="priceLabel">What is the car's estimated on-road cost?</span> <span class="required-mark" aria-hidden="true">*</span></span>
@@ -208,10 +208,7 @@
           </form>
 
           <aside class="privacy-card" aria-labelledby="privacy-title">
-            <span class="privacy-icon" aria-hidden="true">✦</span><h3 id="privacy-title">A little help as you plan</h3>
-            <p>Use your usual monthly costs. Click an amount box to see suggestions from your budget.</p>
-            <p>Emergency savings are part of your total savings. Keep them separate from money for your goal.</p>
-            <details><summary>Your data and privacy</summary><p>Your profile, budgets and saved goals belong to your signed-in account. Export or delete them from Profile. Uploaded originals are not stored.</p>
+            <details><summary id="privacy-title">Your data and privacy</summary><p>Your profile, budgets and saved goals belong to your signed-in account. Export or delete them from Profile. Uploaded originals are not stored.</p>
             <p class="small-print">This is a product summary, not a legal privacy policy. Professional review is required.</p></details>
           </aside>
         </div>
@@ -225,9 +222,9 @@
 <section class="results-section" id="results" aria-labelledby="results-title" hidden>
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Step 2 · Your plan</p>
+
             <h2 id="results-title">Your monthly picture</h2>
-            <p class="section-intro">These results are based only on the details you entered above.</p>
+
           </div>
         </div>
 
@@ -371,7 +368,7 @@
               <span class="result-icon icon-blue" aria-hidden="true">↔</span>
               <h3 id="scenario-title">Compare goal-saving scenarios</h3>
             </div>
-            <p class="section-intro">See how a different monthly amount changes the estimated timeline.</p>
+
             <div class="table-scroll">
               <table class="scenario-table">
                 <caption class="visually-hidden">Goal timelines under three monthly saving scenarios</caption>
@@ -401,7 +398,7 @@
             <span class="feature-sticker" aria-hidden="true">♡</span>
             <div><h3 id="goal-save-title">Keep this plan</h3>
               <label class="field" for="goal-plan-name"><span>Plan name</span><input id="goal-plan-name" maxlength="80" placeholder="For example, My first car"></label>
-              <p class="small-print">Give it a name so you can open or edit it later.</p>
+
               <button id="save-goal-plan" class="button button-primary" type="button">Save goal plan</button>
               <p id="goal-library-message" role="status" aria-live="polite"></p></div>
           </section>

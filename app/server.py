@@ -1,4 +1,10 @@
-"""Small, dependency-free Python server for the Finance AI account pages."""
+"""Finance AI HTTP server: pages, account sessions and private finance APIs.
+
+Reading order: page/config helpers -> SQLite/Mongo storage -> account/token
+helpers -> finance-data validation -> HTTP routes -> startup in main().
+The HTTP layer uses Python's standard library; MongoDB and document formats
+use the packages listed in requirements.txt.
+"""
 
 from __future__ import annotations
 
@@ -104,6 +110,7 @@ _ACCOUNT_ATTEMPTS: dict[tuple[str, str], list[float]] = {}
 
 
 @contextmanager
+# Storage adapters: keep both backends behind the same account/finance helpers.
 def open_database(database_file: Path = DATABASE_FILE):
     """Open a short-lived SQLite connection with foreign keys enabled."""
     database_file.parent.mkdir(parents=True, exist_ok=True)
@@ -423,6 +430,7 @@ class MongoStore:
         return self.get_finance_data(user_id)
 
 
+# Account validation and credentials. Raw passwords and one-time tokens are never stored.
 def clean_profile_fields(name: str, region: str) -> tuple[str, str, str | None]:
     """Return cleaned name and region with a short validation error, if any."""
     clean_name = str(name or "").strip()
@@ -594,6 +602,7 @@ def use_password_reset(
     return True
 
 
+# Email delivery: verification and recovery share the configured sender.
 def email_smtp_settings() -> dict | None:
     """Return SMTP settings only when the app owner has configured email delivery."""
     host = os.environ.get("FINANCE_AI_SMTP_HOST", "").strip()
@@ -790,6 +799,7 @@ PLANNER_PROFILE_FIELDS = {
 }
 
 
+# Finance payloads and account export/deletion. Validate before writing either backend.
 def validate_finance_data_patch(payload: dict) -> tuple[dict, str | None]:
     """Allow only the signed-in user's known finance fields and safe value types."""
     if not payload or set(payload) - FINANCE_DATA_FIELDS:
@@ -1061,6 +1071,7 @@ def is_database_error(error: Exception) -> bool:
     return isinstance(error, PyMongoError)
 
 
+# HTTP boundary: resolve the signed-in account before reading or changing private data.
 class FinanceRequestHandler(BaseHTTPRequestHandler):
     """Serve the static app and its same-origin account API."""
 
@@ -1746,6 +1757,7 @@ class FinanceHTTPServer(ThreadingHTTPServer):
         self.database_file = database_file
 
 
+# Startup only; importing this module in tests does not load .env or start a server.
 def main():
     global DATABASE_FILE, COOKIE_SECURE
 

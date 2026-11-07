@@ -5,8 +5,9 @@ import test from "node:test";
 
 // Execute the real account UI with a small DOM and controlled network responses.
 // Only the unrelated save-queue import is replaced; authentication logic is unchanged.
+// Match an import line even when module documentation comes before it.
 const source = readFileSync(new URL("../js/account_ui.mjs", import.meta.url), "utf8")
-  .replace(/^import .*pending_saves\.mjs";\r?\n/, "");
+  .replace(/^import .*pending_saves\.mjs";\r?\n/m, "");
 const html = ["layout", "auth"].map(name =>
   readFileSync(new URL("../" + name + ".html", import.meta.url), "utf8")).join("\n");
 const tick = () => new Promise(resolve => setImmediate(resolve));

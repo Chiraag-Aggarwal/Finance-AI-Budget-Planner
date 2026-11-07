@@ -1,6 +1,6 @@
 <!-- Page content. server.py adds the shared layout and account forms. -->
 <section class="insights-page" aria-labelledby="insights-page-title">
-<div class="section-heading"><div><p class="eyebrow">Make space for what matters</p><h1 id="insights-page-title">Savings &amp; insights</h1><p class="section-intro">Your spending history, practical adjustments, and a little more breathing room.</p></div></div>
+<div class="section-heading"><div><h1 id="insights-page-title">Savings &amp; insights</h1></div></div>
 <div class="insights-controls"><label class="month-picker">
             <span>View month</span>
             <input id="budget-month" type="month">
@@ -23,12 +23,12 @@
             <span class="result-icon icon-sage" aria-hidden="true">↗</span>
             <div>
               <h3 id="savings-coach-title">Find ways to save each month</h3>
-              <p id="savings-coach-intro">See practical changes based on the spending you recorded this month.</p>
+
             </div>
           </div>
 
           <p id="savings-plan-message" class="result-note savings-plan-message" aria-live="polite">Add income to see a monthly estimate.</p>
-          <p id="savings-draft-note" class="savings-draft-note" hidden>Based on entries so far. A month ending does not mean all expenses were entered. Add missing bills before relying on the estimate.</p>
+          <p id="savings-draft-note" class="savings-draft-note" hidden>Based on recorded entries. Check for missing bills.</p>
 
           <div class="tracker-summary-grid budget-coach-summary" aria-live="polite">
             <article class="tracker-summary-card"><span id="savings-balance-label" class="card-label">Current balance this month</span><strong id="savings-recorded-balance">—</strong></article>
@@ -39,7 +39,9 @@
           <div class="savings-recommendations">
             <div class="savings-recommendations-heading">
               <h4>Where you can save</h4>
-              <p id="savings-model-note">Savings ideas use your entries immediately. Add missing expenses before deciding how much you can save.</p>
+              <details class="estimate-details"><summary>About these estimates</summary>
+                <p id="savings-model-note">Savings ideas use your entries immediately. Add missing expenses before deciding how much you can save.</p>
+              </details>
             </div>
             <div class="table-scroll" id="savings-budget-table-wrap" hidden>
               <table class="scenario-table adjustment-table">
@@ -57,7 +59,7 @@
               <p id="savings-region-note" class="chat-help" aria-live="polite"></p>
               <div class="advice-chat" aria-labelledby="savings-chat-title">
                 <h4 id="savings-chat-title">Tell the coach what cannot change</h4>
-                <p class="chat-help">For example, groceries may be fixed, or you may be able to reduce transport by ₹500.</p>
+
                 <ol id="savings-chat-messages" class="chat-messages" aria-live="polite" aria-relevant="additions text">
                   <li class="chat-message assistant-message">Tell me a category and whether its spending can change. Preferences stay on this page and reset when you leave or sign out.</li>
                 </ol>
@@ -75,7 +77,7 @@
             <span class="result-icon icon-sage" aria-hidden="true">↗</span>
             <div>
               <h3 id="spending-forecast-title">Next month’s cash spending forecast</h3>
-              <p>A starting estimate from your entries, available without waiting three months.</p>
+
             </div>
           </div>
           <p id="spending-forecast-status" class="forecast-status" role="status" aria-live="polite">
@@ -96,10 +98,11 @@
             <p id="spending-forecast-no-categories" class="forecast-status" hidden>
               No recent expense amounts are available. Missing spending is not treated as zero.
             </p>
+            <details class="estimate-details"><summary>About this forecast</summary>
             <p id="spending-forecast-model-note" class="forecast-note"></p>
             <p class="forecast-note">
               Use this as a starting estimate. Review it alongside upcoming bills, current EMIs, and your savings plan.
-            </p>
+            </p></details>
           </div>
         </article></div>
 <div class="page-next"><a href="/budget.html">Add or review budget entries <span aria-hidden="true">→</span></a></div></section>

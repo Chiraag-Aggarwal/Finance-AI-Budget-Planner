@@ -1,0 +1,67 @@
+FINANCE AI UPLOAD TEST FILES
+
+All records are invented. No real person's bank data or login details are included.
+Use a separate demo account so these entries do not change your real budget.
+
+HOW TO TRY A FILE
+1. Open Monthly budget, then the document import area.
+2. Choose one of files 01-04. Keep day-first dates.
+3. Read the document, check the preview, then add the selected entries.
+4. Select the file's month at the top of Monthly budget.
+5. Compare income and expense totals with the figures below.
+6. Refresh, then sign out and sign in again: saved entries should remain.
+7. Download Excel for the selected month and check dates, types, categories and notes.
+
+EXPECTED RESULTS FOR A FRESH ACCOUNT
+Each figure below is for that file alone. File 01 and file 04 both use October,
+so their totals add together if both are imported into the same account.
+
+01_fictional_household.xlsx
+  15 entries. Income INR 76,645.75. Expenses INR 39,419.75.
+  Recorded balance INR 37,226.00.
+
+02_fictional_bank_statement.csv
+  10 entries. Income INR 58,075.00. Expenses INR 22,359.50.
+  Recorded balance INR 35,715.50.
+
+03_fictional_household_log.docx
+  8 entries. Income INR 49,200.00. Expenses INR 13,879.00.
+  Recorded balance INR 35,321.00.
+
+04_fictional_passbook.pdf
+  8 entries. Income INR 69,000.00. Expenses INR 22,205.00.
+  Recorded balance INR 46,795.00.
+
+06_fictional_month_first.csv
+  3 entries. Income INR 12,500.00. Expenses INR 1,070.00.
+  Recorded balance INR 11,430.00.
+
+WHAT EACH FILE TESTS
+01 Excel: explicit income/expense type and category, real spreadsheet date values,
+   decimal amounts, and a complete month of household entries.
+02 CSV: debit and credit columns. Categories are omitted, so the note helper
+   can suggest them. Review suggestions; an uncertain category may remain Other.
+03 Word: an ordinary editable transaction table with explicit categories.
+04 PDF: selectable text in a passbook-style table. Blank debit/credit cells must
+   stay aligned. The opening and running balances must NOT become transactions.
+05 Review CSV: six rows with deliberate problems. On an empty account, only
+   the first row should initially be selected. Rows 2-5 need corrections.
+   Row 6 duplicates row 1 and should remain unselected.
+   Suggested corrections are written in the notes: amount 180, date 30/11/2026,
+   type expense, and positive amount 250. After correction, select rows 1-5
+   and keep row 6 unselected. Expected expenses: INR 2,355.00, income: INR 0.
+06 Date-order CSV: choose MONTH-FIRST before reading. 10/15/2026 means
+   15 October 2026. Expect three valid entries with the totals above.
+
+DUPLICATE CHECK
+After saving any clean file, upload the same file again. Already-saved rows
+should be marked as possible duplicates and left unselected. Cancel the preview.
+
+IMPORTANT LIMITS
+The files 01-04 and 06 use different transactions, so they can be tried together.
+If testing one file's totals, use a fresh demo account or account for earlier imports.
+ML suggests missing categories; dates and amounts come from document parsing.
+The PDF is a readable document, not a scan. Photos, image-only PDFs, old .xls,
+and old .doc files are not supported by the current importer.
+These examples test functionality. They do not establish real-world ML accuracy.
+The ZIP is for downloading the pack. Extract it and upload individual files.

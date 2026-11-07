@@ -1,14 +1,17 @@
+// Editable expense rows and their summed total. Each editor owns one list
+// (essential or personal); incomplete rows never silently replace a valid saved total.
+
 import { EXPENSE_CHOICES, sumExpenseItems } from "./planning_helpers.mjs";
 
-const tr = text => window.financeTranslate?.(text) || text;
+const tr = (text) => window.financeTranslate?.(text) || text;
 // Expense rows are always visible. A valid edit immediately updates the total.
 export function createExpenseEditors(root, scope, onChange) {
   const form = root.querySelector("#finance-form");
   const editors = {};
 
   for (const [key, choices] of Object.entries(EXPENSE_CHOICES)) {
-    const fieldName = key === "essentialItems"
-      ? "monthlyEssentialExpenses" : "monthlyDiscretionaryExpenses";
+    const fieldName =
+      key === "essentialItems" ? "monthlyEssentialExpenses" : "monthlyDiscretionaryExpenses";
     const totalInput = form.elements.namedItem(fieldName);
     const host = root.querySelector('[data-expense-editor="' + key + '"]');
     const rows = host.querySelector(".expense-rows");
@@ -46,7 +49,7 @@ export function createExpenseEditors(root, scope, onChange) {
         categoryBox.className = "expense-category-box";
         const select = document.createElement("select");
         select.setAttribute("aria-label", tr("Expense category"));
-        choices.forEach(choice => select.add(new Option(tr(choice), choice)));
+        choices.forEach((choice) => select.add(new Option(tr(choice), choice)));
         const isCustom = !choices.includes(item.name) || item.name === "Other";
         select.value = isCustom ? "Other" : item.name;
 
@@ -98,7 +101,10 @@ export function createExpenseEditors(root, scope, onChange) {
           select.focus();
           sync();
         });
-        custom.addEventListener("input", () => { item.name = custom.value; sync(); });
+        custom.addEventListener("input", () => {
+          item.name = custom.value;
+          sync();
+        });
         amount.addEventListener("input", () => {
           item.amount = amount.value === "" ? null : Number(amount.value);
           sync();
@@ -118,7 +124,7 @@ export function createExpenseEditors(root, scope, onChange) {
 
     scope.listen(host.querySelector("[data-add-expense]"), "click", () => {
       if (editing.length >= 30) return;
-      editing.push({name: choices[0], amount: null});
+      editing.push({ name: choices[0], amount: null });
       draw();
       sync();
       rows.lastElementChild.querySelector('input[type="number"]').focus();
@@ -142,10 +148,14 @@ export function createExpenseEditors(root, scope, onChange) {
         draw();
         sync(false);
       },
-      read() { return structuredClone(lastComplete); },
+      read() {
+        return structuredClone(lastComplete);
+      },
       validate() {
-        try { readTotal(); return null; }
-        catch {
+        try {
+          readTotal();
+          return null;
+        } catch {
           error.textContent = tr("Finish or remove the incomplete expense row.");
           return "Finish or remove the incomplete expense row.";
         }
@@ -155,7 +165,13 @@ export function createExpenseEditors(root, scope, onChange) {
   }
 
   function errors() {
-    return [...new Set(Object.values(editors).map(editor => editor.validate()).filter(Boolean))];
+    return [
+      ...new Set(
+        Object.values(editors)
+          .map((editor) => editor.validate())
+          .filter(Boolean),
+      ),
+    ];
   }
   scope.registerSave(() => {
     const problems = errors();
@@ -166,8 +182,14 @@ export function createExpenseEditors(root, scope, onChange) {
     restore(profile) {
       for (const [key, editor] of Object.entries(editors)) editor.restore(profile[key] || []);
     },
-    clear(key) { editors[key]?.restore([]); },
-    read() { return Object.fromEntries(Object.entries(editors).map(([key, editor]) => [key, editor.read()])); },
+    clear(key) {
+      editors[key]?.restore([]);
+    },
+    read() {
+      return Object.fromEntries(
+        Object.entries(editors).map(([key, editor]) => [key, editor.read()]),
+      );
+    },
     errors,
   };
 }

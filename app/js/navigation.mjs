@@ -1,3 +1,6 @@
+// Same-origin page navigation keeps the shared header and authenticated session mounted.
+// Finish pending saves, dispose the previous page, then mount the next page's controllers.
+
 import { flushPageSaves } from "./pending_saves.mjs";
 import { loadFinanceData } from "./finance_data.mjs";
 

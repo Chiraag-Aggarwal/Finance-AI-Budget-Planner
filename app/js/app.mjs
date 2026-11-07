@@ -1,3 +1,6 @@
+// Planner page controller: read and validate inputs, run finance_calculations,
+// render the results, and autosave the draft. Saved-goal controls live in planner_tools.
+
 import { createPlannerTools } from "./planner_tools.mjs";
 import { calculatePlan, validateProfile } from "./finance_calculations.mjs";
 import { loadFinanceData, saveFinanceDataField } from "./finance_data.mjs";

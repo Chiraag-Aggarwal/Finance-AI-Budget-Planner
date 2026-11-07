@@ -1,0 +1,7 @@
+﻿Date,Type,Category,Amount,Description
+01/11/2026,expense,Food and groceries,425,Valid fictional grocery row
+02/11/2026,expense,Transport,,Missing amount - correct to 180
+31/11/2026,expense,Utilities,600,Invalid date - correct to 30 Nov
+04/11/2026,,Other,900,Missing type - choose expense
+05/11/2026,expense,Personal,-250,Negative amount - correct to 250
+01/11/2026,expense,Food and groceries,425,Valid fictional grocery row

@@ -1,5 +1,7 @@
-// Share authenticated MongoDB saves between the planner and budget tracker.
+// Shared client for the account-scoped Python finance API.
+// The server chooses storage; the browser never connects to MongoDB directly.
 let signedInUserId = null;
+// Incrementing the epoch invalidates responses from an earlier sign-in, even for the same ID.
 let accountEpoch = 0;
 let savedDataPromise = null;
 let saveQueue = Promise.resolve();
@@ -44,7 +46,10 @@ async function request(path, method = "GET", body = undefined) {
   try {
     result = await response.json();
   } catch {
-    const contentType = response.headers.get("content-type") || "unknown content type"; throw new Error(`Finance server returned HTTP ${response.status} (${contentType}) instead of account data.`);
+    const contentType = response.headers.get("content-type") || "unknown content type";
+    throw new Error(
+      `Finance server returned HTTP ${response.status} (${contentType}) instead of account data.`,
+    );
   }
   if (requestedEpoch !== accountEpoch) {
     throw new Error("Your account changed before the request finished. Please try again.");
@@ -70,6 +75,7 @@ export async function loadFinanceData() {
   return savedDataPromise;
 }
 
+// Queue snapshots in order so a slow earlier save cannot overwrite a later edit.
 export function saveFinanceDataField(field, value) {
   const ownerId = signedInUserId;
   const epoch = accountEpoch;
@@ -90,9 +96,11 @@ export function saveFinanceDataField(field, value) {
   const reportedOperation = operation.catch((error) => {
     if (epoch !== accountEpoch) throw error;
     lastSaveError = error;
-    window.dispatchEvent(new CustomEvent("finance-save-error", {
-      detail: { message: error?.message || "A change could not be saved." },
-    }));
+    window.dispatchEvent(
+      new CustomEvent("finance-save-error", {
+        detail: { message: error?.message || "A change could not be saved." },
+      }),
+    );
     throw error;
   });
   saveQueue = reportedOperation.catch(() => {});
@@ -103,5 +111,3 @@ export async function waitForFinanceSaves() {
   await saveQueue;
   if (lastSaveError) throw lastSaveError;
 }
-
-

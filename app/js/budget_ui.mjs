@@ -1,3 +1,6 @@
+// Monthly budget controller: validate edits, save entries, and refresh totals/forecasts.
+// Also supplies the Insights page; document import/export is delegated to budget_documents.
+
 import { mountBudgetDocuments } from "./budget_documents.mjs";
 import { summarizeMonth, TRANSACTION_CATEGORIES, validateTransaction } from "./budget_tracker.mjs";
 import { createCategoryHelper } from "./category_starter.mjs";

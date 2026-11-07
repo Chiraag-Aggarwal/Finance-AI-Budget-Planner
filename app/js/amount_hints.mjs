@@ -1,9 +1,13 @@
-import { monthlySuggestions } from "./planning_helpers.mjs";
+import { monthlySuggestions, selectAmountSuggestion } from "./planning_helpers.mjs";
 
-const tr = text => window.financeTranslate?.(text) || text;
-const money = amount => new Intl.NumberFormat("en-IN", {
-  style: "currency", currency: "INR", maximumFractionDigits: 0,
-}).format(amount);
+const tr = (text) => window.financeTranslate?.(text) || text;
+const money = (amount) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
 
 // Non-modal popovers are attached to the actual amount fields, not extra dropdowns.
 export function mountAmountHints(root, scope, entries, useAmount) {
@@ -17,54 +21,50 @@ export function mountAmountHints(root, scope, entries, useAmount) {
     current = null;
   }
 
-  for (const field of ["monthlyTakeHomeIncome", "monthlyEssentialExpenses",
-    "monthlyDiscretionaryExpenses", "monthlyDebtPayment"]) {
+  for (const field of [
+    "monthlyTakeHomeIncome",
+    "monthlyEssentialExpenses",
+    "monthlyDiscretionaryExpenses",
+    "monthlyDebtPayment",
+  ]) {
     const input = root.querySelector('[name="' + field + '"]');
-    const wrap = input.closest(".amount-input-wrap");
-    const matches = months.filter(month => Number.isFinite(month.values[field])).slice(0, 3);
-    if (!matches.length) continue;
+    const wrap = input?.closest(".amount-input-wrap");
+    const month = selectAmountSuggestion(months, field);
+    if (!wrap || !month) continue;
 
     const popup = document.createElement("div");
     popup.className = "amount-popover";
     popup.id = field + "-suggestions";
     popup.hidden = true;
     popup.setAttribute("role", "dialog");
-    popup.setAttribute("aria-label", tr("Suggested amounts from your budget"));
-    const heading = document.createElement("strong");
-    heading.textContent = tr("From your monthly budget");
-    const explanation = document.createElement("p");
-    explanation.textContent = tr("Choose an amount to use. These totals include only your recorded entries.");
-    popup.append(heading, explanation);
-
-    matches.forEach(month => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "history-choice";
-      const label = document.createElement("span");
-      label.textContent = new Date(month.month + "-01T12:00:00").toLocaleDateString(
-        window.financeLanguage?.() === "hi" ? "hi-IN" : "en-IN",
-        {month: "short", year: "numeric"},
-      );
-      const amount = document.createElement("strong");
-      amount.textContent = money(month.values[field]);
-      const source = document.createElement("small");
-      source.textContent = tr(month.current ? "This month so far" : "Past month · recorded total");
-      button.append(label, amount, source);
-      button.addEventListener("click", () => {
-        useAmount(field, Math.round(month.values[field] * 100) / 100);
-        close();
-        // Focus without reopening the popover immediately after choosing.
-        suppressFocus = true;
-        input.focus({preventScroll: true});
-        suppressFocus = false;
-      });
-      popup.append(button);
+    popup.setAttribute("aria-label", tr("Suggested amount"));
+    // Keep just the month and a single clickable amount, including any paise.
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "history-choice";
+    const label = document.createElement("span");
+    label.textContent = new Date(month.month + "-01T12:00:00").toLocaleDateString(
+      window.financeLanguage?.() === "hi" ? "hi-IN" : "en-IN",
+      { month: "short", year: "numeric" },
+    );
+    const amount = document.createElement("strong");
+    amount.textContent = money(month.values[field]);
+    const source = document.createElement("small");
+    source.textContent = tr(month.current ? "This month so far" : "Recorded total");
+    button.append(label, amount, source);
+    button.addEventListener("click", () => {
+      useAmount(field, Math.round(month.values[field] * 100) / 100);
+      close();
+      // Focus without reopening the popover immediately after choosing.
+      suppressFocus = true;
+      input.focus({ preventScroll: true });
+      suppressFocus = false;
     });
-    if (field === "monthlyEssentialExpenses" || field === "monthlyDiscretionaryExpenses") {
-      const note = document.createElement("small");
-      note.textContent = tr("Using a total replaces this expense breakdown.");
-      popup.append(note);
-    }
+    popup.append(button);
+    const replacementNote = document.createElement("small");
+    replacementNote.textContent = tr("Replaces your expense items.");
+    replacementNote.hidden = true;
+    popup.append(replacementNote);
     wrap.append(popup);
     input.setAttribute("aria-controls", popup.id);
     input.setAttribute("aria-haspopup", "dialog");
@@ -74,17 +74,23 @@ export function mountAmountHints(root, scope, entries, useAmount) {
     function show() {
       if (suppressFocus) return;
       close();
+      // Warn only when applying the amount would replace an itemised breakdown.
+      replacementNote.hidden = !input.readOnly;
       popup.hidden = false;
       const box = wrap.getBoundingClientRect();
-      popup.classList.toggle("opens-up", box.bottom + popup.offsetHeight > window.innerHeight - 16 && box.top > popup.offsetHeight + 16);
+      popup.classList.toggle(
+        "opens-up",
+        box.bottom + popup.offsetHeight > window.innerHeight - 16 &&
+          box.top > popup.offsetHeight + 16,
+      );
       input.setAttribute("aria-expanded", "true");
       wrap.classList.add("suggestion-open");
-      current = {input, wrap, popup};
+      current = { input, wrap, popup };
     }
     scope.listen(input, "focus", show);
     scope.listen(input, "click", show);
     scope.listen(input, "input", close);
-    scope.listen(input, "keydown", event => {
+    scope.listen(input, "keydown", (event) => {
       if (event.key === "ArrowDown" && !popup.hidden) {
         event.preventDefault();
         popup.querySelector("button").focus();
@@ -92,21 +98,21 @@ export function mountAmountHints(root, scope, entries, useAmount) {
     });
   }
 
-  scope.listen(document, "pointerdown", event => {
+  scope.listen(document, "pointerdown", (event) => {
     if (current && !current.wrap.contains(event.target)) close();
   });
-  scope.listen(document, "focusin", event => {
+  scope.listen(document, "focusin", (event) => {
     if (current && !current.wrap.contains(event.target)) close();
   });
-  scope.listen(document, "keydown", event => {
+  scope.listen(document, "keydown", (event) => {
     if (event.key !== "Escape" || !current) return;
     const input = current.input;
     close();
     // The input may already have focus; prevent its focus handler reopening.
-    input.focus({preventScroll: true});
+    input.focus({ preventScroll: true });
     close();
     event.preventDefault();
   });
   scope.onDispose(close);
-  return {close};
+  return { close };
 }

@@ -1,3 +1,6 @@
+// Profile edits, data export and confirmed account deletion.
+// The server derives ownership from the session; a browser-supplied ID cannot grant access.
+
 import { createPageScope } from "./page_scope.mjs";
 
 // Mount this page inside the persistent layout; dispose it when leaving.

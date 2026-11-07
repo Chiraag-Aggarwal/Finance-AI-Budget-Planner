@@ -1,3 +1,9 @@
 data/synthetic/*.csv text eol=lf
 data/synthetic/evaluation.json text eol=lf
 app/js/starter_models.mjs text eol=lf
+
+# Preserve document bytes: PDF offsets and Office archives must not change line endings.
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.png binary

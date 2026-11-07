@@ -17,6 +17,8 @@ A beginner-friendly Indian household budgeting and goal-planning app. The browse
 
 ## Project files
 
+For a reading order and examples of how the modules work together, see [the code guide](../CODE_GUIDE.md).
+
 - `server.py` serves the app, validates account requests, hashes passwords, creates server-side sessions, and saves account and finance data in MongoDB or local SQLite.
 - `migrate_sqlite_to_mongodb.py` safely copies existing SQLite account records and saved server data. It does not copy active login sessions; users sign in again afterward.
 - `layout.html` is the shared header, navigation, footer, and document shell. `auth.html` holds the existing sign-in, sign-up, verification, and password-recovery forms. Python combines these trusted templates with each page; neither template is a public URL.
@@ -327,11 +329,14 @@ total and returns to manual entry. Incomplete rows must be finished or removed
 before calculating, saving a goal or navigating away.
 EMIs have their own box, so they are not added to essential totals again.
 
-Click or focus an amount box to open a floating card with up to three recorded
-months. Click an amount to use it. Escape or an outside click dismisses the card;
-Arrow Down moves keyboard focus to its first choice. There is no separate dropdown.
-The current month is labelled "so far"; past
-months are recorded totals, not proof that every bill has been entered. Unclassified
+Click or focus an amount box to see **one suggested amount**, with its source month.
+For each field, the app prefers the most recent past month with relevant entries
+within the six month summaries it keeps. If only the current month has a value,
+it uses that total and labels it "so far". No relevant records means no hint.
+It does not choose whichever number is closest to a possibly mistaken typed amount.
+Click the amount to apply it; paise are shown and kept. Escape or an outside click
+closes the card; Arrow Down focuses the choice and Enter selects it.
+Past months are observed totals, not proof that every bill has been entered. Unclassified
 Other expenses are excluded from essential/personal suggestions. Choosing a hint
 fills just that field; the user checks transfers and one-off income first. These
 are transparent summaries, not ML predictions.

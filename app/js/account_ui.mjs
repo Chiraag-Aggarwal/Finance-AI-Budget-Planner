@@ -1,3 +1,6 @@
+// Shared sign-in, verification, recovery and sign-out controls.
+// Page modules receive only the authenticated public profile through finance-user-ready.
+
 import { flushPageSaves } from "./pending_saves.mjs";
 
 const authScreen = document.querySelector("#auth-screen");

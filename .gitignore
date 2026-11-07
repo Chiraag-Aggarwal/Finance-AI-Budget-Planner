@@ -17,3 +17,6 @@
 Thumbs.db
 # Downloaded third-party datasets stay local unless explicitly reviewed for publication.
 /data/raw/
+
+# Local downloads duplicate the fictional example files tracked in sample_uploads*.
+/Finance_AI_*_Test_Pack.zip

@@ -110,6 +110,7 @@ def terms(note):
     return [word for word in clean.split() if len(word) > 1 and word not in STOP and not word.isdigit()]
 
 def category_data():
+    """Keep all variants of a phrase together so train/test wording cannot overlap by variant."""
     rows = []
     for category, phrases in PHRASES.items():
         for index, phrase in enumerate(phrases):
@@ -121,6 +122,7 @@ def category_data():
     return rows
 
 def fit_categories(rows, smoothing=0.5):
+    """Learn smoothed word log-probabilities from the training split only."""
     counts = defaultdict(Counter)
     for row in rows:
         if row["split"] == "train":
@@ -164,6 +166,7 @@ def forecast_features(progress, count):
     return [1.0, progress, progress*progress, n, progress*n]
 
 def forecast_data():
+    """Simulate fictional purchase histories reproducibly; split whole scenarios together."""
     rng = random.Random(20261104)
     rows = []
     for scenario in range(1800):
@@ -200,6 +203,7 @@ def solve(matrix, target):
     return [row[-1] for row in rows]
 
 def fit_forecast(rows, ridge):
+    """Fit a regularised linear model for log(next-month spending / observed spending)."""
     matrix=[[0.0]*5 for _ in range(5)]
     target=[0.0]*5
     for row in rows:
@@ -234,6 +238,7 @@ def csv_file(path, rows):
         writer.writerows(rows)
 
 def main():
+    """Select settings on validation data, evaluate test data, and write browser weights."""
     DATA.mkdir(parents=True,exist_ok=True)
     notes=category_data()
     # Choose smoothing and abstention on held-out phrase families.

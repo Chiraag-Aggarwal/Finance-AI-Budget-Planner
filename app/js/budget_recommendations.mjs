@@ -1,3 +1,6 @@
+// Optional savings examples and short chat constraints.
+// Forecasts may supply a starting amount; proposed spending cuts use explicit rules, not learned outcomes.
+
 import { calculatePlan } from "./finance_calculations.mjs";
 
 

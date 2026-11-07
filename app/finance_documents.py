@@ -33,6 +33,7 @@ def normalise_header(value):
     return re.sub(r"[^a-z0-9\u0900-\u097f]+", " ", text).strip()
 
 def money(value):
+    """Read a finite rupee amount; an unknown or blank amount remains None, not zero."""
     if value is None or str(value).strip() in {"", "-", "—"}:
         return None
     text = re.sub(r"^(?:INR|Rs\.?)\s*", "", str(value).strip().replace(",", "").replace("₹", ""), flags=re.I)
@@ -45,6 +46,7 @@ def money(value):
         return None
 
 def transaction_date(value, date_order="day-first"):
+    """Use the chosen day/month order instead of guessing ambiguous dates."""
     if isinstance(value, (datetime, date)):
         return value.strftime("%Y-%m-%d")
     formats = ["%Y-%m-%d", "%Y/%m/%d", "%d-%b-%Y", "%d %b %Y", "%d %B %Y"]
@@ -68,6 +70,7 @@ def check_zip(data):
         raise DocumentError("This is not a readable Office document.") from None
 
 def read_tables(filename, data):
+    """Extract bounded tables in memory. Images and scanned PDFs have no OCR path."""
     extension = Path(filename).suffix.lower()
     if not data or len(data) > MAX_FILE_BYTES:
         raise DocumentError("Choose a file smaller than 4 MB.")
@@ -149,6 +152,7 @@ def read_tables(filename, data):
     raise DocumentError("Use CSV, XLSX, DOCX tables or a readable PDF. Photos, scanned passbooks and old DOC/XLS files need a table export first.")
 
 def preview_document(filename, data, date_order="day-first"):
+    """Normalise rows and flag uncertain fields for review; do not save transactions."""
     if date_order not in {"day-first", "month-first"}:
         raise DocumentError("Choose day-first or month-first dates.")
     try:
@@ -222,6 +226,7 @@ def preview_document(filename, data, date_order="day-first"):
             "notice": "Check dates, income/expense and categories. Exclude transfers between your own accounts. Originals are not saved."}
 
 def export_workbook(entries, month=""):
+    """Create dated transaction details and monthly summaries from caller-scoped entries."""
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment
     from openpyxl.utils import get_column_letter
